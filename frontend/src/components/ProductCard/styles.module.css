@@ -1,0 +1,126 @@
+.card {
+  position: relative;
+  width: 300px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: .25s;
+}
+
+.card:hover {
+  border-color: var(--text);
+}
+
+.card:hover .image {
+  transform: scale(1.06);
+}
+
+.favorite {
+  position: absolute;
+  z-index: 2;
+  top: 15px;
+  right: 15px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  cursor: pointer;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.imageWrap {
+  position: relative;
+  height: 340px;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .5s ease;
+}
+
+.fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--primary);
+}
+
+.fallback span {
+  font-family: var(--font-heading);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.info {
+  padding: 22px;
+}
+
+.category {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+}
+
+.info h3 {
+  margin: 12px 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #f59e0b;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.oldPrice {
+  text-decoration: line-through;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.currentPrice {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.buyButton {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  background: var(--secondary);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: .25s;
+}
+
+.buyButton:hover {
+  background: var(--primary);
+}

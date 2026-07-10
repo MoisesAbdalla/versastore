@@ -1,0 +1,145 @@
+.footer {
+  background: var(--primary);
+  color: white;
+  margin-top: 120px;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  gap: 50px;
+  padding: 60px;
+  flex-wrap: wrap;
+}
+
+.container h3,
+.container h4 {
+  margin-bottom: 20px;
+}
+
+.container p {
+  max-width: 320px;
+  line-height: 1.6;
+}
+
+.container ul {
+  list-style: none;
+  padding: 0;
+}
+
+.container li {
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: color .2s;
+}
+
+.container li:hover {
+  color: var(--secondary);
+}
+
+.social {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.social a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-inverse);
+  color: white;
+  transition: .2s;
+}
+
+.social a:hover {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.newsletter {
+  min-width: 260px;
+}
+
+.newsletter p {
+  max-width: 320px;
+  line-height: 1.6;
+  opacity: .85;
+  margin-bottom: 18px;
+}
+
+.newsletter form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.newsletter input[type="email"] {
+  padding: 12px 14px;
+  border: 1px solid var(--border-inverse);
+  background: transparent;
+  color: white;
+  font-size: 14px;
+}
+
+.newsletter input[type="email"]::placeholder {
+  color: var(--text-muted-inverse);
+}
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted-inverse);
+}
+
+.consent input[type="checkbox"] {
+  margin-top: 3px;
+  accent-color: var(--secondary);
+}
+
+.consent a {
+  color: white;
+  text-decoration: underline;
+}
+
+.newsletter button {
+  padding: 13px;
+  border: none;
+  background: var(--secondary);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.newsletter button:disabled {
+  background: var(--border-inverse);
+  color: var(--text-muted-inverse);
+  cursor: not-allowed;
+}
+
+.newsletter button:not(:disabled):hover {
+  opacity: .85;
+}
+
+.subscribed {
+  color: var(--secondary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.copy {
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid var(--border-inverse);
+  font-size: 14px;
+}

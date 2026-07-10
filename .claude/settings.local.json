@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:5175/)",
+      "Read(//tmp/**)",
+      "Bash('/c/Program Files \\(x86\\)/Microsoft/Edge/Application/msedge.exe' --headless=new --disable-gpu --no-sandbox --window-size=1440,1600 --virtual-time-budget=8000 --run-all-compositor-stages-before-draw '--screenshot=C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--VersaStore\\\\1be9df1a-d12b-4b4b-b25a-21787575bc6b\\\\scratchpad\\\\home4.png' http://localhost:5175/)",
+      "Read(//c/Users/Admin/AppData/Local/Temp/claude/c--VersaStore/1be9df1a-d12b-4b4b-b25a-21787575bc6b/scratchpad/**)",
+      "Bash(\"/c/Program Files \\(x86\\)/Microsoft/Edge/Application/msedge.exe\" --headless=new --disable-gpu --no-sandbox --virtual-time-budget=8000 --dump-dom http://localhost:5175/)",
+      "Bash(\"/c/Program Files \\(x86\\)/Microsoft/Edge/Application/msedge.exe\" --headless=new --disable-gpu --no-sandbox --enable-logging=stderr --v=1 --virtual-time-budget=8000 --dump-dom http://localhost:5175/)"
+    ]
+  }
+}

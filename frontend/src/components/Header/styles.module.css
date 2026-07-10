@@ -1,0 +1,247 @@
+.header {
+    height: 96px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 0 64px;
+
+    background: var(--background);
+
+    border-bottom: 1px solid var(--border);
+}
+
+.logo{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    cursor:pointer;
+
+}
+
+.mark{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    width:44px;
+
+    height:44px;
+
+    border:1px solid var(--primary);
+
+    font-family:var(--font-heading);
+
+    font-size:20px;
+
+    font-weight:700;
+
+    color:var(--secondary);
+
+}
+
+.wordmark{
+
+    display:flex;
+
+    flex-direction:column;
+
+    line-height:1;
+
+    font-family:var(--font-heading);
+
+    font-size:22px;
+
+    font-weight:700;
+
+    letter-spacing:.06em;
+
+    color:var(--primary);
+
+    text-transform:uppercase;
+
+}
+
+.wordmarkSub{
+
+    font-family:var(--font-body);
+
+    font-size:10px;
+
+    font-weight:500;
+
+    letter-spacing:var(--tracking);
+
+    color:var(--text-muted);
+
+    margin-top:4px;
+
+}
+
+.search{
+
+    display:flex;
+
+    width:440px;
+
+}
+
+.search input{
+
+    flex:1;
+
+    border:none;
+
+    outline:none;
+
+    padding:13px 16px;
+
+    border:1px solid var(--border);
+
+    border-right:none;
+
+    border-radius:var(--radius) 0 0 var(--radius);
+
+    background:var(--surface);
+
+    font-size:14px;
+
+}
+
+.search input::placeholder{
+
+    color:var(--text-muted);
+
+}
+
+.search button{
+
+    width:52px;
+
+    border:none;
+
+    cursor:pointer;
+
+    background:var(--primary);
+
+    color:white;
+
+    border-radius:0 var(--radius) var(--radius) 0;
+
+    transition:.2s;
+
+}
+
+.search button:hover{
+
+    opacity:.85;
+
+}
+
+.actions{
+
+    display:flex;
+
+    gap:28px;
+
+}
+
+.actions button{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    background:none;
+
+    border:none;
+
+    cursor:pointer;
+
+    font-size:11px;
+
+    font-weight:600;
+
+    letter-spacing:var(--tracking);
+
+    text-transform:uppercase;
+
+    color:var(--text);
+
+    transition:.2s;
+
+}
+
+.actions button:hover{
+
+    color:var(--secondary);
+
+}
+
+@media (max-width: 900px){
+
+    .header{
+
+        flex-wrap:wrap;
+
+        height:auto;
+
+        padding:16px 24px;
+
+        row-gap:14px;
+
+    }
+
+    .search{
+
+        order:3;
+
+        width:100%;
+
+    }
+
+    .actionLabel{
+
+        display:none;
+
+    }
+
+    .actions{
+
+        gap:18px;
+
+    }
+
+}
+
+@media (max-width: 480px){
+
+    .wordmark{
+
+        font-size:18px;
+
+    }
+
+    .mark{
+
+        width:36px;
+
+        height:36px;
+
+        font-size:16px;
+
+    }
+
+}

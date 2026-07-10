@@ -1,0 +1,30 @@
+:root{
+    --primary:#0B0B0C;
+    --secondary:#B08D57;
+
+    --gold-text:#8C6D3F;
+
+    --background:#FFFFFF;
+
+    --surface:#FFFFFF;
+
+    --text:#0B0B0C;
+
+    --text-muted:#5C5C5C;
+
+    --text-muted-inverse:#B5B5B5;
+
+    --border:#E3E3E0;
+
+    --border-inverse:rgba(255,255,255,.14);
+
+    --radius:0;
+
+    --shadow:0 1px 3px rgba(11,11,12,.06);
+
+    --tracking:.14em;
+
+    --font-heading:"Playfair Display", Georgia, "Times New Roman", serif;
+
+    --font-body:"Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+}
