@@ -11,6 +11,7 @@ import ConfirmDialog from "../../../../components/ConfirmDialog";
 import { useListState } from "../../../../hooks/useListState";
 import { usePagination } from "../../../../hooks/usePagination";
 import { useProducts } from "../../../../hooks/useProducts";
+import { useCategories } from "../../../../hooks/useCategories";
 import { formatBRL, formatDate } from "../../../../utils/format";
 import { PRODUCT_STATUS, PRODUCT_STATUS_LABELS } from "../../../../constants/product";
 import ROUTES from "../../../../constants/routes";
@@ -18,6 +19,7 @@ import styles from "./styles.module.css";
 
 const LIST_DEFAULTS = {
   search: "",
+  categoryId: "",
   status: "",
   stockRange: "",
   sortKey: "createdAt",
@@ -36,10 +38,12 @@ function ProductListPage() {
   const navigate = useNavigate();
   const { state, setFilters } = useListState(LIST_DEFAULTS);
   const { fetchProducts, bulkUpdate, bulkDelete } = useProducts();
+  const { flat: categoryOptions } = useCategories();
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [confirm, setConfirm] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [bulkCategoryId, setBulkCategoryId] = useState("");
 
   // Cursor vindo da URL (voltar do detalhe) — usado só na primeira carga;
   // deep-link em página N recomeça "anterior" da página 1 (limitação R-6).
@@ -52,6 +56,7 @@ function ProductListPage() {
 
       return fetchProducts({
         search: state.search,
+        categoryId: state.categoryId,
         status: state.status,
         stockRange: state.stockRange,
         sort: { key: state.sortKey, direction: state.sortDir },
@@ -59,7 +64,7 @@ function ProductListPage() {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fetchProducts, state.search, state.status, state.stockRange, state.sortKey, state.sortDir]
+    [fetchProducts, state.search, state.categoryId, state.status, state.stockRange, state.sortKey, state.sortDir]
   );
 
   const pagination = usePagination(fetchPage);
@@ -117,6 +122,10 @@ function ProductListPage() {
   }
 
   async function runBulkAction() {
+    if (confirm.action === "categoria" && !bulkCategoryId) {
+      return;
+    }
+
     setConfirmLoading(true);
 
     let ok = false;
@@ -125,6 +134,14 @@ function ProductListPage() {
       ok = await bulkUpdate(selectedIds, { status: PRODUCT_STATUS.ATIVO }, `${selectedIds.length} produto(s) ativado(s).`);
     } else if (confirm.action === "desativar") {
       ok = await bulkUpdate(selectedIds, { status: PRODUCT_STATUS.INATIVO }, `${selectedIds.length} produto(s) desativado(s).`);
+    } else if (confirm.action === "categoria") {
+      const target = categoryOptions.find((option) => option.id === bulkCategoryId);
+
+      ok = await bulkUpdate(
+        selectedIds,
+        { categoryId: bulkCategoryId, categoryName: target?.name || "", category: target?.name || "" },
+        `${selectedIds.length} produto(s) movido(s) para "${target?.label}".`
+      );
     } else if (confirm.action === "excluir") {
       ok = await bulkDelete(selectedIds);
     }
@@ -170,9 +187,29 @@ function ProductListPage() {
         <TextField
           select
           size="small"
+          label="Categoria"
+          value={state.categoryId}
+          onChange={(e) =>
+            setFilters({ categoryId: e.target.value, search: "", status: "", stockRange: "" })
+          }
+          className={styles.selectField}
+        >
+          <MenuItem value="">Todas</MenuItem>
+          {categoryOptions.map((option) => (
+            <MenuItem key={option.id} value={option.id}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
+          size="small"
           label="Status"
           value={state.status}
-          onChange={(e) => setFilters({ status: e.target.value, search: "", stockRange: "" })}
+          onChange={(e) =>
+            setFilters({ status: e.target.value, search: "", categoryId: "", stockRange: "" })
+          }
           className={styles.selectField}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -188,7 +225,9 @@ function ProductListPage() {
           size="small"
           label="Estoque"
           value={state.stockRange}
-          onChange={(e) => setFilters({ stockRange: e.target.value, search: "", status: "" })}
+          onChange={(e) =>
+            setFilters({ stockRange: e.target.value, search: "", categoryId: "", status: "" })
+          }
           className={styles.selectField}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -207,6 +246,10 @@ function ProductListPage() {
 
           <Button size="small" onClick={() => setConfirm({ action: "desativar", title: "Desativar produtos", message: `Desativar ${selectedIds.length} produto(s)? Eles ficarão ocultos na loja.` })}>
             Desativar
+          </Button>
+
+          <Button size="small" onClick={() => { setBulkCategoryId(""); setConfirm({ action: "categoria", title: "Alterar categoria", message: `Escolha a nova categoria para ${selectedIds.length} produto(s):` }); }}>
+            Alterar categoria
           </Button>
 
           <Button size="small" color="error" onClick={() => setConfirm({ action: "excluir", title: "Excluir produtos", message: `Excluir ${selectedIds.length} produto(s)? Produtos com pedidos são excluídos logicamente (histórico preservado); os demais, definitivamente.`, destructive: true })}>
@@ -247,7 +290,25 @@ function ProductListPage() {
         confirmLabel={confirm?.destructive ? "Excluir" : "Confirmar"}
         onConfirm={runBulkAction}
         onClose={() => setConfirm(null)}
-      />
+      >
+        {confirm?.action === "categoria" && (
+          <TextField
+            select
+            fullWidth
+            size="small"
+            label="Nova categoria"
+            value={bulkCategoryId}
+            onChange={(e) => setBulkCategoryId(e.target.value)}
+            margin="dense"
+          >
+            {categoryOptions.map((option) => (
+              <MenuItem key={option.id} value={option.id}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
+      </ConfirmDialog>
     </div>
   );
 }

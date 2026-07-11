@@ -102,10 +102,10 @@ SKU/promoção/publicação; rascunho automático; soft delete; filtros preserva
 **Independent Test**: quickstart.md §3 — criar categoria + sub; nível 3 bloqueado; exclusão com
 produtos bloqueada com fluxo de mover
 
-- [ ] T031 [P] [US3] Criar `frontend/src/services/categoryService.js` conforme contracts/services.md: `listCategories` (árvore montada no cliente), `createCategory`/`updateCategory` (slug único via `slugify`, `hierarquia-invalida` se pai já é subcategoria), `deleteCategory` (`categoria-com-produtos`, `categoria-com-subcategorias`), `moveProducts` (lote atualizando `categoryId`/`categoryName`)
-- [ ] T032 [US3] Testes de `categoryService` em `frontend/src/services/__tests__/categoryService.test.js`: slug duplicado, limite de 2 níveis, bloqueio de exclusão, moveProducts
-- [ ] T033 [P] [US3] Criar `frontend/src/hooks/useCategories.js`
-- [ ] T034 [US3] Criar `frontend/src/pages/Admin/Categories/index.jsx` + `styles.module.css` (lista hierárquica, formulário com imagem opcional via Cloudinary, fluxo "mover produtos antes de excluir" com ConfirmDialog) e trocar o campo de categoria do Form de produto (T028) para select alimentado por `useCategories` gravando `categoryId`/`categoryName`
+- [x] T031 [P] [US3] Criar `frontend/src/services/categoryService.js` conforme contracts/services.md: `listCategories` (árvore montada no cliente), `createCategory`/`updateCategory` (slug único via `slugify`, `hierarquia-invalida` se pai já é subcategoria), `deleteCategory` (`categoria-com-produtos`, `categoria-com-subcategorias`), `moveProducts` (lote atualizando `categoryId`/`categoryName`)
+- [x] T032 [US3] Testes de `categoryService` em `frontend/src/services/__tests__/categoryService.test.js`: slug duplicado, limite de 2 níveis, bloqueio de exclusão, moveProducts
+- [x] T033 [P] [US3] Criar `frontend/src/hooks/useCategories.js`
+- [x] T034 [US3] Criar `frontend/src/pages/Admin/Categories/index.jsx` + `styles.module.css` (lista hierárquica, formulário com imagem opcional via Cloudinary, fluxo "mover produtos antes de excluir" com ConfirmDialog) e trocar o campo de categoria do Form de produto (T028) para select alimentado por `useCategories` gravando `categoryId`/`categoryName`
 
 **Checkpoint**: Catálogo organizado por hierarquia real de categorias
 

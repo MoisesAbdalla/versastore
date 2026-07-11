@@ -16,6 +16,7 @@ import EmptyState from "../../../../components/EmptyState";
 import ImagesSection from "./ImagesSection";
 import { getProduct, createProduct, updateProduct } from "../../../../services/productService";
 import { useProducts } from "../../../../hooks/useProducts";
+import { useCategories } from "../../../../hooks/useCategories";
 import { useFeedback } from "../../../../contexts/FeedbackContext";
 import { parseBRLInput, centsToInput } from "../../../../utils/format";
 import {
@@ -30,7 +31,8 @@ const EMPTY_FORM = {
   name: "",
   brand: "",
   tags: "",
-  category: "",
+  categoryId: "",
+  legacyCategory: "",
   description: "",
   images: [],
   priceText: "",
@@ -64,7 +66,8 @@ function productToForm(product) {
     name: product.name || "",
     brand: product.brand || "",
     tags: (product.tags || []).join(", "),
-    category: product.categoryName || product.category || "",
+    categoryId: product.categoryId || "",
+    legacyCategory: product.categoryId ? "" : product.categoryName || product.category || "",
     description: product.description || "",
     images:
       product.images && product.images.length
@@ -92,7 +95,11 @@ function productToForm(product) {
   };
 }
 
-function formToProduct(form) {
+function formToProduct(form, categoryName) {
+  // Nome resolvido do select de categorias; produto legado sem categoryId
+  // mantém o texto antigo até o admin escolher uma categoria real.
+  const finalCategoryName = categoryName || form.legacyCategory || "";
+
   return {
     name: form.name.trim(),
     brand: form.brand.trim(),
@@ -100,10 +107,9 @@ function formToProduct(form) {
       .split(",")
       .map((tag) => tag.trim())
       .filter(Boolean),
-    // Categoria como texto livre (legado) até a US3 trocar por select de
-    // categorias reais (categoryId) — tasks.md T034.
-    category: form.category.trim(),
-    categoryName: form.category.trim(),
+    categoryId: form.categoryId || "",
+    categoryName: finalCategoryName,
+    category: finalCategoryName,
     description: form.description,
     images: form.images,
     price: parseBRLInput(form.priceText),
@@ -131,6 +137,7 @@ function ProductFormPage() {
   const navigate = useNavigate();
   const { toastSuccess, toastError } = useFeedback();
   const { removeProduct, duplicate } = useProducts();
+  const { flat: categoryOptions } = useCategories();
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [loaded, setLoaded] = useState(!isEdit);
@@ -215,7 +222,8 @@ function ProductFormPage() {
     setSaving(true);
 
     try {
-      const product = formToProduct(form);
+      const selectedCategory = categoryOptions.find((option) => option.id === form.categoryId);
+      const product = formToProduct(form, selectedCategory?.name);
 
       if (isEdit) {
         await updateProduct(id, product);
@@ -355,12 +363,25 @@ function ProductFormPage() {
           />
 
           <TextField
+            select
             label="Categoria"
-            value={form.category}
-            onChange={(e) => setField("category", e.target.value)}
+            value={form.categoryId}
+            onChange={(e) => setField("categoryId", e.target.value)}
             margin="dense"
             className={styles.rowField}
-          />
+            helperText={
+              form.legacyCategory && !form.categoryId
+                ? `Categoria antiga: "${form.legacyCategory}" — escolha uma categoria real`
+                : " "
+            }
+          >
+            <MenuItem value="">Sem categoria</MenuItem>
+            {categoryOptions.map((option) => (
+              <MenuItem key={option.id} value={option.id}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
 
           <TextField
             label="Tags (separadas por vírgula)"
