@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 
-import { formatBRL, formatDate, formatDateTime, formatPct } from "../format";
+import {
+  formatBRL,
+  formatDate,
+  formatDateTime,
+  formatPct,
+  parseBRLInput,
+  centsToInput,
+} from "../format";
 
 // Intl usa non-breaking space entre "R$" e o valor — normalizamos p/ comparar.
 function normalize(text) {
@@ -42,6 +49,36 @@ describe("formatDateTime", () => {
 
     expect(formatted).toContain("11/07/2026");
     expect(formatted).toContain("15:30");
+  });
+});
+
+describe("parseBRLInput", () => {
+  it("converte entrada brasileira em centavos", () => {
+    expect(parseBRLInput("199,90")).toBe(19990);
+    expect(parseBRLInput("1.234,56")).toBe(123456);
+    expect(parseBRLInput("R$ 49,90")).toBe(4990);
+  });
+
+  it("aceita ponto decimal e inteiro", () => {
+    expect(parseBRLInput("199.90")).toBe(19990);
+    expect(parseBRLInput("199")).toBe(19900);
+  });
+
+  it("retorna null para vazio ou inválido", () => {
+    expect(parseBRLInput("")).toBe(null);
+    expect(parseBRLInput("abc")).toBe(null);
+    expect(parseBRLInput(null)).toBe(null);
+  });
+});
+
+describe("centsToInput", () => {
+  it("converte centavos em texto editável", () => {
+    expect(centsToInput(19990)).toBe("199,90");
+    expect(centsToInput(500)).toBe("5,00");
+  });
+
+  it("retorna vazio para nulo", () => {
+    expect(centsToInput(null)).toBe("");
   });
 });
 

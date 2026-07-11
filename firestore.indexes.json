@@ -79,7 +79,8 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "destaque", "order": "ASCENDING" },
-        { "fieldPath": "deleted", "order": "ASCENDING" }
+        { "fieldPath": "deleted", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
       ]
     },
     {

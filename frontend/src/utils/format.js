@@ -46,6 +46,32 @@ export function formatDateTime(value) {
   return date ? dateTimeFormatter.format(date) : "";
 }
 
+// Converte entrada digitada ("199,90", "1.234,56", "199.90", "199") em centavos.
+export function parseBRLInput(text) {
+  if (text === null || text === undefined || String(text).trim() === "") {
+    return null;
+  }
+
+  let clean = String(text).replace(/[R$\s]/g, "");
+
+  if (clean.includes(",")) {
+    clean = clean.replace(/\./g, "").replace(",", ".");
+  }
+
+  const value = Number(clean);
+
+  return Number.isNaN(value) ? null : Math.round(value * 100);
+}
+
+// Centavos → texto editável no formulário ("19990" → "199,90").
+export function centsToInput(cents) {
+  if (cents === null || cents === undefined) {
+    return "";
+  }
+
+  return (cents / 100).toFixed(2).replace(".", ",");
+}
+
 export function formatPct(delta) {
   if (delta == null || Number.isNaN(delta)) {
     return "—";

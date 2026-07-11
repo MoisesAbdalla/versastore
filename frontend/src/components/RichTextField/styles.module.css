@@ -1,0 +1,61 @@
+.field {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+    margin: 16px 0 8px;
+}
+
+.label {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+}
+
+.toolbar {
+    display: flex;
+
+    gap: 4px;
+
+    padding: 4px;
+
+    border: 1px solid var(--border);
+
+    border-bottom: none;
+
+    background: var(--surface);
+}
+
+.editor {
+    min-height: 140px;
+
+    padding: 12px 14px;
+
+    border: 1px solid var(--border);
+
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    line-height: 1.6;
+
+    color: var(--text);
+
+    background: var(--surface);
+
+    outline: none;
+}
+
+.editor:focus {
+    border-color: var(--secondary);
+}
+
+.editor:empty::before {
+    content: attr(data-placeholder);
+
+    color: var(--text-muted);
+}

@@ -2,6 +2,7 @@ import styles from "./styles.module.css";
 
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
+import { formatBRL } from "../../utils/format";
 
 function ProductCard({ product }) {
   return (
@@ -43,12 +44,12 @@ function ProductCard({ product }) {
         <div className={styles.price}>
           {product.oldPrice != null && (
             <span className={styles.oldPrice}>
-              R$ {product.oldPrice.toFixed(2)}
+              {formatBRL(product.oldPrice)}
             </span>
           )}
 
           <span className={styles.currentPrice}>
-            R$ {product.price.toFixed(2)}
+            {formatBRL(product.price)}
           </span>
         </div>
 

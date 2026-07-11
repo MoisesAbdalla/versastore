@@ -14,11 +14,8 @@ import AdminRoute from "./AdminRoute";
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
 const Dashboard = lazy(() => import("../pages/Admin/Dashboard"));
 const AccessDenied = lazy(() => import("../pages/Admin/AccessDenied"));
-
-// Telas legadas da feature 002 — absorvidas pelas novas telas de produtos na US2 (T029).
-const LegacyProductForm = lazy(() => import("../pages/Admin"));
-const LegacyProductList = lazy(() => import("../pages/Admin/ProductList"));
-const LegacyProductEdit = lazy(() => import("../pages/Admin/ProductEdit"));
+const ProductListPage = lazy(() => import("../pages/Admin/Products/List"));
+const ProductFormPage = lazy(() => import("../pages/Admin/Products/Form"));
 
 function AppRoutes() {
   return (
@@ -47,34 +44,10 @@ function AppRoutes() {
             }
           >
             <Route index element={<Dashboard />} />
+            <Route path="products" element={<ProductListPage />} />
+            <Route path="products/new" element={<ProductFormPage />} />
+            <Route path="products/:id" element={<ProductFormPage />} />
           </Route>
-
-          <Route
-            path="/admin/products"
-            element={
-              <AdminRoute>
-                <LegacyProductList />
-              </AdminRoute>
-            }
-          />
-
-          <Route
-            path="/admin/products/new"
-            element={
-              <AdminRoute>
-                <LegacyProductForm />
-              </AdminRoute>
-            }
-          />
-
-          <Route
-            path="/admin/products/:id"
-            element={
-              <AdminRoute>
-                <LegacyProductEdit />
-              </AdminRoute>
-            }
-          />
 
           <Route path="*" element={<NotFound />} />
 

@@ -1,10 +1,9 @@
 rules_version = '2';
 
-// Rules v1 — rollout escalonado (specs/003-admin-dashboard/contracts/firestore.md):
-// - Coleções administrativas (orders, users, dailyStats, counters) já nascem trancadas.
-// - products/categories mantêm leitura pública irrestrita (comportamento atual da loja).
-//   O aperto de products para (status == "ativo" && deleted == false) acontece na tarefa
-//   T030a, após o backfill dos produtos legados e a migração das queries da loja.
+// Rules da dashboard administrativa (specs/003-admin-dashboard/contracts/firestore.md).
+// Rollout concluído em T030a: leitura pública de products restrita a
+// (status == "ativo" && deleted == false) — exige backfill dos produtos legados
+// ANTES do deploy (ver comentário no match /products).
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -22,9 +21,12 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      // v1: leitura pública irrestrita (loja atual). Final (T030a):
-      // allow read: if isAdmin() || (resource.data.status == "ativo" && resource.data.deleted == false);
-      allow read: if true;
+      // Rule final (T030a): a loja só lê produtos ativos e não excluídos.
+      // ATENÇÃO: só deployar após rodar o backfill (window.backfillProducts()
+      // em dev, logado como admin) — produtos legados sem os campos
+      // status/deleted seriam negados por esta rule.
+      allow read: if isAdmin()
+        || (resource.data.status == "ativo" && resource.data.deleted == false);
       allow write: if isAdmin();
     }
 
