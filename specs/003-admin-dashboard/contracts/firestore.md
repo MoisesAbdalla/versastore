@@ -100,6 +100,13 @@ Toda consulta com igualdade + `orderBy` em campo distinto exige índice composto
 | 15 | `users` | `role ASC, nameLower ASC` | busca de cliente por nome |
 | 16 | `users` | `role ASC, totalSpent DESC` | ordenação por total gasto |
 
+**Combinações de filtros (revisão 2026-07-11)**: além da lista acima, `firestore.indexes.json`
+declara os índices para filtros combinados de produtos — `deleted+categoryId+status+{createdAt,
+price, nameLower, totalStock}`, `deleted+categoryId+{totalStock, price, nameLower}` e
+`deleted+status+{totalStock, price, nameLower}` — habilitando categoria + status + faixa de
+estoque simultâneos com ordenação por coluna. A matriz completa (com o motivo de a busca por
+prefixo permanecer exclusiva) está em research.md R-5a.
+
 Notas:
 
 - Ordenações da UI ficam **restritas** às combinações acima (R-8); coluna sem índice não oferece

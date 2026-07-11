@@ -117,6 +117,28 @@ ou o SKU).
 **Limitação documentada (spec/UI)**: busca não encontra substring interna ("camiseta azul" não é
 encontrada por "azul"). Mitigação futura fora do escopo.
 
+## R-5a. Matriz de combinações de filtros na listagem de produtos
+
+Revisão (2026-07-11, após questionamento correto do usuário): a exclusividade total entre filtros
+era mais conservadora do que o Firestore exige. Regras reais do Firestore que governam cada caso:
+(a) filtros de **igualdade combinam livremente** entre si e com no máximo ordenações indexadas —
+basta o índice composto existir; (b) **um range** (`<`,`<=`,`>`,`>=`) combina com igualdades, mas a
+ordenação primária deve ser o campo do range; (c) cada combinação (igualdades × campo de ordenação)
+exige **um índice composto próprio** — o custo real de combinar é a multiplicação de índices, não
+uma proibição do banco.
+
+| Combinação | Status | Motivo específico |
+|---|---|---|
+| categoria + status | **Suportada** | Igualdade + igualdade; índices `deleted+categoryId+status+{createdAt,price,nameLower,totalStock}` declarados |
+| categoria + estoque | **Suportada** | Igualdades + range em `totalStock`; ordenação forçada a `totalStock` (regra b); índice `deleted+categoryId+totalStock` |
+| status + estoque | **Suportada** | Idem; índice `deleted+status+totalStock` |
+| categoria + status + estoque | **Suportada** | Idem; índice `deleted+categoryId+status+totalStock` |
+| ordenação por coluna com filtros | **Suportada** | Um índice por combinação filtros×coluna (todos declarados); direção inversa é atendida pelo mesmo índice (Firestore percorre índices em ordem reversa) |
+| busca (prefixo) + qualquer filtro | **Não combinada (decisão)** | A busca é um OR entre dois campos (`nameLower` OU `skuUpper`), implementado como **duas queries mescladas no cliente** — a mescla não possui cursor único estável, então paginação por `startAfter` fica incorreta; além disso, cada filtro adicional exigiria índices para os dois ramos do OR (multiplicação 2×N). O operador `or()` nativo existe, mas com dois ranges de prefixo + igualdades + `orderBy` a exigência de índices e as restrições de ordenação/cursor entre disjunções tornam o custo desproporcional à escala declarada. Busca zera os filtros; filtros zeram a busca. |
+
+Consequência de UX: com "estoque baixo" (range) ativo, a tabela é ordenada por estoque (informado
+na UI); ordenação por outras colunas fica disponível nas demais combinações.
+
 ## R-6. Paginação: cursores `startAfter` + estado na URL
 
 **Decision**: Todas as listagens usam `orderBy(...) + limit(20) + startAfter(cursorDoc)`; nunca

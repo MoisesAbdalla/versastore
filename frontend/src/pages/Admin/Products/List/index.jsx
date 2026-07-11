@@ -177,7 +177,7 @@ function ProductListPage() {
           defaultValue={state.search}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              setFilters({ search: e.target.value, status: "", stockRange: "" });
+              setFilters({ search: e.target.value, categoryId: "", status: "", stockRange: "" });
             }
           }}
           className={styles.searchField}
@@ -189,9 +189,7 @@ function ProductListPage() {
           size="small"
           label="Categoria"
           value={state.categoryId}
-          onChange={(e) =>
-            setFilters({ categoryId: e.target.value, search: "", status: "", stockRange: "" })
-          }
+          onChange={(e) => setFilters({ categoryId: e.target.value, search: "" })}
           className={styles.selectField}
         >
           <MenuItem value="">Todas</MenuItem>
@@ -207,9 +205,7 @@ function ProductListPage() {
           size="small"
           label="Status"
           value={state.status}
-          onChange={(e) =>
-            setFilters({ status: e.target.value, search: "", categoryId: "", stockRange: "" })
-          }
+          onChange={(e) => setFilters({ status: e.target.value, search: "" })}
           className={styles.selectField}
         >
           <MenuItem value="">Todos</MenuItem>
@@ -225,10 +221,9 @@ function ProductListPage() {
           size="small"
           label="Estoque"
           value={state.stockRange}
-          onChange={(e) =>
-            setFilters({ stockRange: e.target.value, search: "", categoryId: "", status: "" })
-          }
+          onChange={(e) => setFilters({ stockRange: e.target.value, search: "" })}
           className={styles.selectField}
+          helperText={state.stockRange === "baixo" ? "Ordenado por estoque" : " "}
         >
           <MenuItem value="">Todos</MenuItem>
           <MenuItem value="baixo">Estoque baixo</MenuItem>

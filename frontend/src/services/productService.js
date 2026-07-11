@@ -346,9 +346,11 @@ export async function listProducts({
     constraints.push(where("status", "==", status));
   }
 
-  // Filtro de estoque usa range em totalStock — o Firestore exige que a
-  // ordenação seja pelo mesmo campo, e a UI não o combina com outros filtros
-  // (índices declarados em firestore.indexes.json).
+  // Categoria, status e estoque são combináveis (igualdades + no máximo um
+  // range em totalStock) — cada combinação tem índice composto declarado em
+  // firestore.indexes.json. Com "estoque baixo" (range), a ordenação é
+  // forçada para totalStock; nas demais, a coluna escolhida ordena.
+  // Matriz completa de combinações: research.md R-5a.
   let orderField = "createdAt";
   let orderDirection = "desc";
 

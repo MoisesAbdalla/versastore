@@ -258,6 +258,20 @@ describe("listProducts — filtro de excluídos sempre presente", () => {
     expect(whereMock).toHaveBeenCalledWith("status", "==", "ativo");
   });
 
+  it("combina categoria + status + estoque na mesma consulta (research R-5a)", async () => {
+    getDocsMock.mockResolvedValueOnce(snapshotWith([]));
+
+    await listProducts({ categoryId: "cat-1", status: "ativo", stockRange: "baixo" });
+
+    expect(whereMock).toHaveBeenCalledWith("deleted", "==", false);
+    expect(whereMock).toHaveBeenCalledWith("categoryId", "==", "cat-1");
+    expect(whereMock).toHaveBeenCalledWith("status", "==", "ativo");
+    expect(whereMock).toHaveBeenCalledWith("totalStock", ">", 0);
+    expect(whereMock).toHaveBeenCalledWith("totalStock", "<=", 5);
+    // Range em totalStock exige ordenação primária pelo mesmo campo.
+    expect(orderByMock).toHaveBeenCalledWith("totalStock", "asc");
+  });
+
   it("pagina com limit(pageSize + 1) e reporta hasMore", async () => {
     const docs = Array.from({ length: 21 }, (_, i) => fakeDoc(`p${i}`, { name: `P${i}` }));
     getDocsMock.mockResolvedValueOnce(snapshotWith(docs));
