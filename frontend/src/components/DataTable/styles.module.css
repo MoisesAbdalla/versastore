@@ -1,0 +1,57 @@
+.wrapper {
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+}
+
+.scroll {
+    overflow-x: auto;
+}
+
+.clickableRow {
+    cursor: pointer;
+}
+
+.pagination {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: 12px;
+
+    padding: 12px 16px;
+
+    border-top: 1px solid var(--border);
+}
+
+.pageLabel {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+}
+
+.errorState {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 48px 24px;
+
+    text-align: center;
+
+    font-family: var(--font-body);
+
+    color: var(--text-muted);
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+}

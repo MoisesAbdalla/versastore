@@ -1,0 +1,73 @@
+rules_version = '2';
+
+// Rules v1 — rollout escalonado (specs/003-admin-dashboard/contracts/firestore.md):
+// - Coleções administrativas (orders, users, dailyStats, counters) já nascem trancadas.
+// - products/categories mantêm leitura pública irrestrita (comportamento atual da loja).
+//   O aperto de products para (status == "ativo" && deleted == false) acontece na tarefa
+//   T030a, após o backfill dos produtos legados e a migração das queries da loja.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    match /products/{productId} {
+      // v1: leitura pública irrestrita (loja atual). Final (T030a):
+      // allow read: if isAdmin() || (resource.data.status == "ativo" && resource.data.deleted == false);
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
+      allow create, delete: if isAdmin();
+      // Itens, número, cliente e data são imutáveis após a criação (defesa em profundidade;
+      // a validação principal é do orderService).
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'statusHistory', 'trackingCode', 'internalNotes']);
+    }
+
+    match /users/{userId} {
+      allow read: if isAdmin() || isSelf(userId);
+      // Registro pela loja: o usuário cria o próprio doc, sempre como customer.
+      allow create: if isAdmin()
+        || (isSelf(userId) && request.resource.data.role == "customer");
+      // Escalação de privilégio bloqueada: o próprio usuário nunca altera role
+      // nem os agregados mantidos pelas transações de pedido.
+      allow update: if isAdmin()
+        || (isSelf(userId)
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.get('orderCount', 0) == resource.data.get('orderCount', 0)
+          && request.resource.data.get('totalSpent', 0) == resource.data.get('totalSpent', 0));
+      allow delete: if isAdmin();
+    }
+
+    match /dailyStats/{day} {
+      allow read, write: if isAdmin();
+    }
+
+    match /counters/{counterId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

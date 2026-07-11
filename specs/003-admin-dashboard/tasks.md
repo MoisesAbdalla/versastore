@@ -1,4 +1,4 @@
-# Tasks: Dashboard Administrativa do E-commerce
+﻿# Tasks: Dashboard Administrativa do E-commerce
 
 **Input**: Design documents from `/specs/003-admin-dashboard/`
 
@@ -23,11 +23,11 @@ Foundational antes e Polish ao final.
 
 **Purpose**: Limpeza e blocos compartilhados sem dependências
 
-- [ ] T001 [P] Remover as 2 dependências instaladas por engano na raiz (`@mui/icons-material`, `react-router-dom`) de `package.json`, `package-lock.json` e `node_modules/` da raiz — manter tudo somente em `frontend/`
-- [ ] T002 [P] Remover a pasta vazia `frontend/src/context/` (consolidação em `frontend/src/contexts/` — plan.md)
-- [ ] T003 [P] Criar constantes de domínio: `frontend/src/constants/orderStatus.js` (7 status + mapa de transições válidas do data-model.md), `frontend/src/constants/roles.js` (papéis → capacidades, FR-003) e `frontend/src/constants/product.js` (status de produto, formatos/tamanho máximo de upload)
-- [ ] T004 [P] Criar `frontend/src/utils/format.js` (`formatBRL(cents)`, `formatDate`, `formatDateTime`, `formatPct` via `Intl` pt-BR) com testes em `frontend/src/utils/__tests__/format.test.js`
-- [ ] T005 [P] Criar `frontend/src/utils/slugify.js` com testes em `frontend/src/utils/__tests__/slugify.test.js`
+- [x] T001 [P] Remover as 2 dependências instaladas por engano na raiz (`@mui/icons-material`, `react-router-dom`) de `package.json`, `package-lock.json` e `node_modules/` da raiz — manter tudo somente em `frontend/`
+- [x] T002 [P] Remover a pasta vazia `frontend/src/context/` (consolidação em `frontend/src/contexts/` — plan.md)
+- [x] T003 [P] Criar constantes de domínio: `frontend/src/constants/orderStatus.js` (7 status + mapa de transições válidas do data-model.md), `frontend/src/constants/roles.js` (papéis → capacidades, FR-003) e `frontend/src/constants/product.js` (status de produto, formatos/tamanho máximo de upload)
+- [x] T004 [P] Criar `frontend/src/utils/format.js` (`formatBRL(cents)`, `formatDate`, `formatDateTime`, `formatPct` via `Intl` pt-BR) com testes em `frontend/src/utils/__tests__/format.test.js`
+- [x] T005 [P] Criar `frontend/src/utils/slugify.js` com testes em `frontend/src/utils/__tests__/slugify.test.js`
 
 ---
 
@@ -37,14 +37,14 @@ Foundational antes e Polish ao final.
 
 **⚠️ CRITICAL**: Nenhuma user story começa antes desta fase terminar
 
-- [ ] T006 Criar arquivos versionados do Firebase na raiz: `firebase.json` (apontando rules/indexes), `firestore.rules` (contrato completo de contracts/firestore.md — deny by default, papel via `users/{uid}.role`, anti-escalação de `role`/`orderCount`/`totalSpent`, restrição de campos de update em `orders`) e `firestore.indexes.json` (os 16 índices compostos da tabela de contracts/firestore.md)
-- [ ] T007 Deploy das regras e índices: `npx firebase-tools deploy --only firestore:rules,firestore:indexes` e confirmação no console (índices em build podem demorar; depende de T006)
-- [ ] T008 [P] Criar `frontend/src/contexts/FeedbackContext.jsx` (toasts de sucesso/erro com MUI Snackbar+Alert, hook `useFeedback`) e registrar o provider em `frontend/src/main.jsx`
-- [ ] T009 [P] Criar `frontend/src/components/ConfirmDialog/index.jsx` + `styles.module.css` (confirmação de ações destrutivas, FR-083; fecha com Esc)
-- [ ] T010 [P] Criar `frontend/src/components/EmptyState/index.jsx` + `styles.module.css` (estado vazio com orientação de próximo passo, FR-084)
-- [ ] T011 [P] Criar `frontend/src/hooks/useListState.js` (filtros/busca/ordenação/página/cursor ↔ query params da URL, research R-6) com testes em `frontend/src/hooks/__tests__/useListState.test.js`
-- [ ] T012 [P] Criar `frontend/src/hooks/usePagination.js` (pilha de cursores `startAfter` + `limit(20)`, next/prev/refresh) com testes em `frontend/src/hooks/__tests__/usePagination.test.js`
-- [ ] T013 Criar `frontend/src/components/DataTable/index.jsx` + `styles.module.css` (tabela com skeleton de carregamento, ordenação por coluna restrita às indexadas, seleção em massa, paginação por cursor, estado vazio via EmptyState) — depende de T009–T012
+- [x] T006 Criar arquivos versionados do Firebase na raiz: `firebase.json` (apontando rules/indexes), `firestore.rules` **v1 escalonada** (deny by default nas coleções administrativas — `orders`, `users`, `dailyStats`, `counters` — com papel via `users/{uid}.role`, anti-escalação de `role`/`orderCount`/`totalSpent` e restrição de campos de update em `orders`; **`products` e `categories` mantêm leitura pública irrestrita** para não quebrar a loja atual — o aperto para `status == "ativo" && deleted == false` acontece só em T030a, após backfill e migração da loja) e `firestore.indexes.json` (os 16 índices compostos da tabela de contracts/firestore.md)
+- [x] T007 Deploy das regras v1 e índices: `npx firebase-tools deploy --only firestore:rules,firestore:indexes` e confirmação no console (índices em build podem demorar; depende de T006)
+- [x] T008 [P] Criar `frontend/src/contexts/FeedbackContext.jsx` (toasts de sucesso/erro com MUI Snackbar+Alert, hook `useFeedback`) e registrar o provider em `frontend/src/main.jsx`
+- [x] T009 [P] Criar `frontend/src/components/ConfirmDialog/index.jsx` + `styles.module.css` (confirmação de ações destrutivas, FR-083; fecha com Esc)
+- [x] T010 [P] Criar `frontend/src/components/EmptyState/index.jsx` + `styles.module.css` (estado vazio com orientação de próximo passo, FR-084)
+- [x] T011 [P] Criar `frontend/src/hooks/useListState.js` (filtros/busca/ordenação/página/cursor ↔ query params da URL, research R-6) com testes em `frontend/src/hooks/__tests__/useListState.test.js`
+- [x] T012 [P] Criar `frontend/src/hooks/usePagination.js` (pilha de cursores `startAfter` + `limit(20)`, next/prev/refresh) com testes em `frontend/src/hooks/__tests__/usePagination.test.js`
+- [x] T013 Criar `frontend/src/components/DataTable/index.jsx` + `styles.module.css` (tabela com skeleton de carregamento, ordenação por coluna restrita às indexadas, seleção em massa, paginação por cursor, estado vazio via EmptyState) — depende de T009–T012
 
 **Checkpoint**: Fundação pronta — user stories podem começar (em paralelo, se houver equipe)
 
@@ -58,14 +58,14 @@ Foundational antes e Polish ao final.
 mensagem; anônimo vai ao login; leitura/escrita direta negada pelas rules; escalação de `role`
 negada
 
-- [ ] T014 [P] [US1] Criar `frontend/src/services/userService.js` (`getUserProfile(uid)`, `hasPermission(role, capability)` contra `constants/roles.js`) com testes em `frontend/src/services/__tests__/userService.test.js`
-- [ ] T015 [US1] Estender `frontend/src/contexts/AuthContext.jsx`: após `onAuthStateChanged`, carregar perfil via `userService` e expor `{ user, role, isAdmin, loading }` mantendo a API atual (`user`, `setUser`) — NÃO criar novo contexto
-- [ ] T016 [P] [US1] Criar `frontend/src/pages/Admin/AccessDenied/index.jsx` + `styles.module.css` (mensagem clara em pt-BR + link de volta à loja)
-- [ ] T017 [US1] Implementar `frontend/src/routes/PrivateRoute.jsx` (arquivo existe vazio): autenticado renderiza children; anônimo redireciona a `/login`
-- [ ] T018 [US1] Implementar `frontend/src/routes/AdminRoute.jsx` (arquivo existe vazio): `isAdmin` renderiza; logado não-admin → AccessDenied; anônimo → `/login`; aguarda `loading` do AuthContext — com testes em `frontend/src/routes/__tests__/AdminRoute.test.jsx` (3 cenários)
-- [ ] T019 [US1] Criar `frontend/src/layouts/AdminLayout/index.jsx` + `styles.module.css`: sidebar fixa com os 6 módulos (drawer em mobile), header com nome do usuário logado e slot de busca global — tokens de `variables.css`/design system (FR-080/081)
-- [ ] T020 [US1] Estender `frontend/src/routes/index.jsx` e `frontend/src/constants/routes.js`: rotas aninhadas `/admin`, `/admin/products(/new/:id)`, `/admin/categories`, `/admin/orders(/:id)`, `/admin/customers(/:id)`, `/admin/reports` — todas com `React.lazy` (constituição IV), envolvidas por `AdminRoute` + `AdminLayout`; Dashboard placeholder até US5
-- [ ] T021 [US1] Bootstrap + validação de segurança: promover o primeiro admin no console (quickstart §0) e executar os cenários do Rules Playground do quickstart §1 (leitura negada a customer, escalação de role negada, revogação imediata)
+- [x] T014 [P] [US1] Criar `frontend/src/services/userService.js` (`getUserProfile(uid)`, `hasPermission(role, capability)` contra `constants/roles.js`) com testes em `frontend/src/services/__tests__/userService.test.js`
+- [x] T015 [US1] Estender `frontend/src/contexts/AuthContext.jsx`: após `onAuthStateChanged`, carregar perfil via `userService` e expor `{ user, role, isAdmin, loading }` mantendo a API atual (`user`, `setUser`) — NÃO criar novo contexto
+- [x] T016 [P] [US1] Criar `frontend/src/pages/Admin/AccessDenied/index.jsx` + `styles.module.css` (mensagem clara em pt-BR + link de volta à loja)
+- [x] T017 [US1] Implementar `frontend/src/routes/PrivateRoute.jsx` (arquivo existe vazio): autenticado renderiza children; anônimo redireciona a `/login`
+- [x] T018 [US1] Implementar `frontend/src/routes/AdminRoute.jsx` (arquivo existe vazio): `isAdmin` renderiza; logado não-admin → AccessDenied; anônimo → `/login`; aguarda `loading` do AuthContext — com testes em `frontend/src/routes/__tests__/AdminRoute.test.jsx` (3 cenários)
+- [x] T019 [US1] Criar `frontend/src/layouts/AdminLayout/index.jsx` + `styles.module.css`: sidebar fixa com os 6 módulos (drawer em mobile), header com nome do usuário logado e slot de busca global — tokens de `variables.css`/design system (FR-080/081)
+- [x] T020 [US1] Estender `frontend/src/routes/index.jsx` e `frontend/src/constants/routes.js`: rotas aninhadas `/admin`, `/admin/products(/new/:id)`, `/admin/categories`, `/admin/orders(/:id)`, `/admin/customers(/:id)`, `/admin/reports` — todas com `React.lazy` (constituição IV), envolvidas por `AdminRoute` + `AdminLayout`; Dashboard placeholder até US5
+- [x] T021 [US1] Bootstrap + validação de segurança: promover o primeiro admin no console (quickstart §0) e executar os cenários do Rules Playground do quickstart §1 (leitura negada a customer, escalação de role negada, revogação imediata)
 
 **Checkpoint**: Painel acessível só por admin, protegido também nas rules — MVP validável
 
@@ -87,7 +87,9 @@ SKU/promoção/publicação; rascunho automático; soft delete; filtros preserva
 - [ ] T027 [US2] Criar `frontend/src/pages/Admin/Products/List/index.jsx` + `styles.module.css`: DataTable com colunas da spec, busca por prefixo nome/SKU, filtros categoria/status/faixa de estoque, ordenação indexada, ações em massa com ConfirmDialog, estado na URL (useListState)
 - [ ] T028 [US2] Criar `frontend/src/pages/Admin/Products/Form/index.jsx` + `styles.module.css`: seções (básico, imagens, preço/promoção, estoque, variações, status), upload múltiplo com arrastar-e-soltar/reordenação/imagem principal (estado por imagem + tentar novamente), variações com SKU/estoque/preço opcional, alerta de estoque baixo configurável, rascunho automático em localStorage com debounce e oferta de restauração (R-12), ação duplicar
 - [ ] T029 [US2] Absorver telas antigas: remover o formulário de `frontend/src/pages/Admin/index.jsx` e as telas `frontend/src/pages/Admin/ProductList/` e `frontend/src/pages/Admin/ProductEdit/` (feature 002), redirecionando as rotas antigas para as novas sem quebrar links
-- [ ] T030 [US2] Compatibilidade da loja: `getFeaturedProducts`/`getProducts` passam a filtrar `deleted == false` e a loja lê preço em centavos via `formatBRL` — sem mudança visual na Home (validar destaque da feature 002 intacto)
+- [ ] T029a [US2] Criar e executar script one-time de backfill `frontend/src/dev/backfillProducts.js` (rodado por admin autenticado): para cada produto legado, gravar `deleted: false`, `status: "ativo"`, `nameLower`, `totalStock = stock`, `images[]` derivado do campo `image` legado e **preço convertido para centavos** — conferir no console do Firebase antes de prosseguir (resolve C2/C3 da análise; produtos sem o campo `deleted` não casam com `where("deleted","==",false)`)
+- [ ] T030 [US2] Compatibilidade da loja (SOMENTE após T029a): `getFeaturedProducts`/`getProducts` passam a filtrar `deleted == false` e a loja lê preço em centavos via `formatBRL` — sem mudança visual na Home (validar destaque da feature 002 intacto)
+- [ ] T030a [US2] Apertar a rule de leitura pública de `products` para `status == "ativo" && deleted == false` em `firestore.rules` e redeployar (`npx firebase-tools deploy --only firestore:rules`); validar a Home como anônimo após o deploy (conclui o escalonamento iniciado em T006)
 
 **Checkpoint**: Catálogo gerenciável ponta a ponta; loja intacta
 
@@ -117,7 +119,7 @@ produtos bloqueada com fluxo de mover
 atômico devolve estoque; preço congelado; teste de concorrência do último item
 
 - [ ] T035 [US4] Criar `frontend/src/services/orderService.js` conforme contracts/services.md — todas as mutações em `runTransaction` (R-3): `createOrder` (valida estoque por item/variação → decrementa → incrementa `counters/orders` → grava pedido com itens congelados + `productIds` → atualiza `dailyStats/{hoje}` → agrega `orderCount`/`totalSpent` do cliente), `advanceStatus` (mapa de `constants/orderStatus.js`), `cancelOrder`/`returnOrder` (motivo obrigatório, devolve estoque + subtrai `dailyStats` + ajusta agregados na MESMA transação), `setTrackingCode`, `setInternalNotes`, `listOrders` (filtros/busca/cursor)
-- [ ] T036 [US4] Testes de `orderService` em `frontend/src/services/__tests__/orderService.test.js`: 2 `createOrder` simultâneos do último item → 1 sucesso + 1 `estoque-insuficiente` e estoque final 0 (SC-006); transição inválida bloqueada; cancelamento atômico (estoque + histórico + dailyStats juntos, SC-009); preço congelado após alteração do produto (SC-007); motivo obrigatório; histórico com autor/data (SC-008)
+- [ ] T036 [US4] Testes de `orderService` em `frontend/src/services/__tests__/orderService.test.js`: 2 `createOrder` simultâneos do último item → 1 sucesso + 1 `estoque-insuficiente` e estoque final 0 (SC-006); transição inválida bloqueada; cancelamento atômico (estoque + histórico + dailyStats juntos, SC-009); preço congelado após alteração do produto (SC-007); motivo obrigatório; histórico com autor/data (SC-008). Nota: com Firestore mockado o teste valida a lógica de validação/aborto — a semântica real de retry do `runTransaction` exige emulador (registrado como melhoria futura, como já feito para as rules)
 - [ ] T037 [P] [US4] Criar `frontend/src/hooks/useOrders.js`
 - [ ] T038 [P] [US4] Criar utilitário de seed de desenvolvimento `frontend/src/dev/seedOrders.js` (gera clientes/pedidos de exemplo via `orderService.createOrder`, respeitando baixa de estoque — insumo do quickstart; não referenciado em código de produção)
 - [ ] T039 [US4] Criar `frontend/src/pages/Admin/Orders/List/index.jsx` + `styles.module.css`: DataTable com colunas da spec, filtros status/período/cliente, busca por nº exato ou prefixo de nome, estado na URL
@@ -193,8 +195,8 @@ no Excel pt-BR com acentos e colunas corretos e reflete exatamente os filtros (S
 
 - **Setup (Phase 1)**: sem dependências
 - **Foundational (Phase 2)**: depende de Setup (T003–T005 usados por rules/DataTable); **bloqueia todas as user stories**; T007 depende de T006
-- **US1 (Phase 3)**: depende de Foundational (rules deployadas em T007 são pré-requisito de T021)
-- **US2 (Phase 4)**: depende de Foundational + T020 (rotas). T029/T030 dependem de T023–T028
+- **US1 (Phase 3)**: depende de Foundational (rules v1 deployadas em T007 são pré-requisito de T021)
+- **US2 (Phase 4)**: depende de Foundational + T020 (rotas). Ordem obrigatória no fim da fase: T029 → **T029a (backfill) → T030 (loja) → T030a (aperto das rules)** — inverter essa ordem quebra a Home
 - **US3 (Phase 5)**: depende de Foundational + T028 (integração do select no Form)
 - **US4 (Phase 6)**: depende de Foundational; consome produtos reais (US2) para seed, mas o service é testável com mocks independentemente
 - **US5 (Phase 7)**: depende de Foundational; `dailyStats` é alimentado por US4 — para teste independente, semear via T038

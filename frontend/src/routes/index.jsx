@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "../pages/Home";
@@ -6,34 +7,79 @@ import Product from "../pages/Product";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import NotFound from "../pages/NotFound";
-import Admin from "../pages/Admin";
-import ProductList from "../pages/Admin/ProductList";
-import ProductEdit from "../pages/Admin/ProductEdit";
+import AdminRoute from "./AdminRoute";
+
+// Rotas do painel com code splitting (constituição, Princípio IV): o bundle
+// inicial da loja não carrega nada do admin.
+const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
+const Dashboard = lazy(() => import("../pages/Admin/Dashboard"));
+const AccessDenied = lazy(() => import("../pages/Admin/AccessDenied"));
+
+// Telas legadas da feature 002 — absorvidas pelas novas telas de produtos na US2 (T029).
+const LegacyProductForm = lazy(() => import("../pages/Admin"));
+const LegacyProductList = lazy(() => import("../pages/Admin/ProductList"));
+const LegacyProductEdit = lazy(() => import("../pages/Admin/ProductEdit"));
 
 function AppRoutes() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Suspense fallback={null}>
+        <Routes>
 
-        <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home />} />
 
-        <Route path="/products" element={<Products />} />
+          <Route path="/products" element={<Products />} />
 
-        <Route path="/product/:id" element={<Product />} />
+          <Route path="/product/:id" element={<Product />} />
 
-        <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
 
-        <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<Register />} />
 
-        <Route path="*" element={<NotFound />} />
+          <Route path="/acesso-negado" element={<AccessDenied />} />
 
-        <Route path="/admin" element={<Admin />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<Dashboard />} />
+          </Route>
 
-        <Route path="/admin/products" element={<ProductList />} />
+          <Route
+            path="/admin/products"
+            element={
+              <AdminRoute>
+                <LegacyProductList />
+              </AdminRoute>
+            }
+          />
 
-        <Route path="/admin/products/:id" element={<ProductEdit />} />
+          <Route
+            path="/admin/products/new"
+            element={
+              <AdminRoute>
+                <LegacyProductForm />
+              </AdminRoute>
+            }
+          />
 
-      </Routes>
+          <Route
+            path="/admin/products/:id"
+            element={
+              <AdminRoute>
+                <LegacyProductEdit />
+              </AdminRoute>
+            }
+          />
+
+          <Route path="*" element={<NotFound />} />
+
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

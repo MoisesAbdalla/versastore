@@ -33,9 +33,17 @@ Princípios (FR-001/002, research R-4):
 Contrato por coleção (pseudocódigo das rules; a implementação usa funções auxiliares
 `isSignedIn()`, `isAdmin()`, `isSelf(uid)`):
 
+**Rollout escalonado (evita quebrar a loja em produção)**: a rule de leitura pública de `products`
+abaixo é o estado **final**. O deploy inicial (rules v1, tarefa T006/T007) mantém leitura pública
+irrestrita de `products`/`categories` — o comportamento atual da loja — porque os produtos legados
+ainda não têm os campos `status`/`deleted` e as queries da loja ainda não filtram por eles. O
+aperto para a rule final só acontece após o backfill (T029a) e a migração das queries da loja
+(T030), na tarefa T030a. As coleções administrativas (`orders`, `users`, `dailyStats`, `counters`)
+já nascem trancadas na v1.
+
 | Coleção | read | write |
 |---|---|---|
-| `products` | pública **somente** `status == "ativo" && deleted == false` (loja); admin lê tudo | somente admin |
+| `products` | v1: pública irrestrita (loja atual); **final (T030a)**: pública somente `status == "ativo" && deleted == false`; admin lê tudo | somente admin |
 | `categories` | pública (loja usa para navegação) | somente admin |
 | `orders` | admin; cliente lê apenas os próprios (`customerId == request.auth.uid`) | somente admin (criação de pedido pela loja entra quando o checkout existir — fora do escopo) |
 | `users` | admin lê todos; usuário lê o próprio doc | admin escreve `role`; usuário edita o próprio doc **exceto** `role`, `orderCount`, `totalSpent` |

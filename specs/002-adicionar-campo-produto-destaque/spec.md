@@ -20,6 +20,10 @@
 - Q: Na tela de edição, escolher uma nova imagem deve ser opcional (mantém a atual se nada for
   selecionado) ou continua obrigatório re-selecionar uma imagem toda vez que salvar? → A: Opcional —
   se o admin não selecionar um arquivo novo, a imagem atual (URL já salva) é mantida sem re-upload.
+- Q: Qual a escala esperada do catálogo, para dimensionar a listagem do Admin e a busca de
+  destaques frente à exigência de leituras paginadas da constitution? → A: Paginar a listagem de
+  produtos do Admin (20 por página) e impor teto de exibição de 20 produtos na seção "Produtos em
+  Destaque" da Home (a marcação de destaque continua sem limite).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -68,8 +72,8 @@ exatamente esses produtos, em ordens diferentes em recarregamentos sucessivos, e
 **Acceptance Scenarios**:
 
 1. **Given** existem produtos no Firestore com `destaque: true`, **When** a Home carrega, **Then** a
-   seção "Produtos em Destaque" exibe exatamente esses produtos (nenhum com `destaque` ausente ou
-   `false`).
+   seção "Produtos em Destaque" exibe apenas produtos desse conjunto, até o teto de 20 por
+   carregamento (nenhum com `destaque` ausente ou `false`).
 2. **Given** a Home é recarregada múltiplas vezes com o mesmo conjunto de produtos em destaque,
    **When** cada carregamento acontece, **Then** a ordem de exibição pode variar entre os
    carregamentos (não é sempre a mesma ordem fixa).
@@ -100,8 +104,8 @@ novos valores — e que os campos não alterados permanecem intactos.
 **Acceptance Scenarios**:
 
 1. **Given** o administrador está no Admin, **When** ele acessa a área de produtos cadastrados,
-   **Then** vê uma lista dos produtos já existentes no Firestore (ao menos nome e indicação se está
-   em destaque).
+   **Then** vê uma lista paginada (20 por página) dos produtos já existentes no Firestore (ao menos
+   nome e indicação se está em destaque), com navegação entre páginas quando houver mais de 20.
 2. **Given** o administrador seleciona um produto da lista, **When** a tela de edição abre, **Then**
    o formulário vem pré-preenchido com os valores atuais do produto (nome, categoria, preço,
    estoque, descrição, imagem, destaque).
@@ -128,9 +132,10 @@ novos valores — e que os campos não alterados permanecem intactos.
 - Se todos os produtos em destaque forem removidos do destaque (ou excluídos) entre um carregamento
   e outro da Home, a seção MUST voltar a mostrar o estado vazio ("Em breve") no próximo
   carregamento.
-- Não há limite de quantos produtos podem estar em destaque simultaneamente; a seção "Produtos em
-  Destaque" da Home MUST continuar funcional (sem quebrar layout ou navegação) independentemente de
-  quantos produtos vierem marcados.
+- Não há limite de quantos produtos podem estar **marcados** como destaque simultaneamente; quando
+  houver mais de 20 marcados, a Home exibe um subconjunto aleatório de no máximo 20 por
+  carregamento, e a seção MUST continuar funcional (sem quebrar layout ou navegação)
+  independentemente de quantos produtos vierem marcados.
 - Falha ao buscar produtos em destaque do Firestore (ex.: sem conexão) MUST ser tratada de forma que
   a Home continue utilizável (sem quebrar a página), com a seção exibindo um estado apropriado em
   vez de travar ou lançar erro visível ao usuário.
@@ -149,7 +154,9 @@ novos valores — e que os campos não alterados permanecem intactos.
   quando não estiver marcado (nunca omitido/indefinido para produtos criados a partir de agora).
 - **FR-003**: O Admin MUST oferecer uma área de listagem dos produtos já cadastrados no Firestore
   (ao menos nome e indicação de destaque de cada um), a partir da qual o administrador consegue
-  escolher um produto para editar.
+  escolher um produto para editar. A listagem MUST ser paginada em 20 produtos por página (sem
+  leitura não paginada da coleção inteira), com navegação entre páginas quando houver mais de 20
+  produtos.
 - **FR-003a**: Ao escolher um produto na listagem, o Admin MUST abrir um formulário de edição
   pré-preenchido com os valores atuais de todos os campos do produto (nome, categoria, preço,
   estoque, descrição, imagem e destaque).
@@ -166,6 +173,10 @@ novos valores — e que os campos não alterados permanecem intactos.
 - **FR-005**: A seção "Produtos em Destaque" da Home MUST exibir os produtos retornados em ordem
   embaralhada, recalculada a cada carregamento da página (a ordem não é fixa nem persistida entre
   carregamentos).
+- **FR-005a**: A seção "Produtos em Destaque" MUST exibir no máximo 20 produtos por carregamento.
+  Quando houver mais de 20 produtos com `destaque = true`, o subconjunto exibido MUST ser escolhido
+  aleatoriamente a cada carregamento (combinado com o embaralhamento de FR-005), de modo que todos
+  os produtos destacados tenham chance de aparecer ao longo de carregamentos sucessivos.
 - **FR-006**: Quando a busca não retornar nenhum produto com `destaque = true`, a seção "Produtos em
   Destaque" MUST exibir uma mensagem de estado vazio (ex.: "Em breve") no lugar da grade/carrossel
   de produtos, mantendo o restante da Home funcional.
@@ -173,7 +184,8 @@ novos valores — e que os campos não alterados permanecem intactos.
   tratados como não destacados pela busca da Home, sem necessidade de migração automática de dados
   existentes.
 - **FR-008**: O sistema MUST NOT impor limite de quantidade de produtos que podem estar marcados
-  como destaque simultaneamente.
+  como destaque simultaneamente. O teto de 20 (FR-005a) aplica-se apenas à exibição na Home, não à
+  marcação no Admin.
 - **FR-009**: A funcionalidade MUST reaproveitar a estrutura de serviços já existente
   (`frontend/src/services`, `frontend/src/firebase`) e MUST NOT quebrar o fluxo de cadastro de
   produto já funcional hoje (campos e comportamento atuais do formulário permanecem intactos, além
@@ -211,9 +223,10 @@ novos valores — e que os campos não alterados permanecem intactos.
   assinatura em tempo real) — coerente com "embaralhar a cada carregamento da página" do pedido
   original; mudanças feitas pelo admin refletem na Home no próximo carregamento, não instantaneamente
   enquanto a página já está aberta.
-- Não há um teto de exibição para "Produtos em Destaque" — todos os produtos com `destaque = true`
-  são candidatos a aparecer (a apresentação em carrossel/grid já existente na Home comporta qualquer
-  quantidade).
+- A exibição de "Produtos em Destaque" é limitada a 20 produtos por carregamento (FR-005a); todos
+  os produtos com `destaque = true` são candidatos, escolhidos aleatoriamente quando houver mais de
+  20. A listagem do Admin é paginada em 20 por página (FR-003) — ambos alinhados à exigência da
+  constitution de leituras do Firestore com escopo/paginação.
 - O controle de acesso à página `/admin` (quem pode ou não cadastrar/editar produtos) é uma
   preocupação pré-existente do projeto, fora do escopo desta funcionalidade.
 - O rótulo de estado vazio será "Em breve" (sugestão do pedido original); o texto exato pode ser
