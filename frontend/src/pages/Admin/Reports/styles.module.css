@@ -4,6 +4,9 @@
     flex-direction: column;
 
     gap: 20px;
+
+    /* Tabelas de 2-3 colunas ficam ilegíveis esticadas em monitor largo */
+    max-width: 1100px;
 }
 
 .title {
@@ -120,8 +123,16 @@
     border-bottom: none;
 }
 
-.number {
+/* Colunas numéricas: cabeçalho e valores alinhados à direita, coluna presa
+   ao conteúdo (width 1% + nowrap) — sem esticar em telas largas. A primeira
+   coluna (texto) absorve o espaço restante. */
+.table th.number,
+.table td.number {
     text-align: right;
+
+    width: 1%;
+
+    white-space: nowrap;
 }
 
 .errorState {
