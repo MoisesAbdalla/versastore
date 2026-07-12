@@ -155,7 +155,7 @@ function Dashboard() {
         </div>
 
         {seriesLoading ? (
-          <Skeleton variant="rectangular" height={240} />
+          <Skeleton variant="rectangular" height={280} />
         ) : (
           <SalesChart series={series} />
         )}

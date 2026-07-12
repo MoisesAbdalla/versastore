@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { formatBRL } from "../../utils/format";
 import styles from "./styles.module.css";
@@ -8,10 +8,14 @@ import styles from "./styles.module.css";
 // cor validada pelo validador da skill de dataviz (#A87420 — croma e
 // contraste OK sobre branco); grid recessivo; hover com crosshair + tooltip;
 // tabela oculta para leitores de tela.
+//
+// Altura FIXA (280px): o viewBox acompanha a largura real do container via
+// ResizeObserver — largura total sem esticar a altura nem distorcer o texto
+// dos eixos (viewBox proporcional escalava a altura junto com a largura).
 
-const WIDTH = 720;
-const HEIGHT = 240;
-const PAD = { top: 16, right: 16, bottom: 28, left: 64 };
+const HEIGHT = 280;
+const MIN_WIDTH = 360;
+const PAD = { top: 16, right: 16, bottom: 24, left: 56 };
 
 const compactBRL = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -39,8 +43,23 @@ function niceMax(value) {
 function SalesChart({ series }) {
   const wrapperRef = useRef(null);
   const [hoverIndex, setHoverIndex] = useState(null);
+  const [width, setWidth] = useState(720);
 
-  const plotWidth = WIDTH - PAD.left - PAD.right;
+  useEffect(() => {
+    if (typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      setWidth(Math.max(MIN_WIDTH, Math.floor(entries[0].contentRect.width)));
+    });
+
+    observer.observe(wrapperRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const plotWidth = width - PAD.left - PAD.right;
   const plotHeight = HEIGHT - PAD.top - PAD.bottom;
 
   const { points, yTicks, xTicks } = useMemo(() => {
@@ -52,16 +71,19 @@ function SalesChart({ series }) {
       y: PAD.top + plotHeight - (d.revenue / max) * plotHeight,
     }));
 
-    const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => ({
+    // Grid enxuto: 4 linhas (0, 1/3, 2/3, teto).
+    const ticks = [0, 1 / 3, 2 / 3, 1].map((f) => ({
       value: max * f,
       y: PAD.top + plotHeight - f * plotHeight,
     }));
 
-    // ~5 rótulos de data, sempre incluindo as pontas.
-    const step = Math.max(1, Math.ceil(series.length / 5));
+    // Densidade de rótulos de data proporcional à largura (~1 a cada 120px),
+    // sempre incluindo a última ponta.
+    const maxLabels = Math.max(4, Math.floor(plotWidth / 120));
+    const step = Math.max(1, Math.ceil(series.length / maxLabels));
     const xs = pts.filter((_, i) => i % step === 0 || i === series.length - 1);
 
-    return { points: pts, yMax: max, yTicks: ticks, xTicks: xs };
+    return { points: pts, yTicks: ticks, xTicks: xs };
   }, [series, plotWidth, plotHeight]);
 
   const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
@@ -71,7 +93,7 @@ function SalesChart({ series }) {
 
   function handlePointerMove(event) {
     const rect = wrapperRef.current.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * WIDTH;
+    const x = ((event.clientX - rect.left) / rect.width) * width;
 
     let nearest = 0;
     let best = Infinity;
@@ -93,7 +115,7 @@ function SalesChart({ series }) {
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
       <svg
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        viewBox={`0 0 ${width} ${HEIGHT}`}
         className={styles.svg}
         role="img"
         aria-label={`Vendas por dia, de ${shortDate(series[0]?.date || "")} a ${shortDate(series[series.length - 1]?.date || "")}`}
@@ -105,7 +127,7 @@ function SalesChart({ series }) {
             <line
               className={styles.gridLine}
               x1={PAD.left}
-              x2={WIDTH - PAD.right}
+              x2={width - PAD.right}
               y1={tick.y}
               y2={tick.y}
             />
@@ -147,7 +169,7 @@ function SalesChart({ series }) {
       {hover && (
         <div
           className={styles.tooltip}
-          style={{ left: `${(hover.x / WIDTH) * 100}%` }}
+          style={{ left: `${(hover.x / width) * 100}%` }}
           role="status"
         >
           <span className={styles.tooltipDate}>{shortDate(hover.date)}</span>

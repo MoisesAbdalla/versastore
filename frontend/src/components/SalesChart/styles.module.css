@@ -9,7 +9,9 @@
 
     width: 100%;
 
-    height: auto;
+    /* Altura fixa: o viewBox segue a largura medida do container, então a
+       proporção nunca estica o gráfico verticalmente. */
+    height: 280px;
 
     /* Cor de série validada (validate_palette.js: croma >= 0.1, contraste
        >= 3:1 sobre #FFFFFF) — família do dourado do design system. */
@@ -25,7 +27,7 @@
 .axisLabel {
     font-family: var(--font-body);
 
-    font-size: 11px;
+    font-size: 10px;
 
     fill: var(--text-muted);
 }
