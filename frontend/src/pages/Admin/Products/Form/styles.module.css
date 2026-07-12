@@ -5,7 +5,11 @@
 
     gap: 20px;
 
-    max-width: 960px;
+    max-width: 900px;
+
+    width: 100%;
+
+    margin: 0 auto;
 }
 
 .header {
@@ -97,7 +101,9 @@
 
     flex-wrap: wrap;
 
-    align-items: center;
+    /* Campos com helperText reservado alinham pelo topo — evita o "dança"
+       de baseline entre TextField e Select. */
+    align-items: flex-start;
 }
 
 .rowField {

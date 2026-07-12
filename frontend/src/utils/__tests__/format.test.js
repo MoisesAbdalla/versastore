@@ -7,6 +7,8 @@ import {
   formatPct,
   parseBRLInput,
   centsToInput,
+  maskDateInput,
+  parseDateInput,
 } from "../format";
 
 // Intl usa non-breaking space entre "R$" e o valor — normalizamos p/ comparar.
@@ -79,6 +81,44 @@ describe("centsToInput", () => {
 
   it("retorna vazio para nulo", () => {
     expect(centsToInput(null)).toBe("");
+  });
+});
+
+describe("maskDateInput", () => {
+  it("aplica a máscara dd/mm/aaaa progressivamente", () => {
+    expect(maskDateInput("1")).toBe("1");
+    expect(maskDateInput("1107")).toBe("11/07");
+    expect(maskDateInput("11072026")).toBe("11/07/2026");
+  });
+
+  it("ignora não-dígitos e limita a 8 dígitos", () => {
+    expect(maskDateInput("11/07/2026extra")).toBe("11/07/2026");
+    expect(maskDateInput("abc")).toBe("");
+  });
+});
+
+describe("parseDateInput", () => {
+  it("converte dd/mm/aaaa em Date", () => {
+    const date = parseDateInput("11/07/2026");
+
+    expect(date.getDate()).toBe(11);
+    expect(date.getMonth()).toBe(6);
+    expect(date.getFullYear()).toBe(2026);
+    expect(date.getHours()).toBe(0);
+  });
+
+  it("endOfDay marca o fim do dia (fim de promoção)", () => {
+    const date = parseDateInput("11/07/2026", { endOfDay: true });
+
+    expect(date.getHours()).toBe(23);
+    expect(date.getMinutes()).toBe(59);
+  });
+
+  it("rejeita datas impossíveis e formatos incompletos", () => {
+    expect(parseDateInput("31/02/2026")).toBe(null);
+    expect(parseDateInput("11/13/2026")).toBe(null);
+    expect(parseDateInput("11/07/26")).toBe(null);
+    expect(parseDateInput("")).toBe(null);
   });
 });
 

@@ -72,6 +72,39 @@ export function centsToInput(cents) {
   return (cents / 100).toFixed(2).replace(".", ",");
 }
 
+// Máscara progressiva para digitação de data brasileira: "11072026" → "11/07/2026".
+export function maskDateInput(text) {
+  const digits = String(text || "").replace(/\D/g, "").slice(0, 8);
+  const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
+
+  return parts.join("/");
+}
+
+// "dd/mm/aaaa" → Date (ou null se inválida/incompleta). endOfDay para datas de
+// fim de período (promoção termina no fim do dia).
+export function parseDateInput(text, { endOfDay = false } = {}) {
+  const match = String(text || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+
+  const date = endOfDay
+    ? new Date(year, month - 1, day, 23, 59, 59)
+    : new Date(year, month - 1, day);
+
+  // Rejeita datas impossíveis (ex.: 31/02) — o Date "rolaria" para o mês seguinte.
+  if (date.getDate() !== day || date.getMonth() !== month - 1 || date.getFullYear() !== year) {
+    return null;
+  }
+
+  return date;
+}
+
 export function formatPct(delta) {
   if (delta == null || Number.isNaN(delta)) {
     return "—";

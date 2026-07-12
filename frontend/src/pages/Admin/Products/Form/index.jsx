@@ -18,7 +18,13 @@ import { getProduct, createProduct, updateProduct } from "../../../../services/p
 import { useProducts } from "../../../../hooks/useProducts";
 import { useCategories } from "../../../../hooks/useCategories";
 import { useFeedback } from "../../../../contexts/FeedbackContext";
-import { parseBRLInput, centsToInput } from "../../../../utils/format";
+import {
+  parseBRLInput,
+  centsToInput,
+  formatDate,
+  maskDateInput,
+  parseDateInput,
+} from "../../../../utils/format";
 import {
   PRODUCT_STATUS,
   PRODUCT_STATUS_LABELS,
@@ -51,15 +57,8 @@ function draftKey(id) {
   return `product-draft:${id || "new"}`;
 }
 
-function timestampToDateInput(value) {
-  if (!value) {
-    return "";
-  }
-
-  const date = value.toDate ? value.toDate() : new Date(value);
-
-  return date.toISOString().slice(0, 10);
-}
+// Datas de promoção exibidas e digitadas no formato brasileiro dd/mm/aaaa
+// (FR-087) — formatDate já converte Timestamp/Date para esse formato.
 
 function productToForm(product) {
   return {
@@ -77,8 +76,8 @@ function productToForm(product) {
           : [],
     priceText: centsToInput(product.price),
     promoPriceText: centsToInput(product.promoPrice),
-    promoStart: timestampToDateInput(product.promoStart),
-    promoEnd: timestampToDateInput(product.promoEnd),
+    promoStart: formatDate(product.promoStart),
+    promoEnd: formatDate(product.promoEnd),
     sku: product.sku || "",
     stock: product.stock != null ? String(product.stock) : "",
     lowStockThreshold: String(product.lowStockThreshold ?? DEFAULT_LOW_STOCK_THRESHOLD),
@@ -114,8 +113,8 @@ function formToProduct(form, categoryName) {
     images: form.images,
     price: parseBRLInput(form.priceText),
     promoPrice: parseBRLInput(form.promoPriceText),
-    promoStart: form.promoStart ? new Date(`${form.promoStart}T00:00:00`) : null,
-    promoEnd: form.promoEnd ? new Date(`${form.promoEnd}T23:59:59`) : null,
+    promoStart: parseDateInput(form.promoStart),
+    promoEnd: parseDateInput(form.promoEnd, { endOfDay: true }),
     sku: form.sku.trim(),
     stock: form.stock === "" ? null : Number(form.stock),
     lowStockThreshold: Number(form.lowStockThreshold) || DEFAULT_LOW_STOCK_THRESHOLD,
@@ -219,6 +218,16 @@ function ProductFormPage() {
   }
 
   async function handleSave() {
+    for (const [field, label] of [
+      ["promoStart", "início da promoção"],
+      ["promoEnd", "fim da promoção"],
+    ]) {
+      if (form[field] && !parseDateInput(form[field])) {
+        toastError(`Data de ${label} inválida. Use o formato dd/mm/aaaa.`);
+        return;
+      }
+    }
+
     setSaving(true);
 
     try {
@@ -360,6 +369,7 @@ function ProductFormPage() {
             onChange={(e) => setField("brand", e.target.value)}
             margin="dense"
             className={styles.rowField}
+            helperText=" "
           />
 
           <TextField
@@ -389,6 +399,7 @@ function ProductFormPage() {
             onChange={(e) => setField("tags", e.target.value)}
             margin="dense"
             className={styles.rowField}
+            helperText=" "
           />
         </div>
 
@@ -426,23 +437,23 @@ function ProductFormPage() {
           />
 
           <TextField
-            type="date"
             label="Início da promoção"
             value={form.promoStart}
-            onChange={(e) => setField("promoStart", e.target.value)}
+            onChange={(e) => setField("promoStart", maskDateInput(e.target.value))}
             margin="dense"
             className={styles.rowField}
-            InputLabelProps={{ shrink: true }}
+            placeholder="dd/mm/aaaa"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { inputMode: "numeric" } }}
           />
 
           <TextField
-            type="date"
             label="Fim da promoção"
             value={form.promoEnd}
-            onChange={(e) => setField("promoEnd", e.target.value)}
+            onChange={(e) => setField("promoEnd", maskDateInput(e.target.value))}
             margin="dense"
             className={styles.rowField}
-            InputLabelProps={{ shrink: true }}
+            placeholder="dd/mm/aaaa"
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { inputMode: "numeric" } }}
           />
         </div>
       </section>
