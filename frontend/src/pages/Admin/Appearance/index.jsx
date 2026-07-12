@@ -2,16 +2,35 @@ import { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import Skeleton from "@mui/material/Skeleton";
 
-import { getHomeSettings, setHeroImage, setCategoryImage } from "../../../services/settingsService";
+import {
+  getHomeSettings,
+  setHeroImage,
+  setCategoryImage,
+  setHeroPosition,
+  setCategoryPosition,
+  resetHero,
+  resetCategory,
+  DEFAULT_IMAGE_POSITION,
+} from "../../../services/settingsService";
 import { uploadImageWithRetry } from "../../../services/cloudinaryService";
 import { useFeedback } from "../../../contexts/FeedbackContext";
 import categories from "../../../data/categories";
 import heroDefault from "../../../assets/hero.png";
+import PositionPicker from "./PositionPicker";
 import styles from "./styles.module.css";
 
 // Aparência da Home (feature 004): troca das imagens do banner e das
-// categorias da vitrine, com restauração do padrão embarcado.
-function ImageSlot({ label, currentUrl, defaultImage, onUpload, onReset, wide = false }) {
+// categorias da vitrine, com enquadramento (posição) e restauração do padrão.
+function ImageSlot({
+  label,
+  currentUrl,
+  defaultImage,
+  position,
+  onUpload,
+  onPositionChange,
+  onReset,
+  wide = false,
+}) {
   const [busy, setBusy] = useState(false);
   const { toastSuccess, toastError } = useFeedback();
 
@@ -34,6 +53,18 @@ function ImageSlot({ label, currentUrl, defaultImage, onUpload, onReset, wide = 
     }
   }
 
+  async function handlePosition(newPosition) {
+    setBusy(true);
+
+    try {
+      await onPositionChange(newPosition);
+    } catch (error) {
+      toastError(error.message || "Erro ao salvar a posição.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleReset() {
     setBusy(true);
 
@@ -47,11 +78,14 @@ function ImageSlot({ label, currentUrl, defaultImage, onUpload, onReset, wide = 
     }
   }
 
+  const isCustomized = Boolean(currentUrl) || position !== DEFAULT_IMAGE_POSITION;
+
   return (
     <div className={wide ? `${styles.slot} ${styles.slotWide}` : styles.slot}>
       <img
         className={wide ? styles.previewWide : styles.preview}
         src={currentUrl || defaultImage}
+        style={{ objectPosition: position }}
         alt={`Imagem atual de ${label}`}
       />
 
@@ -62,9 +96,16 @@ function ImageSlot({ label, currentUrl, defaultImage, onUpload, onReset, wide = 
           {currentUrl ? "Imagem personalizada" : "Imagem padrão"}
         </span>
 
+        <PositionPicker
+          value={position}
+          onChange={handlePosition}
+          disabled={busy}
+          idPrefix={label.toLowerCase().replace(/\s/g, "-")}
+        />
+
         <div className={styles.slotActions}>
           <Button component="label" size="small" variant="outlined" disabled={busy}>
-            {busy ? "Enviando…" : "Trocar imagem"}
+            {busy ? "Aguarde…" : "Trocar imagem"}
             <input
               type="file"
               hidden
@@ -76,7 +117,7 @@ function ImageSlot({ label, currentUrl, defaultImage, onUpload, onReset, wide = 
             />
           </Button>
 
-          {currentUrl && (
+          {isCustomized && (
             <Button size="small" disabled={busy} onClick={handleReset}>
               Restaurar padrão
             </Button>
@@ -116,13 +157,18 @@ function AppearancePage() {
     );
   }
 
+  function categoryPosition(key) {
+    return settings.categoryPositions[key] || DEFAULT_IMAGE_POSITION;
+  }
+
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Aparência da loja</h1>
 
       <p className={styles.hint}>
-        As imagens abaixo aparecem na página inicial da loja. A mudança vale no próximo
-        carregamento da Home. "Restaurar padrão" volta à imagem original do site.
+        As imagens abaixo aparecem na página inicial da loja. A posição define qual parte da
+        imagem fica visível quando ela é cortada para caber no espaço. As mudanças valem no
+        próximo carregamento da Home; "Restaurar padrão" volta à imagem original, centralizada.
       </p>
 
       {!settings ? (
@@ -137,13 +183,22 @@ function AppearancePage() {
               label="Banner"
               currentUrl={settings.heroImage}
               defaultImage={heroDefault}
+              position={settings.heroPosition}
               onUpload={async (url) => {
                 await setHeroImage(url);
                 setSettings((s) => ({ ...s, heroImage: url }));
               }}
+              onPositionChange={async (position) => {
+                await setHeroPosition(position);
+                setSettings((s) => ({ ...s, heroPosition: position }));
+              }}
               onReset={async () => {
-                await setHeroImage(null);
-                setSettings((s) => ({ ...s, heroImage: null }));
+                await resetHero();
+                setSettings((s) => ({
+                  ...s,
+                  heroImage: null,
+                  heroPosition: DEFAULT_IMAGE_POSITION,
+                }));
               }}
             />
           </section>
@@ -158,6 +213,7 @@ function AppearancePage() {
                   label={category.name}
                   currentUrl={settings.categoryImages[category.key] || null}
                   defaultImage={category.image}
+                  position={categoryPosition(category.key)}
                   onUpload={async (url) => {
                     await setCategoryImage(category.key, url);
                     setSettings((s) => ({
@@ -165,11 +221,22 @@ function AppearancePage() {
                       categoryImages: { ...s.categoryImages, [category.key]: url },
                     }));
                   }}
+                  onPositionChange={async (position) => {
+                    await setCategoryPosition(category.key, position);
+                    setSettings((s) => ({
+                      ...s,
+                      categoryPositions: { ...s.categoryPositions, [category.key]: position },
+                    }));
+                  }}
                   onReset={async () => {
-                    await setCategoryImage(category.key, null);
+                    await resetCategory(category.key);
                     setSettings((s) => ({
                       ...s,
                       categoryImages: { ...s.categoryImages, [category.key]: null },
+                      categoryPositions: {
+                        ...s.categoryPositions,
+                        [category.key]: DEFAULT_IMAGE_POSITION,
+                      },
                     }));
                   }}
                 />

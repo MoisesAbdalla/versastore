@@ -5,7 +5,7 @@ import CategoryCard from "../CategoryCard";
 import { useHomeSettings } from "../../hooks/useHomeSettings";
 
 function Categories() {
-  const { categoryImages } = useHomeSettings();
+  const { categoryImages, categoryPositions } = useHomeSettings();
 
   return (
     <section id="categorias" className={styles.section}>
@@ -18,6 +18,7 @@ function Categories() {
             category={{
               ...category,
               image: categoryImages[category.key] || category.image,
+              imagePosition: categoryPositions[category.key] || "center",
             }}
           />
         ))}

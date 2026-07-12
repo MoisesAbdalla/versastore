@@ -14,32 +14,60 @@ vi.mock("../../firebase/firestore", () => ({
   default: {},
 }));
 
-import { getHomeSettings, setHeroImage, setCategoryImage } from "../settingsService";
+import {
+  getHomeSettings,
+  setHeroImage,
+  setCategoryImage,
+  setHeroPosition,
+  setCategoryPosition,
+  resetHero,
+} from "../settingsService";
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
 describe("getHomeSettings", () => {
-  it("retorna defaults vazios quando o documento não existe (loja usa assets padrão)", async () => {
+  it("retorna defaults quando o documento não existe (assets padrão, centralizado)", async () => {
     getDocMock.mockResolvedValueOnce({ exists: () => false });
 
-    expect(await getHomeSettings()).toEqual({ heroImage: null, categoryImages: {} });
+    expect(await getHomeSettings()).toEqual({
+      heroImage: null,
+      heroPosition: "center",
+      categoryImages: {},
+      categoryPositions: {},
+    });
   });
 
-  it("retorna as imagens customizadas quando existem", async () => {
+  it("retorna imagens e posições customizadas quando existem", async () => {
     getDocMock.mockResolvedValueOnce({
       exists: () => true,
       data: () => ({
         heroImage: "https://img/hero.jpg",
+        heroPosition: "top",
         categoryImages: { masculino: "https://img/m.jpg" },
+        categoryPositions: { masculino: "bottom right" },
       }),
     });
 
     const settings = await getHomeSettings();
 
     expect(settings.heroImage).toBe("https://img/hero.jpg");
+    expect(settings.heroPosition).toBe("top");
     expect(settings.categoryImages.masculino).toBe("https://img/m.jpg");
+    expect(settings.categoryPositions.masculino).toBe("bottom right");
+  });
+
+  it("posição ausente cai para center (docs gravados antes do enquadramento)", async () => {
+    getDocMock.mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({ heroImage: "https://img/hero.jpg" }),
+    });
+
+    const settings = await getHomeSettings();
+
+    expect(settings.heroPosition).toBe("center");
+    expect(settings.categoryPositions).toEqual({});
   });
 });
 
@@ -66,11 +94,27 @@ describe("escrita das configurações", () => {
     expect(data.categoryImages).toEqual({ feminino: "https://img/f.jpg" });
   });
 
-  it("restaurar padrão grava null (loja volta ao asset embarcado)", async () => {
+  it("setHeroPosition e setCategoryPosition gravam o enquadramento com merge", async () => {
+    setDocMock.mockResolvedValue(undefined);
+
+    await setHeroPosition("top");
+    await setCategoryPosition("calcados", "bottom left");
+
+    expect(setDocMock.mock.calls[0][1].heroPosition).toBe("top");
+    expect(setDocMock.mock.calls[1][1].categoryPositions).toEqual({
+      "calcados": "bottom left",
+    });
+  });
+
+  it("resetHero zera imagem E posição em uma única escrita", async () => {
     setDocMock.mockResolvedValueOnce(undefined);
 
-    await setHeroImage(null);
+    await resetHero();
 
-    expect(setDocMock.mock.calls[0][1].heroImage).toBe(null);
+    const [, data] = setDocMock.mock.calls[0];
+
+    expect(data.heroImage).toBe(null);
+    expect(data.heroPosition).toBe(null);
+    expect(setDocMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -3,12 +3,15 @@ import heroImage from "../../assets/hero.png";
 import { useHomeSettings } from "../../hooks/useHomeSettings";
 
 function HeroBanner() {
-  const { heroImage: customHero } = useHomeSettings();
+  const { heroImage: customHero, heroPosition } = useHomeSettings();
 
   return (
     <section
       className={styles.hero}
-      style={{ backgroundImage: `url(${customHero || heroImage})` }}
+      style={{
+        backgroundImage: `url(${customHero || heroImage})`,
+        backgroundPosition: heroPosition || "center",
+      }}
     >
       <div className={styles.overlay} />
 

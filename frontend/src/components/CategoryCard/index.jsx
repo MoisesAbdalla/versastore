@@ -8,6 +8,7 @@ function CategoryCard({ category }) {
           src={category.image}
           alt={category.imageAlt || category.name}
           className={styles.image}
+          style={category.imagePosition ? { objectPosition: category.imagePosition } : undefined}
           loading="lazy"
           decoding="async"
         />

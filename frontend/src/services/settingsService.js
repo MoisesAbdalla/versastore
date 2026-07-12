@@ -3,26 +3,37 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import db from "../firebase/firestore";
 
 // Aparência da Home (feature 004): documento único settings/home com as
-// imagens customizadas do banner e das categorias da vitrine. Ausência de
-// campo (ou do documento) = a loja usa a imagem padrão embarcada nos assets.
+// imagens customizadas do banner e das categorias da vitrine — e o
+// ENQUADRAMENTO de cada uma (posição CSS: center, top, bottom left, …).
+// Ausência de campo (ou do documento) = imagem padrão dos assets, centralizada.
 //
-// Shape: { heroImage: url|null, categoryImages: { [key]: url|null }, updatedAt }
+// Shape: { heroImage, heroPosition, categoryImages: {key: url},
+//          categoryPositions: {key: pos}, updatedAt }
 // (keys estáveis definidas em data/categories.js)
 
 const HOME_SETTINGS_REF = ["settings", "home"];
+
+export const DEFAULT_IMAGE_POSITION = "center";
 
 export async function getHomeSettings() {
   const snapshot = await getDoc(doc(db, ...HOME_SETTINGS_REF));
 
   if (!snapshot.exists()) {
-    return { heroImage: null, categoryImages: {} };
+    return {
+      heroImage: null,
+      heroPosition: DEFAULT_IMAGE_POSITION,
+      categoryImages: {},
+      categoryPositions: {},
+    };
   }
 
   const data = snapshot.data();
 
   return {
     heroImage: data.heroImage || null,
+    heroPosition: data.heroPosition || DEFAULT_IMAGE_POSITION,
     categoryImages: data.categoryImages || {},
+    categoryPositions: data.categoryPositions || {},
   };
 }
 
@@ -41,4 +52,26 @@ export async function setHeroImage(url) {
 
 export async function setCategoryImage(key, url) {
   await updateHomeSettings({ categoryImages: { [key]: url || null } });
+}
+
+export async function setHeroPosition(position) {
+  await updateHomeSettings({ heroPosition: position || DEFAULT_IMAGE_POSITION });
+}
+
+export async function setCategoryPosition(key, position) {
+  await updateHomeSettings({
+    categoryPositions: { [key]: position || DEFAULT_IMAGE_POSITION },
+  });
+}
+
+// "Restaurar padrão" zera imagem E enquadramento em uma única escrita.
+export async function resetHero() {
+  await updateHomeSettings({ heroImage: null, heroPosition: null });
+}
+
+export async function resetCategory(key) {
+  await updateHomeSettings({
+    categoryImages: { [key]: null },
+    categoryPositions: { [key]: null },
+  });
 }
