@@ -9,11 +9,16 @@ import theme from './styles/theme'
 import { AuthProvider } from './contexts/AuthContext';
 import { FeedbackProvider } from './contexts/FeedbackContext';
 
-// Utilitário one-time de migração (specs/003, T029a) — só em desenvolvimento:
-// logado como admin, rode `await backfillProducts()` no console do navegador.
+// Utilitários de desenvolvimento (specs/003, T029a/T038) — só em dev, logado
+// como admin, no console do navegador:
+//   await backfillProducts()      migração one-time de produtos legados
+//   await seedOrders({ count })   pedidos de exemplo p/ quickstart §4-7
 if (import.meta.env.DEV) {
   import('./dev/backfillProducts').then((module) => {
     window.backfillProducts = module.backfillProducts;
+  });
+  import('./dev/seedOrders').then((module) => {
+    window.seedOrders = module.seedOrders;
   });
 }
 

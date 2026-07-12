@@ -17,6 +17,8 @@ const AccessDenied = lazy(() => import("../pages/Admin/AccessDenied"));
 const ProductListPage = lazy(() => import("../pages/Admin/Products/List"));
 const ProductFormPage = lazy(() => import("../pages/Admin/Products/Form"));
 const CategoriesPage = lazy(() => import("../pages/Admin/Categories"));
+const OrderListPage = lazy(() => import("../pages/Admin/Orders/List"));
+const OrderDetailPage = lazy(() => import("../pages/Admin/Orders/Detail"));
 
 function AppRoutes() {
   return (
@@ -49,6 +51,8 @@ function AppRoutes() {
             <Route path="products/new" element={<ProductFormPage />} />
             <Route path="products/:id" element={<ProductFormPage />} />
             <Route path="categories" element={<CategoriesPage />} />
+            <Route path="orders" element={<OrderListPage />} />
+            <Route path="orders/:id" element={<OrderDetailPage />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

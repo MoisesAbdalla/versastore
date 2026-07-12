@@ -1,0 +1,39 @@
+.page {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+.title {
+    font-family: var(--font-heading);
+
+    font-size: 26px;
+
+    color: var(--text);
+}
+
+.filters {
+    display: flex;
+
+    gap: 12px;
+
+    flex-wrap: wrap;
+
+    align-items: flex-start;
+}
+
+.searchField {
+    flex: 1;
+
+    min-width: 260px;
+}
+
+.selectField {
+    min-width: 180px;
+}
+
+.dateField {
+    width: 140px;
+}
