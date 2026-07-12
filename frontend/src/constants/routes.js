@@ -24,7 +24,9 @@ const ROUTES = {
 
     ADMIN_CUSTOMERS:"/admin/customers",
 
-    ADMIN_REPORTS:"/admin/reports"
+    ADMIN_REPORTS:"/admin/reports",
+
+    ADMIN_APPEARANCE:"/admin/appearance"
 
 }
 

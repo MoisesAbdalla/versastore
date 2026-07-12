@@ -9,6 +9,7 @@ import CategoryIcon from "@mui/icons-material/Category";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import PeopleIcon from "@mui/icons-material/People";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import WallpaperIcon from "@mui/icons-material/Wallpaper";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { signOut } from "firebase/auth";
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { to: ROUTES.ADMIN_ORDERS, label: "Pedidos", icon: ReceiptLongIcon },
   { to: ROUTES.ADMIN_CUSTOMERS, label: "Clientes", icon: PeopleIcon },
   { to: ROUTES.ADMIN_REPORTS, label: "Relatórios", icon: AssessmentIcon },
+  { to: ROUTES.ADMIN_APPEARANCE, label: "Aparência", icon: WallpaperIcon },
 ];
 
 function SidebarContent({ onNavigate }) {
