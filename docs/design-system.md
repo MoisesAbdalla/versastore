@@ -215,3 +215,69 @@ Categoria
 Pedido
 
 Usuário
+
+---
+
+# Painel Administrativo (003-admin-dashboard, 2026-07-12)
+
+O painel (`/admin/*`) compartilha os tokens da loja (`variables.css`) com padrões próprios,
+documentados aqui na mesma PR que os introduziu (constituição, Princípio III).
+
+## AdminLayout
+
+- Sidebar fixa 240px sobre `--primary` (preto), itens em `--text-muted-inverse`, item ativo em
+  `--secondary` com borda esquerda de 2px; vira Drawer em < 900px.
+- Header 64px sobre `--surface` com busca global (produtos + pedidos, dropdown de resultados) e
+  nome do usuário logado.
+
+## DataTable (tabelas do painel)
+
+- Skeleton de 6 linhas no carregamento; estado vazio via EmptyState (orientação de próximo passo);
+  estado de erro com "Tentar novamente".
+- Ordenação apenas nas colunas com índice composto no Firestore; paginação por cursor
+  ("Anterior/Próxima", 20 por página); seleção em massa com checkbox.
+- Linhas clicáveis são focáveis (Tab) e ativáveis com Enter.
+- Colunas numéricas: alinhadas à direita, presas ao conteúdo (`width: 1%` + `nowrap`).
+
+## StatCard (indicadores)
+
+- Rótulo uppercase em `--text-muted`, valor em `--font-heading` 26px.
+- Delta percentual com sinal + cor (verde `#15803D` / vermelho `#B3261E` — tons escurecidos para
+  contraste de TEXTO sobre branco); sem base de comparação exibe "—".
+
+## SalesChart (gráfico de vendas)
+
+- SVG próprio, altura fixa 280px, largura acompanha o container (ResizeObserver).
+- Cor de série `#A87420` — validada pelo validador da skill de dataviz (croma ≥ 0.1 e contraste
+  ≥ 3:1 sobre `#FFFFFF`); o `--secondary` da marca reprova no piso de croma (lê como cinza) e não
+  deve ser usado como cor de série.
+- Linha 2px, grid recessivo em `--border` (4 linhas), rótulos de eixo 10px em `--text-muted`,
+  crosshair + tooltip no hover, tabela oculta para leitores de tela.
+
+## Feedback e confirmação
+
+- Toasts via `FeedbackContext` (MUI Snackbar + Alert `filled`), sucesso/erro, 5s.
+- Toda ação destrutiva passa por `ConfirmDialog` (fecha com Esc; botão destrutivo `color="error"`).
+- Estados vazios via `EmptyState`: título em `--font-heading`, ação em botão outline uppercase.
+
+## Chips de status
+
+- Pedido: aguardando pagamento `warning` · pago/em separação `info` · enviado `primary` ·
+  entregue `success` · cancelado `error` · devolvido `default` — sempre `variant="outlined"` com o
+  rótulo em português (nunca cor sozinha).
+- Produto: ativo `success` · inativo `default` · rascunho `warning`.
+- Alertas da visão geral usam badges com rótulo textual ("Sem estoque", "Estoque baixo",
+  "Aguardando envio", "Cadastro incompleto — <campo>").
+
+## Formulários do painel
+
+- Campos monetários como texto ("199,90", parse em `utils/format.js`); datas com máscara
+  dd/mm/aaaa (label fixo via `slotProps`, sem input date nativo — formato brasileiro garantido).
+- Campos em linha reservam a faixa de helperText e alinham pelo topo (baseline estável entre
+  TextField e Select).
+- Descrição rica via `RichTextField` (negrito/itálico/listas), HTML sanitizado por allowlist.
+
+## Exportação CSV
+
+- Botão "Exportar CSV" (ícone Download) nas listagens e relatórios; o arquivo reflete exatamente
+  os filtros da tela; BOM UTF-8 + separador ";" (Excel pt-BR); toast com o nº de linhas.

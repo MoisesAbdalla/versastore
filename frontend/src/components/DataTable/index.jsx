@@ -132,6 +132,16 @@ function DataTable({
                     hover={Boolean(onRowClick)}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                     className={onRowClick ? styles.clickableRow : undefined}
+                    tabIndex={onRowClick ? 0 : undefined}
+                    onKeyDown={
+                      onRowClick
+                        ? (e) => {
+                            if (e.key === "Enter" && e.target === e.currentTarget) {
+                              onRowClick(row);
+                            }
+                          }
+                        : undefined
+                    }
                   >
                     {selectable && (
                       <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>

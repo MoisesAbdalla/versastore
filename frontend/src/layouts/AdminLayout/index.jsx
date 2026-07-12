@@ -16,6 +16,7 @@ import { signOut } from "firebase/auth";
 import auth from "../../firebase/auth";
 import { useAuth } from "../../contexts/AuthContext";
 import ROUTES from "../../constants/routes";
+import GlobalSearch from "./GlobalSearch";
 import styles from "./styles.module.css";
 
 const NAV_ITEMS = [
@@ -95,6 +96,8 @@ function AdminLayout() {
           >
             <MenuIcon />
           </IconButton>
+
+          <GlobalSearch />
 
           <div className={styles.headerSpacer} />
 

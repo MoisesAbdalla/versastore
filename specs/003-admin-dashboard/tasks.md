@@ -87,9 +87,9 @@ SKU/promoção/publicação; rascunho automático; soft delete; filtros preserva
 - [x] T027 [US2] Criar `frontend/src/pages/Admin/Products/List/index.jsx` + `styles.module.css`: DataTable com colunas da spec, busca por prefixo nome/SKU, filtros categoria/status/faixa de estoque, ordenação indexada, ações em massa com ConfirmDialog, estado na URL (useListState)
 - [x] T028 [US2] Criar `frontend/src/pages/Admin/Products/Form/index.jsx` + `styles.module.css`: seções (básico, imagens, preço/promoção, estoque, variações, status), upload múltiplo com arrastar-e-soltar/reordenação/imagem principal (estado por imagem + tentar novamente), variações com SKU/estoque/preço opcional, alerta de estoque baixo configurável, rascunho automático em localStorage com debounce e oferta de restauração (R-12), ação duplicar
 - [x] T029 [US2] Absorver telas antigas: remover o formulário de `frontend/src/pages/Admin/index.jsx` e as telas `frontend/src/pages/Admin/ProductList/` e `frontend/src/pages/Admin/ProductEdit/` (feature 002), redirecionando as rotas antigas para as novas sem quebrar links
-- [ ] T029a [US2] Criar e executar script one-time de backfill `frontend/src/dev/backfillProducts.js` (rodado por admin autenticado): para cada produto legado, gravar `deleted: false`, `status: "ativo"`, `nameLower`, `totalStock = stock`, `images[]` derivado do campo `image` legado e **preço convertido para centavos** — conferir no console do Firebase antes de prosseguir (resolve C2/C3 da análise; produtos sem o campo `deleted` não casam com `where("deleted","==",false)`)
+- [x] T029a [US2] Criar e executar script one-time de backfill `frontend/src/dev/backfillProducts.js` (rodado por admin autenticado): para cada produto legado, gravar `deleted: false`, `status: "ativo"`, `nameLower`, `totalStock = stock`, `images[]` derivado do campo `image` legado e **preço convertido para centavos** — conferir no console do Firebase antes de prosseguir (resolve C2/C3 da análise; produtos sem o campo `deleted` não casam com `where("deleted","==",false)`)
 - [x] T030 [US2] Compatibilidade da loja (SOMENTE após T029a): `getFeaturedProducts`/`getProducts` passam a filtrar `deleted == false` e a loja lê preço em centavos via `formatBRL` — sem mudança visual na Home (validar destaque da feature 002 intacto)
-- [ ] T030a [US2] Apertar a rule de leitura pública de `products` para `status == "ativo" && deleted == false` em `firestore.rules` e redeployar (`npx firebase-tools deploy --only firestore:rules`); validar a Home como anônimo após o deploy (conclui o escalonamento iniciado em T006)
+- [x] T030a [US2] Apertar a rule de leitura pública de `products` para `status == "ativo" && deleted == false` em `firestore.rules` e redeployar (`npx firebase-tools deploy --only firestore:rules`); validar a Home como anônimo após o deploy (conclui o escalonamento iniciado em T006)
 
 **Checkpoint**: Catálogo gerenciável ponta a ponta; loja intacta
 
@@ -180,11 +180,11 @@ no Excel pt-BR com acentos e colunas corretos e reflete exatamente os filtros (S
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T054 Implementar busca global no header do AdminLayout (`frontend/src/layouts/AdminLayout/`): produtos e pedidos por prefixo/nº com atalho para o detalhe (FR-080)
-- [ ] T055 [P] Atualizar `docs/design-system.md` no mesmo PR com os novos padrões do painel (DataTable, sidebar/AdminLayout, StatCard, SalesChart, toasts, ConfirmDialog, EmptyState) — constituição, Princípio III
-- [ ] T056 Auditoria responsiva: todos os fluxos do quickstart em viewport 375px (sidebar → drawer, tabelas com scroll próprio, formulários utilizáveis) — SC-004
-- [ ] T057 Auditoria de acessibilidade: navegação por teclado nos fluxos principais, Esc fecha diálogos, contraste dos tokens, `aria-label` em ações de ícone (FR-086)
-- [ ] T058 Gates finais: `npm run lint` (zero erros), `npm run test` (suíte completa verde), `npm run build` comparando o bundle inicial da loja com o baseline (rotas `/admin/*` em chunks lazy — constituição IV)
+- [x] T054 Implementar busca global no header do AdminLayout (`frontend/src/layouts/AdminLayout/`): produtos e pedidos por prefixo/nº com atalho para o detalhe (FR-080)
+- [x] T055 [P] Atualizar `docs/design-system.md` no mesmo PR com os novos padrões do painel (DataTable, sidebar/AdminLayout, StatCard, SalesChart, toasts, ConfirmDialog, EmptyState) — constituição, Princípio III
+- [x] T056 Auditoria responsiva: todos os fluxos do quickstart em viewport 375px (sidebar → drawer, tabelas com scroll próprio, formulários utilizáveis) — SC-004
+- [x] T057 Auditoria de acessibilidade: navegação por teclado nos fluxos principais, Esc fecha diálogos, contraste dos tokens, `aria-label` em ações de ícone (FR-086)
+- [x] T058 Gates finais: `npm run lint` (zero erros), `npm run test` (suíte completa verde), `npm run build` comparando o bundle inicial da loja com o baseline (rotas `/admin/*` em chunks lazy — constituição IV)
 - [ ] T059 Executar a validação completa do quickstart.md (§0–8), incluindo regressão da loja (Home/produtos/login inalterados, destaque da feature 002 funcionando)
 
 ---
