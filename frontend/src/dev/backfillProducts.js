@@ -2,6 +2,7 @@ import { collection, getDocs, writeBatch, doc } from "firebase/firestore";
 
 import db from "../firebase/firestore";
 import { PRODUCT_STATUS, DEFAULT_LOW_STOCK_THRESHOLD } from "../constants/product";
+import { computeIncompleteFields } from "../services/productService";
 import { normalizeForSearch } from "../utils/slugify";
 
 // Backfill ONE-TIME de produtos legados (tasks.md T029a — resolve C2/C3 da
@@ -23,11 +24,19 @@ export async function backfillProducts() {
     const data = docSnap.data();
 
     // Já normalizado (tem a flag deleted) — não tocar no preço; apenas
-    // completa a flag `incomplete` (alertas da US5) se ainda não existir.
+    // recalcula incomplete/incompleteFields com o MESMO critério do
+    // productService (corrige flags gravadas pelo critério antigo).
     if (data.deleted !== undefined) {
-      if (data.incomplete === undefined) {
+      const fields = computeIncompleteFields(data);
+      const incomplete = fields.length > 0;
+
+      if (
+        data.incomplete !== incomplete ||
+        JSON.stringify(data.incompleteFields || null) !== JSON.stringify(fields)
+      ) {
         batch.update(doc(db, "products", docSnap.id), {
-          incomplete: !data.image || (data.descriptionText || "").length < 20,
+          incomplete,
+          incompleteFields: fields,
         });
         updated++;
       } else {
@@ -38,6 +47,11 @@ export async function backfillProducts() {
 
     const stock = Number(data.stock) || 0;
     const price = Number(data.price) || 0;
+    const incompleteFields = computeIncompleteFields({
+      ...data,
+      price: Math.round(price * 100),
+      stock,
+    });
 
     batch.update(doc(db, "products", docSnap.id), {
       deleted: false,
@@ -55,7 +69,8 @@ export async function backfillProducts() {
       // Preço legado em reais (ex.: 199.9) → centavos (19990).
       price: Math.round(price * 100),
       destaque: Boolean(data.destaque),
-      incomplete: !data.image || (data.description || "").trim().length < 20,
+      incomplete: incompleteFields.length > 0,
+      incompleteFields,
     });
 
     updated++;

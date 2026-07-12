@@ -47,6 +47,7 @@ import {
   listProducts,
   getFeaturedProducts,
   checkSkuAvailable,
+  computeIncompleteFields,
 } from "../productService";
 
 function emptySnapshot() {
@@ -245,6 +246,71 @@ describe("duplicateProduct", () => {
     expect(data.status).toBe("rascunho");
     expect(data.destaque).toBe(false);
     expect(data.id).toBeUndefined();
+  });
+});
+
+describe("cadastro incompleto (alerta da visão geral, FR-014)", () => {
+  it("produto completo SEM opcionais (marca, tags, promoção) não alerta", async () => {
+    addDocMock.mockResolvedValueOnce({ id: "id-1" });
+
+    // Descrição curta é válida — o critério é ausência, não tamanho.
+    await createProduct({
+      name: "teste",
+      description: "<p>teste</p>",
+      sku: "TESTE-1",
+      price: 1990,
+      stock: 3,
+      images: [{ url: "https://img/t.jpg", publicId: "t", isMain: true }],
+      status: "ativo",
+    });
+
+    const [, data] = addDocMock.mock.calls[0];
+
+    expect(data.incomplete).toBe(false);
+    expect(data.incompleteFields).toEqual([]);
+  });
+
+  it("aponta exatamente o que falta", () => {
+    expect(computeIncompleteFields({ name: "Só nome" })).toEqual([
+      "sem preço",
+      "sem foto",
+      "sem estoque definido",
+      "sem descrição",
+    ]);
+
+    expect(
+      computeIncompleteFields({
+        name: "Sem descrição",
+        price: 1000,
+        image: "https://img/x.jpg",
+        stock: 1,
+        description: "",
+      })
+    ).toEqual(["sem descrição"]);
+  });
+
+  it("re-salvar o produto recalcula a flag (some do alerta após completar)", async () => {
+    getDocMock.mockResolvedValueOnce(
+      fakeDoc("p1", {
+        name: "teste",
+        price: 1990,
+        stock: 3,
+        image: "https://img/t.jpg",
+        description: "",
+        deleted: false,
+        status: "ativo",
+        incomplete: true,
+        incompleteFields: ["sem descrição"],
+      })
+    );
+    updateDocMock.mockResolvedValueOnce(undefined);
+
+    await updateProduct("p1", { description: "<p>Agora tem descrição</p>" });
+
+    const [, merged] = updateDocMock.mock.calls[0];
+
+    expect(merged.incomplete).toBe(false);
+    expect(merged.incompleteFields).toEqual([]);
   });
 });
 

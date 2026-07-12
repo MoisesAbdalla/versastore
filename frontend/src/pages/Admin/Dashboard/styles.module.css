@@ -194,6 +194,10 @@
     color: var(--text);
 }
 
+.alertDetail {
+    color: var(--text-muted);
+}
+
 .alertAction {
     font-family: var(--font-body);
 

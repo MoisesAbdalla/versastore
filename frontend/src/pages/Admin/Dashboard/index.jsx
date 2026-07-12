@@ -254,7 +254,15 @@ function Dashboard() {
               {alerts.incompleteProducts.map((product) => (
                 <li key={`inc-${product.id}`} className={styles.alertItem}>
                   <span className={styles.alertBadgeInfo}>Cadastro incompleto</span>
-                  <span className={styles.alertText}>{product.name || "(sem nome)"}</span>
+                  <span className={styles.alertText}>
+                    {product.name || "(sem nome)"}
+                    {(product.incompleteFields || []).length > 0 && (
+                      <span className={styles.alertDetail}>
+                        {" — "}
+                        {product.incompleteFields.join(", ")}
+                      </span>
+                    )}
+                  </span>
                   <Link className={styles.alertAction} to={`${ROUTES.ADMIN_PRODUCTS}/${product.id}`}>
                     Completar
                   </Link>

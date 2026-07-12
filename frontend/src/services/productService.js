@@ -38,6 +38,42 @@ function toItem(docSnap) {
   return { id: docSnap.id, ...docSnap.data() };
 }
 
+// Critério ÚNICO de "cadastro incompleto" (alerta da visão geral, FR-014):
+// exatamente os campos que o formulário exige para publicar (status ativo) +
+// descrição vazia ("descrição incompleta" da spec). Campos opcionais (marca,
+// tags, promoção, categoria) NUNCA entram aqui. Compartilhado com o backfill.
+export function computeIncompleteFields(data) {
+  const fields = [];
+
+  if (!data.name || !String(data.name).trim()) {
+    fields.push("sem nome");
+  }
+
+  if (data.price == null || data.price <= 0) {
+    fields.push("sem preço");
+  }
+
+  const hasImage = (data.images || []).length > 0 || Boolean(data.image);
+
+  if (!hasImage) {
+    fields.push("sem foto");
+  }
+
+  const hasStock =
+    (data.variations || []).length > 0 ||
+    (data.stock !== null && data.stock !== undefined && data.stock !== "");
+
+  if (!hasStock) {
+    fields.push("sem estoque definido");
+  }
+
+  if (!stripHtml(data.description)) {
+    fields.push("sem descrição");
+  }
+
+  return fields;
+}
+
 // Campos derivados gravados em todo create/update (contracts/services.md).
 // Também normaliza produtos legados: garante deleted/status/totalStock presentes.
 function withDerivedFields(data) {
@@ -50,9 +86,9 @@ function withDerivedFields(data) {
     ? variations.reduce((sum, variation) => sum + (Number(variation.stock) || 0), 0)
     : Number(data.stock) || 0;
 
-  // Flag derivada p/ alerta "produto incompleto" da visão geral (FR-014;
-  // resolve o índice #8 do contrato como consulta de igualdade barata).
-  const incomplete = (!mainImage && !data.image) || descriptionText.length < 20;
+  // Flag derivada p/ alerta "produto incompleto" (FR-014) — recalculada em
+  // TODO save via computeIncompleteFields (critério = campos de publicação).
+  const incompleteFields = computeIncompleteFields(data);
 
   return {
     ...data,
@@ -61,7 +97,8 @@ function withDerivedFields(data) {
     nameLower: normalizeForSearch(data.name),
     skuUpper: (data.sku || "").trim().toUpperCase(),
     descriptionText,
-    incomplete,
+    incomplete: incompleteFields.length > 0,
+    incompleteFields,
     totalStock,
     variationSkus: variations.map((variation) => (variation.sku || "").trim().toUpperCase()),
     // Campo legado `image` mantido em sincronia com a imagem principal (loja atual).
