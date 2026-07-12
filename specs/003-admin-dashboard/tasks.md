@@ -136,12 +136,12 @@ atômico devolve estoque; preço congelado; teste de concorrência do último it
 **Independent Test**: quickstart.md §5 — cards com deltas, gráfico por período, alertas acionáveis;
 Network sem leitura da coleção `orders` inteira; < 2 s (SC-003)
 
-- [ ] T041 [US5] Criar `frontend/src/services/dashboardService.js` conforme contracts/services.md: `getOverviewStats` (hoje/7 dias/mês com delta vs. período anterior equivalente), `getSalesSeries` (1 range query em `dailyStats` por ID de documento), `getTopProducts` (merge client-side de `unitsByProduct`), `getRecentOrders(limit 5)`, `getAlerts` (estoque baixo/zerado via `totalStock`, pedidos pagos sem envio, produtos sem foto/descrição incompleta — cada um com `limit`)
-- [ ] T042 [US5] Testes de `dashboardService` em `frontend/src/services/__tests__/dashboardService.test.js`: cálculo de deltas percentuais (incluindo período anterior zerado), merge de `unitsByProduct`, limites de período
-- [ ] T043 [P] [US5] Criar `frontend/src/components/StatCard/index.jsx` + `styles.module.css` (valor, rótulo, delta % com cor semântica do design system)
-- [ ] T044 [P] [US5] Criar `frontend/src/components/SalesChart/index.jsx` + `styles.module.css` (SVG próprio responsivo por viewBox, série de `dailyStats`, acessível: role img + descrição textual — R-10)
-- [ ] T045 [P] [US5] Criar `frontend/src/hooks/useDashboard.js` (período selecionado → stats/series/top/recentes/alertas com loading/error)
-- [ ] T046 [US5] Criar `frontend/src/pages/Admin/Dashboard/index.jsx` + `styles.module.css` substituindo o placeholder de T020: grid de StatCards, SalesChart com seletor de período (7/30/90 dias, 12 meses, personalizado), top-5, pedidos recentes com atalho, painel de alertas com links de resolução (FR-010..015)
+- [x] T041 [US5] Criar `frontend/src/services/dashboardService.js` conforme contracts/services.md: `getOverviewStats` (hoje/7 dias/mês com delta vs. período anterior equivalente), `getSalesSeries` (1 range query em `dailyStats` por ID de documento), `getTopProducts` (merge client-side de `unitsByProduct`), `getRecentOrders(limit 5)`, `getAlerts` (estoque baixo/zerado via `totalStock`, pedidos pagos sem envio, produtos sem foto/descrição incompleta — cada um com `limit`)
+- [x] T042 [US5] Testes de `dashboardService` em `frontend/src/services/__tests__/dashboardService.test.js`: cálculo de deltas percentuais (incluindo período anterior zerado), merge de `unitsByProduct`, limites de período
+- [x] T043 [P] [US5] Criar `frontend/src/components/StatCard/index.jsx` + `styles.module.css` (valor, rótulo, delta % com cor semântica do design system)
+- [x] T044 [P] [US5] Criar `frontend/src/components/SalesChart/index.jsx` + `styles.module.css` (SVG próprio responsivo por viewBox, série de `dailyStats`, acessível: role img + descrição textual — R-10)
+- [x] T045 [P] [US5] Criar `frontend/src/hooks/useDashboard.js` (período selecionado → stats/series/top/recentes/alertas com loading/error)
+- [x] T046 [US5] Criar `frontend/src/pages/Admin/Dashboard/index.jsx` + `styles.module.css` substituindo o placeholder de T020: grid de StatCards, SalesChart com seletor de período (7/30/90 dias, 12 meses, personalizado), top-5, pedidos recentes com atalho, painel de alertas com links de resolução (FR-010..015)
 
 **Checkpoint**: Visão geral operacional em < 2 s com dados agregados
 

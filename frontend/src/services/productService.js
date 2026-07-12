@@ -44,10 +44,15 @@ function withDerivedFields(data) {
   const variations = data.variations || [];
   const images = data.images || [];
   const mainImage = images.find((img) => img.isMain) || images[0];
+  const descriptionText = stripHtml(data.description);
 
   const totalStock = variations.length
     ? variations.reduce((sum, variation) => sum + (Number(variation.stock) || 0), 0)
     : Number(data.stock) || 0;
+
+  // Flag derivada p/ alerta "produto incompleto" da visão geral (FR-014;
+  // resolve o índice #8 do contrato como consulta de igualdade barata).
+  const incomplete = (!mainImage && !data.image) || descriptionText.length < 20;
 
   return {
     ...data,
@@ -55,7 +60,8 @@ function withDerivedFields(data) {
     images,
     nameLower: normalizeForSearch(data.name),
     skuUpper: (data.sku || "").trim().toUpperCase(),
-    descriptionText: stripHtml(data.description),
+    descriptionText,
+    incomplete,
     totalStock,
     variationSkus: variations.map((variation) => (variation.sku || "").trim().toUpperCase()),
     // Campo legado `image` mantido em sincronia com a imagem principal (loja atual).

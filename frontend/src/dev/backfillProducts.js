@@ -22,9 +22,17 @@ export async function backfillProducts() {
   for (const docSnap of snapshot.docs) {
     const data = docSnap.data();
 
-    // Já normalizado (tem a flag deleted) — não tocar, inclusive no preço.
+    // Já normalizado (tem a flag deleted) — não tocar no preço; apenas
+    // completa a flag `incomplete` (alertas da US5) se ainda não existir.
     if (data.deleted !== undefined) {
-      skipped++;
+      if (data.incomplete === undefined) {
+        batch.update(doc(db, "products", docSnap.id), {
+          incomplete: !data.image || (data.descriptionText || "").length < 20,
+        });
+        updated++;
+      } else {
+        skipped++;
+      }
       continue;
     }
 
@@ -47,6 +55,7 @@ export async function backfillProducts() {
       // Preço legado em reais (ex.: 199.9) → centavos (19990).
       price: Math.round(price * 100),
       destaque: Boolean(data.destaque),
+      incomplete: !data.image || (data.description || "").trim().length < 20,
     });
 
     updated++;

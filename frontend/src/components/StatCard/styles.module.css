@@ -1,0 +1,59 @@
+.card {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+
+    padding: 18px 20px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+}
+
+.label {
+    font-family: var(--font-body);
+
+    font-size: 12px;
+
+    letter-spacing: var(--tracking);
+
+    text-transform: uppercase;
+
+    color: var(--text-muted);
+}
+
+.value {
+    font-family: var(--font-heading);
+
+    font-size: 26px;
+
+    color: var(--text);
+}
+
+.deltaNeutral,
+.deltaUp,
+.deltaDown {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+}
+
+.deltaNeutral {
+    color: var(--text-muted);
+}
+
+/* Tons escuros p/ contraste de TEXTO em fundo branco (tokens de status do
+   design system escurecidos p/ uso tipográfico; o sinal +/- evita cor-sozinha). */
+.deltaUp {
+    color: #15803D;
+}
+
+.deltaDown {
+    color: #B3261E;
+}
+
+.deltaLabel {
+    color: var(--text-muted);
+}

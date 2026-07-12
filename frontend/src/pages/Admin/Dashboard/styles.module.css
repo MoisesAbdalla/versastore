@@ -1,9 +1,9 @@
-.dashboard {
+.page {
     display: flex;
 
     flex-direction: column;
 
-    gap: 8px;
+    gap: 20px;
 }
 
 .title {
@@ -14,10 +14,264 @@
     color: var(--text);
 }
 
-.subtitle {
+.statGrid {
+    display: grid;
+
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+
+    gap: 12px;
+}
+
+.card {
+    padding: 20px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+}
+
+.cardHeader {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    flex-wrap: wrap;
+
+    margin-bottom: 16px;
+}
+
+.cardTitle {
+    font-family: var(--font-heading);
+
+    font-size: 17px;
+
+    color: var(--text);
+
+    margin-bottom: 8px;
+}
+
+.periodControls {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 6px;
+
+    flex-wrap: wrap;
+}
+
+.dateField {
+    width: 130px;
+}
+
+.columns {
+    display: grid;
+
+    grid-template-columns: 1fr;
+
+    gap: 16px;
+}
+
+.muted {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+}
+
+.topList {
+    list-style: decimal inside;
+
+    margin: 0;
+
+    padding: 0;
+
     font-family: var(--font-body);
 
     font-size: 14px;
 
+    color: var(--text);
+}
+
+.topItem {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 8px 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.topItem:last-child {
+    border-bottom: none;
+}
+
+.topLink {
+    color: var(--text);
+
+    text-decoration: none;
+}
+
+.topLink:hover {
+    color: var(--gold-text);
+}
+
+.recentList {
+    list-style: none;
+
+    margin: 0;
+
+    padding: 0;
+}
+
+.recentItem {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    justify-content: space-between;
+
+    padding: 10px 0;
+
+    border-bottom: 1px solid var(--border);
+
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    color: var(--text);
+
+    text-decoration: none;
+}
+
+.recentItem:hover {
+    background: rgba(11, 11, 12, .02);
+}
+
+.alertList {
+    list-style: none;
+
+    margin: 0;
+
+    padding: 0;
+}
+
+.alertItem {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 10px 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.alertItem:last-child {
+    border-bottom: none;
+}
+
+.alertText {
+    flex: 1;
+
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    color: var(--text);
+}
+
+.alertAction {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    letter-spacing: var(--tracking);
+
+    text-transform: uppercase;
+
+    color: var(--gold-text);
+
+    text-decoration: none;
+}
+
+.alertAction:hover {
+    text-decoration: underline;
+}
+
+.alertBadgeCritical,
+.alertBadgeWarning,
+.alertBadgeInfo {
+    padding: 2px 10px;
+
+    font-family: var(--font-body);
+
+    font-size: 11px;
+
+    letter-spacing: .06em;
+
+    text-transform: uppercase;
+
+    white-space: nowrap;
+}
+
+/* Status com rótulo textual (nunca cor sozinha) — tons escuros p/ contraste */
+.alertBadgeCritical {
+    color: #B3261E;
+
+    border: 1px solid #B3261E;
+}
+
+.alertBadgeWarning {
+    color: #8C5A00;
+
+    border: 1px solid #8C5A00;
+}
+
+.alertBadgeInfo {
     color: var(--text-muted);
+
+    border: 1px solid var(--border);
+}
+
+.errorState {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 48px 24px;
+
+    text-align: center;
+
+    font-family: var(--font-body);
+
+    color: var(--text-muted);
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+}
+
+@media (min-width: 1000px) {
+
+    .columns {
+        grid-template-columns: 1fr 1fr;
+    }
 }
