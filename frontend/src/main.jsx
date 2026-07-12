@@ -20,6 +20,9 @@ if (import.meta.env.DEV) {
   import('./dev/seedOrders').then((module) => {
     window.seedOrders = module.seedOrders;
   });
+  import('./dev/backfillOrders').then((module) => {
+    window.backfillOrders = module.backfillOrders;
+  });
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

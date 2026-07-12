@@ -38,11 +38,14 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
       allow create, delete: if isAdmin();
-      // Itens, número, cliente e data são imutáveis após a criação (defesa em profundidade;
-      // a validação principal é do orderService).
+      // Itens, número, cliente (id/e-mail) e data são imutáveis após a criação
+      // (defesa em profundidade; a validação principal é do orderService).
+      // Os campos desnormalizados de exibição/busca do cliente podem ser
+      // corrigidos por admin (backfill da busca por nome/e-mail).
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'statusHistory', 'trackingCode', 'internalNotes']);
+          .hasOnly(['status', 'statusHistory', 'trackingCode', 'internalNotes',
+                    'customerName', 'customerNameLower', 'customerEmailLower']);
     }
 
     match /users/{userId} {

@@ -59,10 +59,10 @@ vi.mock("firebase/firestore", () => ({
   updateDoc: vi.fn(async (ref, changes) => {
     store.set(getPath(ref), { ...store.get(getPath(ref)), ...changes });
   }),
-  query: vi.fn(),
-  where: vi.fn(),
-  orderBy: vi.fn(),
-  limit: vi.fn(),
+  query: vi.fn((col, ...constraints) => ({ col, constraints })),
+  where: vi.fn((field, op, value) => ({ type: "where", field, op, value })),
+  orderBy: vi.fn((field, direction) => ({ type: "orderBy", field, direction })),
+  limit: vi.fn((n) => ({ type: "limit", n })),
   startAfter: vi.fn(),
   Timestamp: {
     now: () => ({ __timestamp: true, toDate: () => new Date() }),
@@ -75,9 +75,10 @@ vi.mock("../../firebase/firestore", () => ({
   default: {},
 }));
 
-import { createOrder, advanceStatus, cancelOrder, getOrder } from "../orderService";
+import { createOrder, advanceStatus, cancelOrder, getOrder, listOrders } from "../orderService";
 import { updateProduct } from "../productService";
 import { ORDER_STATUS } from "../../constants/orderStatus";
+import { getDocs, where } from "firebase/firestore";
 
 function seedStore() {
   store = new Map();
@@ -311,6 +312,59 @@ describe("cancelOrder — atomicidade (SC-009)", () => {
 
     // Estoque NÃO devolvido (transação abortou)
     expect(store.get("products/prod-1").stock).toBe(0);
+  });
+});
+
+describe("listOrders — busca por cliente (nome E e-mail)", () => {
+  function searchSnapshot(docs) {
+    return { docs: docs.map(([id, data]) => ({ id, data: () => data })) };
+  }
+
+  it("cria pedido com customerEmailLower desnormalizado", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+    });
+
+    const order = store.get(findOrderPath());
+
+    expect(order.customerEmailLower).toBe("maria@exemplo.com");
+    expect(order.customerNameLower).toBe("maria silva");
+  });
+
+  it("encontra por prefixo do nome", async () => {
+    getDocs
+      .mockResolvedValueOnce(searchSnapshot([["o1", { customerName: "Maria Silva" }]]))
+      .mockResolvedValueOnce(searchSnapshot([]));
+
+    const result = await listOrders({ search: "Maria" });
+
+    expect(result.items).toHaveLength(1);
+    expect(where).toHaveBeenCalledWith("customerNameLower", ">=", "maria");
+    expect(where).toHaveBeenCalledWith("customerEmailLower", ">=", "maria");
+  });
+
+  it("encontra por prefixo do e-mail (o que a coluna exibe quando não há nome)", async () => {
+    getDocs
+      .mockResolvedValueOnce(searchSnapshot([]))
+      .mockResolvedValueOnce(searchSnapshot([["o2", { customerEmail: "teste@teste.com" }]]));
+
+    const result = await listOrders({ search: "teste@tes" });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].customerEmail).toBe("teste@teste.com");
+    expect(where).toHaveBeenCalledWith("customerEmailLower", ">=", "teste@tes");
+  });
+
+  it("mescla os dois ramos sem duplicar pedido que casa em ambos", async () => {
+    getDocs
+      .mockResolvedValueOnce(searchSnapshot([["o3", { customerName: "Ana" }]]))
+      .mockResolvedValueOnce(searchSnapshot([["o3", { customerName: "Ana" }]]));
+
+    const result = await listOrders({ search: "ana" });
+
+    expect(result.items).toHaveLength(1);
   });
 });
 

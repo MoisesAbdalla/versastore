@@ -193,6 +193,7 @@ export async function createOrder({ customerId, items, shippingAddress, paymentM
       customerName: customer.name || "",
       customerNameLower: normalizeForSearch(customer.name || ""),
       customerEmail: customer.email || "",
+      customerEmailLower: normalizeForSearch(customer.email || ""),
       shippingAddress: shippingAddress || null,
       paymentMethod: paymentMethod || "",
       items: frozenItems,
@@ -402,24 +403,41 @@ export async function listOrders({
       };
     }
 
-    // Nome do cliente: prefixo normalizado (R-5); sem paginação (range + merge).
+    // Cliente: a busca cobre o que a coluna exibe — nome quando houver,
+    // e-mail como alternativa (customerEmailLower). Duas queries de prefixo
+    // mescladas por id (padrão R-5); sem paginação (range + merge).
     const nameTerm = normalizeForSearch(term);
-    const snapshot = await getDocs(
-      query(
+    const prefixEnd = nameTerm + String.fromCharCode(0xf8ff);
+    const [byName, byEmail] = await Promise.all([
+      getDocs(query(
         col,
         where("customerNameLower", ">=", nameTerm),
-        where("customerNameLower", "<=", nameTerm + ""),
+        where("customerNameLower", "<=", prefixEnd),
         orderBy("customerNameLower", "asc"),
         orderBy("createdAt", "desc"),
         limit(pageSize)
-      )
-    );
+      )),
+      getDocs(query(
+        col,
+        where("customerEmailLower", ">=", nameTerm),
+        where("customerEmailLower", "<=", prefixEnd),
+        orderBy("customerEmailLower", "asc"),
+        orderBy("createdAt", "desc"),
+        limit(pageSize)
+      )),
+    ]);
 
-    return {
-      items: snapshot.docs.map((d) => ({ id: d.id, ...d.data() })),
-      nextCursor: null,
-      hasMore: false,
-    };
+    const merged = new Map();
+
+    for (const docSnap of [...byName.docs, ...byEmail.docs]) {
+      merged.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+    }
+
+    const items = [...merged.values()]
+      .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0))
+      .slice(0, pageSize);
+
+    return { items, nextCursor: null, hasMore: false };
   }
 
   const constraints = [];

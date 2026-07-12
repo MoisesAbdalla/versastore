@@ -1,9 +1,23 @@
-import { collection, getDocs, query, where, limit } from "firebase/firestore";
+import { collection, doc, getDocs, query, updateDoc, where, limit } from "firebase/firestore";
 
 import db from "../firebase/firestore";
 import { createOrder, advanceStatus } from "../services/orderService";
 import { ORDER_STATUS } from "../constants/orderStatus";
 import { PRODUCT_STATUS } from "../constants/product";
+import { normalizeForSearch } from "../utils/slugify";
+
+// Contas de e-mail/senha nascem sem displayName → users.name fica vazio e a
+// busca de pedidos por nome não encontra nada. O seed garante um nome derivado
+// do e-mail ("maria.silva@x.com" → "Maria Silva") antes de criar os pedidos.
+function nameFromEmail(email) {
+  const localPart = (email || "cliente").split("@")[0];
+
+  return localPart
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
 const SAMPLE_ADDRESS = {
   rua: "Rua das Flores",
@@ -53,6 +67,21 @@ export async function seedOrders({ count = 8 } = {}) {
 
   if (!products.length) {
     throw new Error("Seed: publique ao menos um produto ativo com estoque antes.");
+  }
+
+  // Garante nome nos clientes ANTES dos pedidos (a criação do pedido copia
+  // customerName/customerNameLower desnormalizados).
+  for (const customer of customers) {
+    if (!customer.name) {
+      const name = nameFromEmail(customer.email);
+
+      await updateDoc(doc(db, "users", customer.id), {
+        name,
+        nameLower: normalizeForSearch(name),
+      });
+
+      customer.name = name;
+    }
   }
 
   const created = [];
