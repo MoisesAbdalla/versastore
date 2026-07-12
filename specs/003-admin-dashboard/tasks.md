@@ -185,7 +185,7 @@ no Excel pt-BR com acentos e colunas corretos e reflete exatamente os filtros (S
 - [x] T056 Auditoria responsiva: todos os fluxos do quickstart em viewport 375px (sidebar → drawer, tabelas com scroll próprio, formulários utilizáveis) — SC-004
 - [x] T057 Auditoria de acessibilidade: navegação por teclado nos fluxos principais, Esc fecha diálogos, contraste dos tokens, `aria-label` em ações de ícone (FR-086)
 - [x] T058 Gates finais: `npm run lint` (zero erros), `npm run test` (suíte completa verde), `npm run build` comparando o bundle inicial da loja com o baseline (rotas `/admin/*` em chunks lazy — constituição IV)
-- [ ] T059 Executar a validação completa do quickstart.md (§0–8), incluindo regressão da loja (Home/produtos/login inalterados, destaque da feature 002 funcionando)
+- [x] T059 Executar a validação completa do quickstart.md (§0–8), incluindo regressão da loja (Home/produtos/login inalterados, destaque da feature 002 funcionando)
 
 ---
 
