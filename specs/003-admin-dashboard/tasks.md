@@ -154,10 +154,10 @@ Network sem leitura da coleção `orders` inteira; < 2 s (SC-003)
 **Independent Test**: quickstart.md §6 — listagem com totais, busca nome/e-mail, detalhe com
 pedidos; cancelamento ajusta totais
 
-- [ ] T047 [P] [US6] Criar `frontend/src/services/customerService.js` conforme contracts/services.md: `listCustomers` (`role == "customer"`, busca prefixo/e-mail exato, ordenações indexadas), `getCustomer`, `getCustomerOrders` (cursor)
-- [ ] T048 [US6] Testes de `customerService` em `frontend/src/services/__tests__/customerService.test.js`: filtro de papel, busca, paginação
-- [ ] T049 [P] [US6] Criar `frontend/src/hooks/useCustomers.js`
-- [ ] T050 [US6] Criar `frontend/src/pages/Admin/Customers/List/index.jsx` e `frontend/src/pages/Admin/Customers/Detail/index.jsx` (+ `styles.module.css`): listagem com totais em R$, detalhe com histórico de pedidos (atalhos) e endereços
+- [x] T047 [P] [US6] Criar `frontend/src/services/customerService.js` conforme contracts/services.md: `listCustomers` (`role == "customer"`, busca prefixo/e-mail exato, ordenações indexadas), `getCustomer`, `getCustomerOrders` (cursor)
+- [x] T048 [US6] Testes de `customerService` em `frontend/src/services/__tests__/customerService.test.js`: filtro de papel, busca, paginação
+- [x] T049 [P] [US6] Criar `frontend/src/hooks/useCustomers.js`
+- [x] T050 [US6] Criar `frontend/src/pages/Admin/Customers/List/index.jsx` e `frontend/src/pages/Admin/Customers/Detail/index.jsx` (+ `styles.module.css`): listagem com totais em R$, detalhe com histórico de pedidos (atalhos) e endereços
 
 **Checkpoint**: Módulo de clientes consultável
 

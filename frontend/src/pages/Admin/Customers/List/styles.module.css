@@ -1,0 +1,19 @@
+.page {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+.title {
+    font-family: var(--font-heading);
+
+    font-size: 26px;
+
+    color: var(--text);
+}
+
+.searchField {
+    max-width: 380px;
+}
