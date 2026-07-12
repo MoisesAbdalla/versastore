@@ -5,6 +5,7 @@ import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
 import AddIcon from "@mui/icons-material/Add";
+import DownloadIcon from "@mui/icons-material/Download";
 
 import DataTable from "../../../../components/DataTable";
 import ConfirmDialog from "../../../../components/ConfirmDialog";
@@ -12,7 +13,9 @@ import { useListState } from "../../../../hooks/useListState";
 import { usePagination } from "../../../../hooks/usePagination";
 import { useProducts } from "../../../../hooks/useProducts";
 import { useCategories } from "../../../../hooks/useCategories";
-import { formatBRL, formatDate } from "../../../../utils/format";
+import { useFeedback } from "../../../../contexts/FeedbackContext";
+import { exportCsv, CSV_MAX_ROWS } from "../../../../utils/csv";
+import { formatBRL, formatDate, centsToInput } from "../../../../utils/format";
 import { PRODUCT_STATUS, PRODUCT_STATUS_LABELS } from "../../../../constants/product";
 import ROUTES from "../../../../constants/routes";
 import styles from "./styles.module.css";
@@ -39,6 +42,7 @@ function ProductListPage() {
   const { state, setFilters } = useListState(LIST_DEFAULTS);
   const { fetchProducts, bulkUpdate, bulkDelete } = useProducts();
   const { flat: categoryOptions } = useCategories();
+  const { toastSuccess, toastError } = useFeedback();
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [confirm, setConfirm] = useState(null);
@@ -155,19 +159,58 @@ function ProductListPage() {
     }
   }
 
+  // Exportação reflete EXATAMENTE os filtros aplicados (SC-010): re-executa a
+  // query filtrada sem paginação, com o teto do utils/csv.
+  async function handleExport() {
+    try {
+      const { items } = await fetchProducts({
+        search: state.search,
+        categoryId: state.categoryId,
+        status: state.status,
+        stockRange: state.stockRange,
+        sort: { key: state.sortKey, direction: state.sortDir },
+        pageSize: CSV_MAX_ROWS,
+      });
+
+      const count = exportCsv({
+        headers: ["Nome", "SKU", "Categoria", "Preço (R$)", "Estoque", "Status", "Criado em"],
+        rows: items.map((p) => [
+          p.name,
+          p.sku || "",
+          p.categoryName || p.category || "",
+          centsToInput(p.price),
+          p.totalStock ?? p.stock ?? 0,
+          PRODUCT_STATUS_LABELS[p.status] || "Rascunho",
+          formatDate(p.createdAt),
+        ]),
+        filename: `produtos-${new Date().toISOString().slice(0, 10)}.csv`,
+      });
+
+      toastSuccess(`CSV exportado (${count} linhas).`);
+    } catch {
+      toastError("Erro ao exportar. Verifique sua conexão.");
+    }
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Produtos</h1>
 
-        <Button
-          component={Link}
-          to={ROUTES.ADMIN_PRODUCT_NEW}
-          variant="contained"
-          startIcon={<AddIcon />}
-        >
-          Novo produto
-        </Button>
+        <div className={styles.headerActions}>
+          <Button size="small" startIcon={<DownloadIcon />} onClick={handleExport}>
+            Exportar CSV
+          </Button>
+
+          <Button
+            component={Link}
+            to={ROUTES.ADMIN_PRODUCT_NEW}
+            variant="contained"
+            startIcon={<AddIcon />}
+          >
+            Novo produto
+          </Button>
+        </div>
       </div>
 
       <div className={styles.filters}>

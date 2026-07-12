@@ -26,6 +26,14 @@
     color: var(--text);
 }
 
+.headerActions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
 .filters {
     display: flex;
 

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
+import Button from "@mui/material/Button";
+import DownloadIcon from "@mui/icons-material/Download";
 
 import DataTable from "../../../../components/DataTable";
 import { useListState } from "../../../../hooks/useListState";
@@ -13,7 +15,9 @@ import {
   ORDER_STATUS_LABELS,
 } from "../../../../constants/orderStatus";
 import { formatOrderNumber } from "../../../../services/orderService";
-import { formatBRL, formatDate, maskDateInput, parseDateInput } from "../../../../utils/format";
+import { useFeedback } from "../../../../contexts/FeedbackContext";
+import { exportCsv, CSV_MAX_ROWS } from "../../../../utils/csv";
+import { formatBRL, formatDate, maskDateInput, parseDateInput, centsToInput } from "../../../../utils/format";
 import ROUTES from "../../../../constants/routes";
 import styles from "./styles.module.css";
 
@@ -53,6 +57,7 @@ function OrderListPage() {
   const navigate = useNavigate();
   const { state, setFilters } = useListState(LIST_DEFAULTS);
   const { fetchOrders } = useOrders();
+  const { toastSuccess, toastError } = useFeedback();
 
   const initialAfterRef = useRef(state.after);
 
@@ -96,9 +101,46 @@ function OrderListPage() {
     []
   );
 
+  async function handleExport() {
+    try {
+      const { items } = await fetchOrders({
+        search: state.search,
+        status: state.status,
+        dateFrom: parseDateInput(state.from),
+        dateTo: parseDateInput(state.to, { endOfDay: true }),
+        pageSize: CSV_MAX_ROWS,
+      });
+
+      const count = exportCsv({
+        headers: ["Pedido", "Cliente", "E-mail", "Data", "Itens", "Total (R$)", "Pagamento", "Status"],
+        rows: items.map((o) => [
+          formatOrderNumber(o.orderNumber),
+          o.customerName || "",
+          o.customerEmail || "",
+          formatDate(o.createdAt),
+          o.items.reduce((sum, item) => sum + item.quantity, 0),
+          centsToInput(o.total),
+          PAYMENT_LABELS[o.paymentMethod] || o.paymentMethod || "",
+          ORDER_STATUS_LABELS[o.status] || o.status,
+        ]),
+        filename: `pedidos-${new Date().toISOString().slice(0, 10)}.csv`,
+      });
+
+      toastSuccess(`CSV exportado (${count} linhas).`);
+    } catch {
+      toastError("Erro ao exportar. Verifique sua conexão.");
+    }
+  }
+
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>Pedidos</h1>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Pedidos</h1>
+
+        <Button size="small" startIcon={<DownloadIcon />} onClick={handleExport}>
+          Exportar CSV
+        </Button>
+      </div>
 
       <div className={styles.filters}>
         <TextField

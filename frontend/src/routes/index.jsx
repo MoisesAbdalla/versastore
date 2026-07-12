@@ -21,6 +21,7 @@ const OrderListPage = lazy(() => import("../pages/Admin/Orders/List"));
 const OrderDetailPage = lazy(() => import("../pages/Admin/Orders/Detail"));
 const CustomerListPage = lazy(() => import("../pages/Admin/Customers/List"));
 const CustomerDetailPage = lazy(() => import("../pages/Admin/Customers/Detail"));
+const ReportsPage = lazy(() => import("../pages/Admin/Reports"));
 
 function AppRoutes() {
   return (
@@ -57,6 +58,7 @@ function AppRoutes() {
             <Route path="orders/:id" element={<OrderDetailPage />} />
             <Route path="customers" element={<CustomerListPage />} />
             <Route path="customers/:id" element={<CustomerDetailPage />} />
+            <Route path="reports" element={<ReportsPage />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

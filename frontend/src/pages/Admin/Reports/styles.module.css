@@ -1,0 +1,147 @@
+.page {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+.title {
+    font-family: var(--font-heading);
+
+    font-size: 26px;
+
+    color: var(--text);
+}
+
+.controls {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 6px;
+
+    flex-wrap: wrap;
+}
+
+.dateField {
+    width: 130px;
+}
+
+.groupField {
+    min-width: 140px;
+}
+
+.card {
+    padding: 20px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+}
+
+.cardHeader {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    flex-wrap: wrap;
+
+    margin-bottom: 12px;
+}
+
+.cardTitle {
+    font-family: var(--font-heading);
+
+    font-size: 17px;
+
+    color: var(--text);
+}
+
+.cardActions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+.muted {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+}
+
+.tableScroll {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    color: var(--text);
+}
+
+.table th {
+    text-align: left;
+
+    padding: 8px 12px;
+
+    font-size: 12px;
+
+    letter-spacing: var(--tracking);
+
+    text-transform: uppercase;
+
+    color: var(--text-muted);
+
+    border-bottom: 1px solid var(--border);
+}
+
+.table td {
+    padding: 8px 12px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.number {
+    text-align: right;
+}
+
+.errorState {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 48px 24px;
+
+    text-align: center;
+
+    font-family: var(--font-body);
+
+    color: var(--text-muted);
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+}

@@ -170,9 +170,9 @@ pedidos; cancelamento ajusta totais
 **Independent Test**: quickstart.md §7 — agrupamento dia/semana/mês bate com `dailyStats`; CSV abre
 no Excel pt-BR com acentos e colunas corretos e reflete exatamente os filtros (SC-010)
 
-- [ ] T051 [P] [US7] Criar `frontend/src/utils/csv.js` (`exportCsv({headers, rows, filename})` — BOM UTF-8, separador `;`, escape de aspas, teto 5.000 linhas, R-9) com testes em `frontend/src/utils/__tests__/csv.test.js` (saída byte a byte)
-- [ ] T052 [US7] Criar `frontend/src/pages/Admin/Reports/index.jsx` + `styles.module.css`: relatório de vendas por período com agrupamento dia/semana/mês (consolidação client-side de `dailyStats`), relatório de produtos (mais vendidos, sem vendas no período, estoque atual)
-- [ ] T053 [US7] Adicionar exportação CSV às listagens de Products/List, Orders/List, Customers/List e Reports: re-executa a query filtrada sem paginação (com teto) e chama `exportCsv` com cabeçalhos pt-BR
+- [x] T051 [P] [US7] Criar `frontend/src/utils/csv.js` (`exportCsv({headers, rows, filename})` — BOM UTF-8, separador `;`, escape de aspas, teto 5.000 linhas, R-9) com testes em `frontend/src/utils/__tests__/csv.test.js` (saída byte a byte)
+- [x] T052 [US7] Criar `frontend/src/pages/Admin/Reports/index.jsx` + `styles.module.css`: relatório de vendas por período com agrupamento dia/semana/mês (consolidação client-side de `dailyStats`), relatório de produtos (mais vendidos, sem vendas no período, estoque atual)
+- [x] T053 [US7] Adicionar exportação CSV às listagens de Products/List, Orders/List, Customers/List e Reports: re-executa a query filtrada sem paginação (com teto) e chama `exportCsv` com cabeçalhos pt-BR
 
 **Checkpoint**: Todas as user stories completas
 
