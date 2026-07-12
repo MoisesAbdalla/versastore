@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
 
-import { getHomeSettings } from "../services/settingsService";
+import { getHomeSettings, DEFAULT_IMAGE_POSITION } from "../services/settingsService";
 
-const EMPTY = { heroImage: null, categoryImages: {} };
+// Precisa ter o MESMO shape do retorno de getHomeSettings: este valor é o que
+// os componentes da Home leem antes do Firestore responder (e no fallback de
+// erro) — campo faltando aqui derruba a vitrine inteira.
+const EMPTY = {
+  heroImage: null,
+  heroPosition: DEFAULT_IMAGE_POSITION,
+  categoryImages: {},
+  categoryPositions: {},
+};
 
 // Cache de módulo: HeroBanner e Categories montam juntos na Home — uma única
 // leitura do settings/home por carregamento de página.
