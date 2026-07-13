@@ -43,6 +43,10 @@ FR-014b). Persistência de carrinho, conta do cliente, checkout e pagamento são
 - Q: Em que fuso a vigência da promoção é avaliada? → A: **Sempre no fuso America/Sao_Paulo**
   (horário de Brasília), nunca no fuso do navegador do cliente — uma promoção que termina "dia 25"
   expira no mesmo instante para todos os visitantes, independentemente do dispositivo.
+- Q (analyze 2026-07-12): Escopo de composição da busca no M1? → A: Busca **compõe com o filtro de
+  categoria** (índice dedicado); durante busca, a ordenação é por relevância/recência (ordenar por
+  preço/nome só fora de busca). A paginação "carregar mais" preserva filtros na URL, mas não
+  restaura a profundidade de scroll em deep-link.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -246,8 +250,10 @@ carregamento (ver skeletons) e falha de rede (ver mensagem com "tentar novamente
 - **FR-012**: A loja MUST ter um campo de busca no header, presente em todas as páginas da vitrine.
   A busca MUST disparar ao submeter (tecla Enter ou clique na lupa), navegando para
   `/products?q=termo` — sem consulta a cada tecla nem dropdown de sugestões ao vivo no M1.
-- **FR-013**: Os resultados MUST ser exibidos em `/products` via `?q=termo`, componível com filtro
-  de categoria e ordenação.
+- **FR-013**: Os resultados MUST ser exibidos em `/products` via `?q=termo`, **componível com o
+  filtro de categoria**. Durante uma busca ativa, os resultados são ordenados por relevância/recência
+  (mais recentes) — a ordenação por preço/nome fica disponível apenas fora de busca (limitação de
+  índice do Firestore documentada no plano, R-9). Sem busca, todas as ordenações do FR-004 valem.
 - **FR-014**: A correspondência MUST cobrir nome (tokens com prefixo), categoria e SKU, normalizada
   (minúsculas, sem acentos), reutilizando o normalizador de tokens compartilhado já existente.
 - **FR-014b**: O produto MUST ganhar o campo `searchKeywords` (array de tokens normalizados
@@ -300,7 +306,9 @@ carregamento (ver skeletons) e falha de rede (ver mensagem com "tentar novamente
   durante e depois da janela), com a vigência avaliada no fuso America/Sao_Paulo — verificado por
   teste com o relógio simulado em fuso diferente do de Brasília.
 - **SC-004**: Uma variação esgotada nunca tem o botão de compra habilitado (teste automatizado).
-- **SC-005**: Filtro + busca + ordenação + página são preservados ao compartilhar a URL.
+- **SC-005**: Filtro (categoria) + busca + ordenação são preservados ao compartilhar a URL. A
+  profundidade de paginação ("carregar mais") não é restaurada em deep-link — a URL compartilhada
+  abre na primeira página com os mesmos filtros.
 - **SC-006**: A busca encontra produto por fragmento de nome (≥ 3 letras), por SKU exato e por nome
   de categoria, com e sem acentos (testes automatizados).
 - **SC-007**: O zoom é funcional no desktop (hover/lupa) e no mobile (pinch/modal), verificado nos

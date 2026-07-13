@@ -30,16 +30,20 @@ A busca da vitrine consulta `searchKeywords array-contains` + igualdades + orden
 | # | Coleção | Campos | Consulta |
 |---|---|---|---|
 | N1 | `products` | `deleted ASC, status ASC, searchKeywords ARRAY_CONTAINS, createdAt DESC` | busca pública por termo, só ativos, mais recentes primeiro |
+| N2 | `products` | `deleted ASC, status ASC, categoryId ASC, searchKeywords ARRAY_CONTAINS, createdAt DESC` | busca **combinada com filtro de categoria** (US3-S3 / FR-013) |
 
 Notas:
 
-- Um `array-contains` conta como o único operador de array/range da consulta; combinar com o filtro
-  de igualdade `deleted`/`status` e `orderBy(createdAt)` exige o índice composto acima.
-- **Busca + filtro de categoria**: adicionar categoria vira outro igualdade
-  (`deleted+status+categoryId+searchKeywords+createdAt`). Decidir no /tasks se a UI permite combinar
-  busca **e** categoria (então declarar o índice N2) ou se a busca zera a categoria (mesma política
-  do admin — sem índice extra). **Recomendação**: busca zera categoria no M1 (evita N2); reavaliar
-  se o uso pedir.
+- Um `array-contains` conta como o único operador de array/range da consulta; combinar com os
+  filtros de igualdade (`deleted`, `status`, e opcionalmente `categoryId`) e `orderBy(createdAt)`
+  exige os índices compostos acima.
+- **Busca + filtro de categoria** é **suportada no M1** (US3-S3 é acceptance do lojista): sem
+  categoria usa N1, com categoria usa N2. Ambos declarados em `firestore.indexes.json` (tarefa
+  T019).
+- **Busca + ordenação por preço/nome NÃO é oferecida no M1**: durante busca ativa a ordenação é
+  fixa em `createdAt` (relevância/recência) — combinar `array-contains` com `orderBy(price)`/
+  `orderBy(nameLower)` exigiria um índice por ordenação e não agrega valor suficiente no M1
+  (FR-013 relaxado nesse sentido; R-9).
 - As **ordenações do catálogo** (sem busca) reusam os índices já presentes
   `deleted+status+{createdAt,price,nameLower}` e `deleted+categoryId+status+{...}`; direções
   inversas (preço↓, nome Z–A) são servidas pela reversão de índice do Firestore (só igualdades
