@@ -376,6 +376,26 @@ export async function getOrder(id) {
   return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
 }
 
+// "Meus pedidos" do cliente logado (feature 007, US4). Reusa o índice
+// `customerId + createdAt` já existente (nenhum índice novo).
+export function listMyOrders(uid, { pageSize = PAGE_SIZE, cursor = null } = {}) {
+  return listOrders({ customerId: uid, pageSize, cursor });
+}
+
+// Detalhe de um pedido do próprio cliente. Retorna `null` se o pedido não
+// existir OU não pertencer ao usuário (SC-006) — nunca vaza pedido alheio,
+// mesmo que o cliente adivinhe o id na URL. As rules barram no servidor; esta
+// checagem evita exibir dado de outro caso a leitura passe.
+export async function getMyOrder(id, uid) {
+  const order = await getOrder(id);
+
+  if (!order || order.customerId !== uid) {
+    return null;
+  }
+
+  return order;
+}
+
 export async function listOrders({
   search = "",
   status = "",

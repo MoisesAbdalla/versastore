@@ -15,6 +15,7 @@ import NotFound from "../pages/NotFound";
 import AccountLayout from "../layouts/AccountLayout";
 import AccountPersonalData from "../pages/Account/PersonalData";
 import AccountOrders from "../pages/Account/Orders";
+import AccountOrderDetail from "../pages/Account/Orders/Detail";
 import AccountAddresses from "../pages/Account/Addresses";
 import AdminRoute from "./AdminRoute";
 import PrivateRoute from "./PrivateRoute";
@@ -74,6 +75,7 @@ function AppRoutes() {
           >
             <Route index element={<AccountPersonalData />} />
             <Route path="pedidos" element={<AccountOrders />} />
+            <Route path="pedidos/:id" element={<AccountOrderDetail />} />
             <Route path="enderecos" element={<AccountAddresses />} />
           </Route>
 

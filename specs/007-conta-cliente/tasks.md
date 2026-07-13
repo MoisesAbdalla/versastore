@@ -114,9 +114,9 @@ user story (levantados no teste manual do bloco US1–US3).
 **Independent Test**: quickstart §5 — lista dos próprios pedidos, detalhe, estado vazio, e bloqueio
 de pedido alheio por URL.
 
-- [ ] T017 [US4] Estender `frontend/src/services/orderService.js`: `listMyOrders(uid,{pageSize,cursor})` (`customerId==uid`, recentes, cursor — reusa índice existente) e `getMyOrder(id,uid)` (retorna `null` se `customerId !== uid`) — estender `frontend/src/services/__tests__/orderService.test.js` (getMyOrder → null para outro uid — SC-006)
-- [ ] T018 [P] [US4] Criar `frontend/src/hooks/useMyOrders.js` (paginação por cursor do cliente logado)
-- [ ] T019 [US4] Criar a aba de pedidos `frontend/src/pages/Account/Orders/index.jsx` (lista: nº, data, status, valor) e o detalhe `frontend/src/pages/Account/Orders/Detail/index.jsx` (itens com preço do momento, endereço, status, rastreio) + `styles.module.css`; estados carregando/vazio/erro; rota índice em `/conta/pedidos` e detalhe `/conta/pedidos/:id` sob o `AccountLayout`/`PrivateRoute`
+- [x] T017 [US4] Estender `frontend/src/services/orderService.js`: `listMyOrders(uid,{pageSize,cursor})` (`customerId==uid`, recentes, cursor — reusa índice existente) e `getMyOrder(id,uid)` (retorna `null` se `customerId !== uid`) — estender `frontend/src/services/__tests__/orderService.test.js` (getMyOrder → null para outro uid — SC-006)
+- [x] T018 [P] [US4] Criar `frontend/src/hooks/useMyOrders.js` (paginação por cursor do cliente logado)
+- [x] T019 [US4] Criar a aba de pedidos `frontend/src/pages/Account/Orders/index.jsx` (lista: nº, data, status, valor) e o detalhe `frontend/src/pages/Account/Orders/Detail/index.jsx` (itens com preço do momento, endereço, status, rastreio) + `styles.module.css`; estados carregando/vazio/erro; rota índice em `/conta/pedidos` e detalhe `/conta/pedidos/:id` sob o `AccountLayout`/`PrivateRoute`
 
 **Checkpoint**: acompanhamento de pedidos do cliente, isolado por conta
 
@@ -129,8 +129,8 @@ de pedido alheio por URL.
 **Independent Test**: quickstart §6 — CEP válido preenche; CEP inválido/serviço fora cai para
 manual; marcar padrão (um só); editar/remover.
 
-- [ ] T020 [P] [US5] Criar `frontend/src/services/cepService.js`: `lookupCep(cep)` via ViaCEP (`fetch` com timeout ~5s; CEP inválido/não encontrado/timeout → `null`) — testes em `frontend/src/services/__tests__/cepService.test.js` (mapeia campos no sucesso; `null` em erro/timeout — SC-007)
-- [ ] T021 [US5] Criar a aba de endereços `frontend/src/pages/Account/Addresses/index.jsx` + `styles.module.css` (rota `/conta/enderecos`, sob o `AccountLayout`/`PrivateRoute`): lista de endereços, formulário com CEP (preenche rua/bairro/cidade/UF; fallback manual em falha), número/complemento manuais, marcar padrão, editar/remover — via `userService` (T007); estados carregando/vazio/erro
+- [x] T020 [P] [US5] Criar `frontend/src/services/cepService.js`: `lookupCep(cep)` via ViaCEP (`fetch` com timeout ~5s; CEP inválido/não encontrado/timeout → `null`) — testes em `frontend/src/services/__tests__/cepService.test.js` (mapeia campos no sucesso; `null` em erro/timeout — SC-007)
+- [x] T021 [US5] Criar a aba de endereços `frontend/src/pages/Account/Addresses/index.jsx` + `styles.module.css` (rota `/conta/enderecos`, sob o `AccountLayout`/`PrivateRoute`): lista de endereços, formulário com CEP (preenche rua/bairro/cidade/UF; fallback manual em falha), número/complemento manuais, marcar padrão, editar/remover — via `userService` (T007); estados carregando/vazio/erro
 
 **Checkpoint**: endereços prontos para o checkout (M4) usar como entrega
 

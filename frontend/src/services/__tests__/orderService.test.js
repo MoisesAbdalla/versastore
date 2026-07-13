@@ -75,7 +75,7 @@ vi.mock("../../firebase/firestore", () => ({
   default: {},
 }));
 
-import { createOrder, advanceStatus, cancelOrder, getOrder, listOrders } from "../orderService";
+import { createOrder, advanceStatus, cancelOrder, getOrder, getMyOrder, listOrders } from "../orderService";
 import { updateProduct } from "../productService";
 import { ORDER_STATUS } from "../../constants/orderStatus";
 import { getDocs, where } from "firebase/firestore";
@@ -388,5 +388,36 @@ describe("preço congelado (SC-007)", () => {
 
     expect(order.items[0].unitPrice).toBe(19990);
     expect(order.total).toBe(19990);
+  });
+});
+
+describe("getMyOrder — isolamento por cliente (SC-006)", () => {
+  it("retorna o pedido para o próprio dono", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+    });
+    const orderId = findOrderPath().split("/")[1];
+
+    const order = await getMyOrder(orderId, "cliente-1");
+
+    expect(order).not.toBeNull();
+    expect(order.customerId).toBe("cliente-1");
+  });
+
+  it("retorna null quando o pedido é de outro cliente (não vaza por URL)", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+    });
+    const orderId = findOrderPath().split("/")[1];
+
+    expect(await getMyOrder(orderId, "outro-cliente")).toBeNull();
+  });
+
+  it("retorna null quando o pedido não existe", async () => {
+    expect(await getMyOrder("inexistente", "cliente-1")).toBeNull();
   });
 });

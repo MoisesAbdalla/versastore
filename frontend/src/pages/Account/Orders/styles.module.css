@@ -1,0 +1,188 @@
+.wrap {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+.muted {
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    color: var(--text-muted);
+}
+
+.list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+    list-style: none;
+}
+
+.row {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    padding: 18px 20px;
+
+    border: 1px solid var(--border);
+
+    background: var(--surface);
+
+    text-decoration: none;
+
+    transition: border-color .2s;
+}
+
+.row:hover {
+    border-color: var(--secondary);
+}
+
+.rowMain {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+.number {
+    font-family: var(--font-body);
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    color: var(--text);
+}
+
+.date {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+}
+
+.rowMeta {
+    display: flex;
+
+    align-items: center;
+
+    gap: 20px;
+}
+
+.total {
+    font-family: var(--font-body);
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    color: var(--text);
+}
+
+.status {
+    padding: 5px 12px;
+
+    border-radius: 999px;
+
+    font-family: var(--font-body);
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    background: var(--background);
+
+    color: var(--text-muted);
+}
+
+.status[data-status="pago"],
+.status[data-status="entregue"] {
+    background: rgba(30, 123, 52, .12);
+
+    color: #1E7B34;
+}
+
+.status[data-status="enviado"],
+.status[data-status="em_separacao"] {
+    background: rgba(11, 87, 208, .12);
+
+    color: #0B57D0;
+}
+
+.status[data-status="aguardando_pagamento"] {
+    background: rgba(176, 122, 0, .14);
+
+    color: #8A5A00;
+}
+
+.status[data-status="cancelado"],
+.status[data-status="devolvido"] {
+    background: rgba(179, 38, 30, .1);
+
+    color: #B3261E;
+}
+
+.more,
+.retry {
+    align-self: flex-start;
+
+    padding: 12px 24px;
+
+    border: 1px solid var(--border);
+
+    background: var(--surface);
+
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    letter-spacing: var(--tracking);
+
+    text-transform: uppercase;
+
+    color: var(--text);
+
+    cursor: pointer;
+
+    transition: border-color .2s;
+}
+
+.more:hover:not(:disabled),
+.retry:hover {
+    border-color: var(--text);
+}
+
+.more:disabled {
+    opacity: .6;
+
+    cursor: not-allowed;
+}
+
+.errorBox {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 14px;
+
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    color: var(--text);
+}
