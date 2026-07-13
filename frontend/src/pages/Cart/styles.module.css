@@ -191,13 +191,87 @@
 }
 
 .note {
-    text-align: right;
-
     font-family: var(--font-body);
 
     font-size: 13px;
 
     color: var(--text-muted);
+}
+
+.notice {
+    padding: 14px 16px;
+
+    border: 1px solid var(--secondary);
+
+    background: rgba(176, 141, 87, .08);
+
+    font-family: var(--font-body);
+}
+
+.noticeTitle {
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: var(--text);
+
+    margin-bottom: 6px;
+}
+
+.noticeList {
+    margin: 0;
+
+    padding-left: 20px;
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+}
+
+.revalidating {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+}
+
+.checkoutRow {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-end;
+
+    gap: 8px;
+}
+
+.checkout {
+    padding: 14px 32px;
+
+    border: none;
+
+    background: var(--secondary);
+
+    color: #FFFFFF;
+
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    letter-spacing: var(--tracking);
+
+    text-transform: uppercase;
+
+    cursor: pointer;
+}
+
+.checkout:disabled {
+    background: var(--text-muted);
+
+    cursor: not-allowed;
 }
 
 .ghostButton {

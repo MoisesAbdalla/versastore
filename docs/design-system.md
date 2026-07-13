@@ -321,8 +321,11 @@ o `MainLayout` (TopBar + Header + Navbar + Footer).
 
 ## Carrinho
 
-- `CartBadge` no header: ícone com contador (`--secondary`). Página `/cart` mínima (itens + subtotal
-  + quantidade/remover) — a completa e a persistência são do M2.
+- `CartBadge` no header: ícone com contador (`--secondary`).
+- Página `/cart` (M2): itens + quantidade/remover + subtotal, persistida em `localStorage`
+  (`versastore:cart`). Ao abrir, **revalida** cada item contra o Firestore (preço/estoque atuais,
+  remove indisponíveis) e mostra um **aviso** listando o que mudou (borda dourada). CTA "Finalizar
+  compra" desabilitado até o checkout (M4).
 
 ## Busca
 
