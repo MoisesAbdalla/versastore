@@ -12,7 +12,12 @@ import CompleteProfile from "../pages/CompleteProfile";
 import Terms from "../pages/Legal/Terms";
 import Privacy from "../pages/Legal/Privacy";
 import NotFound from "../pages/NotFound";
+import AccountLayout from "../layouts/AccountLayout";
+import AccountPersonalData from "../pages/Account/PersonalData";
+import AccountOrders from "../pages/Account/Orders";
+import AccountAddresses from "../pages/Account/Addresses";
 import AdminRoute from "./AdminRoute";
+import PrivateRoute from "./PrivateRoute";
 import CompleteProfileGuard from "./CompleteProfileGuard";
 
 // Rotas do painel com code splitting (constituição, Princípio IV): o bundle
@@ -58,6 +63,19 @@ function AppRoutes() {
               </CompleteProfileGuard>
             }
           />
+
+          <Route
+            path="/conta"
+            element={
+              <PrivateRoute>
+                <AccountLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<AccountPersonalData />} />
+            <Route path="pedidos" element={<AccountOrders />} />
+            <Route path="enderecos" element={<AccountAddresses />} />
+          </Route>
 
           <Route path="/termos" element={<Terms />} />
 

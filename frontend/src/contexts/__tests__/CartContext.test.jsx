@@ -2,12 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
 const getPublicProductMock = vi.fn();
+const useAuthMock = vi.fn();
 
 vi.mock("../../services/productService", () => ({
   getPublicProduct: (...args) => getPublicProductMock(...args),
 }));
 
+vi.mock("../AuthContext", () => ({
+  useAuth: () => useAuthMock(),
+}));
+
 import { CartProvider, useCart } from "../CartContext";
+
+const GUEST_KEY = "versastore:cart:guest";
 
 function wrapper({ children }) {
   return <CartProvider>{children}</CartProvider>;
@@ -27,6 +34,8 @@ const varProduct = {
 beforeEach(() => {
   localStorage.clear();
   getPublicProductMock.mockReset();
+  useAuthMock.mockReset();
+  useAuthMock.mockReturnValue({ user: null }); // visitante por padrão
 });
 
 describe("CartContext — operações", () => {
@@ -133,7 +142,7 @@ describe("CartContext — persistência em localStorage (M2)", () => {
 
     act(() => first.result.current.addItem(simpleProduct, null, 2));
 
-    expect(JSON.parse(localStorage.getItem("versastore:cart"))).toHaveLength(1);
+    expect(JSON.parse(localStorage.getItem(GUEST_KEY))).toHaveLength(1);
 
     // Nova montagem lê o localStorage (lazy init).
     const second = renderHook(() => useCart(), { wrapper });
@@ -142,7 +151,7 @@ describe("CartContext — persistência em localStorage (M2)", () => {
   });
 
   it("carga inicial tolera localStorage corrompido (cai para vazio)", () => {
-    localStorage.setItem("versastore:cart", "{ nao é json");
+    localStorage.setItem(GUEST_KEY, "{ nao é json");
 
     const { result } = renderHook(() => useCart(), { wrapper });
 
@@ -152,7 +161,7 @@ describe("CartContext — persistência em localStorage (M2)", () => {
 
 describe("CartContext — revalidação contra o Firestore (M2)", () => {
   function seedCart(lines) {
-    localStorage.setItem("versastore:cart", JSON.stringify(lines));
+    localStorage.setItem(GUEST_KEY, JSON.stringify(lines));
   }
 
   const line = {
@@ -257,5 +266,73 @@ describe("CartContext — revalidação contra o Firestore (M2)", () => {
 
     expect(changes).toEqual([{ name: "Camiseta", type: "indisponivel" }]);
     expect(result.current.items).toHaveLength(0);
+  });
+});
+
+describe("CartContext — isolamento por identidade (feature 007)", () => {
+  const otherProduct = { id: "p9", name: "Caneca", price: 3000, stock: 5, variations: [] };
+
+  it("não vaza o carrinho de um usuário para o próximo ao trocar de conta", () => {
+    useAuthMock.mockReturnValue({ user: { uid: "u1" } });
+    const { result, rerender } = renderHook(() => useCart(), { wrapper });
+
+    act(() => result.current.addItem(simpleProduct, null, 2));
+    expect(result.current.count).toBe(2);
+
+    // Troca para outra conta na mesma aba — deve começar limpo.
+    useAuthMock.mockReturnValue({ user: { uid: "u2" } });
+    act(() => rerender());
+    expect(result.current.count).toBe(0);
+
+    // Volta para u1 — o carrinho salvo dele é preservado.
+    useAuthMock.mockReturnValue({ user: { uid: "u1" } });
+    act(() => rerender());
+    expect(result.current.count).toBe(2);
+  });
+
+  it("logout esvazia o carrinho da sessão (visitante começa limpo)", () => {
+    useAuthMock.mockReturnValue({ user: { uid: "u1" } });
+    const { result, rerender } = renderHook(() => useCart(), { wrapper });
+
+    act(() => result.current.addItem(simpleProduct, null, 1));
+    expect(result.current.count).toBe(1);
+
+    useAuthMock.mockReturnValue({ user: null });
+    act(() => rerender());
+    expect(result.current.count).toBe(0);
+  });
+
+  it("no login mescla o carrinho do visitante ao carrinho salvo do usuário", () => {
+    // Carrinho salvo do u1: 1x Caneca.
+    localStorage.setItem(
+      "versastore:cart:u1",
+      JSON.stringify([
+        {
+          lineId: "p9",
+          productId: "p9",
+          variationId: null,
+          name: "Caneca",
+          unitPrice: 3000,
+          quantity: 1,
+          maxStock: 5,
+        },
+      ])
+    );
+
+    // Visitante monta o carrinho com 1x Boné e 1x Caneca.
+    const { result, rerender } = renderHook(() => useCart(), { wrapper });
+    act(() => result.current.addItem(simpleProduct, null, 1));
+    act(() => result.current.addItem(otherProduct, null, 1));
+    expect(result.current.count).toBe(2);
+
+    // Login como u1: mescla (Caneca 1+1=2, Boné 1) e limpa a chave do visitante.
+    useAuthMock.mockReturnValue({ user: { uid: "u1" } });
+    act(() => rerender());
+
+    expect(result.current.items).toHaveLength(2);
+    expect(result.current.count).toBe(3);
+    const caneca = result.current.items.find((i) => i.productId === "p9");
+    expect(caneca.quantity).toBe(2);
+    expect(localStorage.getItem(GUEST_KEY)).toBeNull();
   });
 });

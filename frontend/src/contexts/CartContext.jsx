@@ -1,8 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef } from "react";
 
 import { effectivePrice } from "../utils/promo";
 import { cloudinaryUrl, IMAGE_WIDTHS } from "../services/cloudinaryService";
 import { getPublicProduct } from "../services/productService";
+import { useAuth } from "./AuthContext";
 
 // Carrinho da vitrine (feature 005/006, D4/FR-019). Interface DEFINITIVA. No M2
 // o estado é persistido em localStorage e revalidado contra o Firestore ao
@@ -15,10 +16,37 @@ import { getPublicProduct } from "../services/productService";
 
 const CartContext = createContext(null);
 
-const STORAGE_KEY = "versastore:cart";
+// Carrinho isolado por IDENTIDADE (feature 007): cada usuário tem sua própria
+// chave; o visitante anônimo usa `:guest`. Sem isso, trocar de conta na mesma
+// aba vazava o carrinho de um cliente para o próximo (regressão do M2) — e no
+// M4 isso viraria pedido com item de outra pessoa.
+const STORAGE_PREFIX = "versastore:cart";
+
+function cartKey(uid) {
+  return uid ? `${STORAGE_PREFIX}:${uid}` : `${STORAGE_PREFIX}:guest`;
+}
 
 function lineIdOf(productId, variationId) {
   return variationId ? `${productId}::${variationId}` : productId;
+}
+
+// Mescla dois carrinhos por lineId, somando quantidades e travando no estoque.
+// Usado no login para juntar o que o visitante montou ao carrinho salvo dele.
+function mergeCarts(base, extra) {
+  const byId = new Map(base.map((line) => [line.lineId, { ...line }]));
+
+  for (const line of extra) {
+    const existing = byId.get(line.lineId);
+
+    if (existing) {
+      const cap = existing.maxStock ?? line.maxStock ?? Infinity;
+      existing.quantity = Math.min(existing.quantity + line.quantity, cap);
+    } else {
+      byId.set(line.lineId, { ...line });
+    }
+  }
+
+  return [...byId.values()];
 }
 
 function variationLabelOf(variation) {
@@ -30,9 +58,9 @@ function variationLabelOf(variation) {
 }
 
 // Carga inicial do localStorage, tolerante a dado corrompido/ausente.
-function loadStored() {
+function loadStored(key) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     const parsed = raw ? JSON.parse(raw) : [];
 
     return Array.isArray(parsed) ? parsed : [];
@@ -83,16 +111,62 @@ function reducer(state, action) {
 }
 
 export function CartProvider({ children }) {
-  const [items, dispatch] = useReducer(reducer, undefined, loadStored);
+  const { user } = useAuth();
+  const uid = user?.uid ?? null;
 
-  // Persiste a cada mudança (M2).
+  // Carga inicial já na chave da identidade atual. O CartProvider só monta
+  // depois que o AuthContext resolve o loading, então `uid` já está correto
+  // aqui — refresh logado NÃO dispara a mesclagem de login abaixo.
+  const [items, dispatch] = useReducer(reducer, uid, (u) => loadStored(cartKey(u)));
+
+  const uidRef = useRef(uid);
+  const persistedUidRef = useRef(uid);
+
+  // Reage à troca de identidade na mesma aba (login / logout / troca de conta).
   useEffect(() => {
+    const prevUid = uidRef.current;
+
+    if (prevUid === uid) {
+      return;
+    }
+
+    uidRef.current = uid;
+
+    if (prevUid === null && uid) {
+      // Login: mescla o carrinho do visitante no carrinho salvo do usuário e
+      // limpa a chave do visitante para não vazar para outra conta.
+      const merged = mergeCarts(loadStored(cartKey(uid)), loadStored(cartKey(null)));
+
+      try {
+        localStorage.removeItem(cartKey(null));
+      } catch {
+        // ignora
+      }
+
+      dispatch({ type: "replace", items: merged });
+    } else {
+      // Logout ou troca de usuário: carrega o carrinho da nova identidade
+      // (visitante começa limpo; usuário recupera o carrinho salvo dele).
+      dispatch({ type: "replace", items: loadStored(cartKey(uid)) });
+    }
+  }, [uid]);
+
+  // Persiste a cada mudança, sempre na chave da identidade atual. No render em
+  // que a identidade muda, pula a escrita: o efeito de troca acima vai
+  // recarregar o estado e a persistência ocorre no render seguinte — evita
+  // gravar o carrinho antigo na chave nova.
+  useEffect(() => {
+    if (persistedUidRef.current !== uid) {
+      persistedUidRef.current = uid;
+      return;
+    }
+
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      localStorage.setItem(cartKey(uid), JSON.stringify(items));
     } catch {
       // Cota cheia / modo privado: ignora — o carrinho segue em memória.
     }
-  }, [items]);
+  }, [items, uid]);
 
   const addItem = useCallback((product, variation = null, qty = 1) => {
     const hasVariations = (product.variations || []).length > 0;
@@ -139,7 +213,7 @@ export function CartProvider({ children }) {
   // preço/estoque, remove o indisponível e devolve a lista do que mudou para a
   // UI sinalizar ao cliente. Reaproveitável pelo checkout (M4).
   const revalidate = useCallback(async () => {
-    const current = loadStored();
+    const current = loadStored(cartKey(uidRef.current));
     const productIds = [...new Set(current.map((item) => item.productId))];
 
     const products = await Promise.all(productIds.map((id) => getPublicProduct(id)));

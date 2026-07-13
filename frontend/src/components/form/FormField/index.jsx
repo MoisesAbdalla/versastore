@@ -16,6 +16,8 @@ function FormField({
   placeholder,
   autoComplete,
   inputMode,
+  disabled,
+  hint,
   children,
 }) {
   const id = useId();
@@ -40,11 +42,14 @@ function FormField({
           placeholder={placeholder}
           autoComplete={autoComplete}
           inputMode={inputMode}
+          disabled={disabled}
           aria-invalid={Boolean(showError)}
           aria-describedby={showError ? `${id}-error` : undefined}
           className={showError ? `${styles.input} ${styles.inputError}` : styles.input}
         />
       )}
+
+      {hint && !showError && <span className={styles.hint}>{hint}</span>}
 
       {showError && (
         <span id={`${id}-error`} className={styles.error} role="alert">

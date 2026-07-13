@@ -148,6 +148,17 @@ Nenhum arquivo fora de `frontend/` muda (rules e índices inalterados — audita
 | R-9 | Rules | Auditoria confirma: usuário cria/edita o próprio `users/{uid}` (exceto `role`/`orderCount`/`totalSpent`), lê os próprios `orders` — **sem mudança** em `firestore.rules` |
 | R-10 | Google no console | Habilitar o provedor Google no Firebase (Authentication → Sign-in method) é passo operacional do lojista (quickstart) |
 
+## Decisões de escopo M3.1 (pós-teste manual de US1–US3)
+
+Dois pontos levantados na validação do bloco US1–US3, fora das user stories originais, decididos e
+implementados na Phase 5.5:
+
+| # | Tema | Decisão | Justificativa |
+|---|---|---|---|
+| M31-1 | Menu do usuário | Dropdown no header (`UserMenu`): Minha conta, Meus pedidos, Meus endereços, **separador**, Sair; **Painel admin** só quando `isAdmin`. Itens em lista de dados (extensível: Lista de Desejos entra na Fase C). | O e-mail aparecia sem ação; não havia caminho para conta/pedidos/endereços nem para o painel (só via URL). Separador antes do "Sair" evita clique destrutivo acidental. |
+| M31-2 | Arquitetura da conta | Uma página `/conta` com `AccountLayout` de **abas** (Dados / Pedidos / Endereços); o dropdown aponta para as abas. | Evita três páginas soltas com layouts divergentes; dá lar consistente a US4 (aba Pedidos) e US5 (aba Endereços). Aba Dados: nome+telefone editáveis, e-mail somente leitura, "alterar senha" por e-mail de redefinição. |
+| M31-3 | Carrinho por identidade (fix regressão M2) | Chave `versastore:cart:<uid>` (`:guest` p/ anônimo). **Login mescla** o carrinho do visitante ao salvo do usuário (soma travada no estoque) e limpa a chave do visitante; **logout** recarrega a chave do visitante (sessão limpa), preservando o carrinho salvo do usuário. | O carrinho no `localStorage` não era isolado por usuário: trocar de conta/logout na mesma aba vazava o carrinho para o próximo — e no M4 viraria pedido com item de outra pessoa. Merge (vs substituir) evita perder itens que o visitante escolheu com intenção de compra — comportamento padrão de e-commerce. Coberto por testes de troca de conta/logout/merge. |
+
 ## Complexity Tracking
 
 Sem violações da constituição — seção não aplicável.

@@ -6,8 +6,8 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { useNavigate } from "react-router-dom";
 import  ROUTES  from "../../constants/routes";
 import { useAuth } from "../../contexts/AuthContext";
-import { logout } from "../../services/authService";
 import CartBadge from "../CartBadge";
+import UserMenu from "../UserMenu";
 
 
 function Header() {
@@ -22,15 +22,6 @@ function Header() {
 
     navigate(q ? `${ROUTES.PRODUCTS}?q=${encodeURIComponent(q)}` : ROUTES.PRODUCTS);
   }
-
-  async function handleLogout() {
-  try {
-    await logout();
-    navigate("/");
-  } catch (error) {
-    console.error(error);
-  }
-}
 
   return (
     <header className={styles.header}>
@@ -65,10 +56,7 @@ function Header() {
 
       <div className={styles.actions}>
           {user ? (
-            <button onClick={handleLogout}>
-              <PersonOutlineOutlinedIcon />
-              <span className={styles.actionLabel}>{user?.email}</span>
-            </button>
+            <UserMenu />
           ) : (
             <button onClick={() => navigate(ROUTES.LOGIN)}>
               <PersonOutlineOutlinedIcon />

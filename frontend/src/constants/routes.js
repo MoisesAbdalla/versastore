@@ -16,9 +16,12 @@ const ROUTES = {
 
     COMPLETAR_CADASTRO:"/completar-cadastro",
 
-    MEUS_PEDIDOS:"/meus-pedidos",
+    // Área de conta com abas (feature 007): uma página, três abas, layout único.
+    CONTA:"/conta",
 
-    ENDERECOS:"/enderecos",
+    CONTA_PEDIDOS:"/conta/pedidos",
+
+    CONTA_ENDERECOS:"/conta/enderecos",
 
     TERMOS:"/termos",
 

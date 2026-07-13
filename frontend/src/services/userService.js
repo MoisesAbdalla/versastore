@@ -89,6 +89,17 @@ export async function completeProfile(uid, { phone, termsVersion }) {
   });
 }
 
+// Edição dos dados pessoais na aba "Meus dados" (feature 007). Mantém o
+// nameLower em sincronia (busca de clientes no admin) — o e-mail não é editável
+// aqui porque é a credencial de login do Auth.
+export async function updatePersonalData(uid, { name, phone }) {
+  await updateDoc(doc(db, "users", uid), {
+    name,
+    nameLower: normalizeForSearch(name),
+    phone: phone || "",
+  });
+}
+
 // Perfil completo quando tem telefone E aceite de termos (feature 007).
 export function isProfileComplete(profile) {
   return Boolean(profile?.phone) && profile?.termsAcceptedAt != null;

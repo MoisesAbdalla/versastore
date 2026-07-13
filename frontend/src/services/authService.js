@@ -79,6 +79,13 @@ export async function resetPassword(email) {
   }
 }
 
+// Sincroniza o displayName do Auth com o nome editado na aba "Meus dados".
+export async function updateDisplayName(name) {
+  if (auth.currentUser) {
+    await updateProfile(auth.currentUser, { displayName: name });
+  }
+}
+
 export async function logout() {
   await signOut(auth);
 }
