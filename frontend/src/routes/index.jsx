@@ -7,6 +7,7 @@ import Product from "../pages/Product";
 import Cart from "../pages/Cart";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import ForgotPassword from "../pages/ForgotPassword";
 import CompleteProfile from "../pages/CompleteProfile";
 import Terms from "../pages/Legal/Terms";
 import Privacy from "../pages/Legal/Privacy";
@@ -46,6 +47,8 @@ function AppRoutes() {
           <Route path="/login" element={<Login />} />
 
           <Route path="/register" element={<Register />} />
+
+          <Route path="/recuperar-senha" element={<ForgotPassword />} />
 
           <Route
             path="/completar-cadastro"
