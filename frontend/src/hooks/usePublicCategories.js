@@ -55,6 +55,7 @@ export function usePublicCategories() {
   const flat = flatten(tree);
   const idBySlug = Object.fromEntries(flat.map((c) => [c.slug, c.id]));
   const bySlug = Object.fromEntries(flat.map((c) => [c.slug, c]));
+  const slugById = Object.fromEntries(flat.map((c) => [c.id, c.slug]));
 
-  return { tree, flat, idBySlug, bySlug, loading };
+  return { tree, flat, idBySlug, bySlug, slugById, loading };
 }

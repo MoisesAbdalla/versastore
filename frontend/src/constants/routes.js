@@ -6,6 +6,8 @@ const ROUTES = {
 
     PRODUCT:"/product",
 
+    CART:"/cart",
+
     LOGIN:"/login",
 
     REGISTER:"/register",

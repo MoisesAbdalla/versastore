@@ -8,6 +8,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import theme from './styles/theme'
 import { AuthProvider } from './contexts/AuthContext';
 import { FeedbackProvider } from './contexts/FeedbackContext';
+import { CartProvider } from './contexts/CartContext';
 
 // Utilitários de desenvolvimento (specs/003, T029a/T038) — só em dev, logado
 // como admin, no console do navegador:
@@ -32,7 +33,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <FeedbackProvider>
-            <App />
+            <CartProvider>
+              <App />
+            </CartProvider>
           </FeedbackProvider>
         </ThemeProvider>
       </AuthProvider>

@@ -1,5 +1,5 @@
+import { useState } from "react";
 import styles from "./styles.module.css";
-import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
@@ -7,11 +7,21 @@ import { useNavigate } from "react-router-dom";
 import  ROUTES  from "../../constants/routes";
 import { useAuth } from "../../contexts/AuthContext";
 import { logout } from "../../services/authService";
+import CartBadge from "../CartBadge";
 
 
 function Header() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [term, setTerm] = useState("");
+
+  // Busca dispara no submit (Enter/lupa) navegando ao catálogo — sem consulta
+  // ao vivo (FR-012).
+  function submitSearch() {
+    const q = term.trim();
+
+    navigate(q ? `${ROUTES.PRODUCTS}?q=${encodeURIComponent(q)}` : ROUTES.PRODUCTS);
+  }
 
   async function handleLogout() {
   try {
@@ -38,9 +48,17 @@ function Header() {
         <input
           type="text"
           placeholder="Pesquisar produtos..."
+          value={term}
+          onChange={(e) => setTerm(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              submitSearch();
+            }
+          }}
+          aria-label="Buscar produtos"
         />
 
-        <button>
+        <button onClick={submitSearch} aria-label="Buscar">
           <SearchOutlinedIcon />
         </button>
       </div>
@@ -58,13 +76,11 @@ function Header() {
             </button>
           )}
 
-          <button>
+          <button aria-label="Lista de desejos">
             <FavoriteBorderOutlinedIcon />
           </button>
 
-          <button>
-            <ShoppingCartOutlinedIcon />
-          </button>
+          <CartBadge />
         </div>
     </header>
   );

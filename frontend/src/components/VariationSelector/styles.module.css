@@ -1,0 +1,71 @@
+.selector {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+.label {
+    font-family: var(--font-body);
+
+    font-size: 12px;
+
+    letter-spacing: var(--tracking);
+
+    text-transform: uppercase;
+
+    color: var(--text-muted);
+}
+
+.options {
+    display: flex;
+
+    gap: 8px;
+
+    flex-wrap: wrap;
+}
+
+.option {
+    padding: 10px 18px;
+
+    border: 1px solid var(--border);
+
+    background: var(--surface);
+
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    color: var(--text);
+
+    cursor: pointer;
+
+    transition: .2s;
+}
+
+.option:hover:not(:disabled) {
+    border-color: var(--text);
+}
+
+.selected {
+    border-color: var(--primary);
+
+    background: var(--primary);
+
+    color: #FFFFFF;
+}
+
+.soldOut {
+    opacity: .45;
+
+    cursor: not-allowed;
+
+    text-decoration: line-through;
+}
+
+.soldOutTag {
+    font-size: 11px;
+
+    text-transform: uppercase;
+}
