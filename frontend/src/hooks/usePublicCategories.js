@@ -57,5 +57,49 @@ export function usePublicCategories() {
   const bySlug = Object.fromEntries(flat.map((c) => [c.slug, c]));
   const slugById = Object.fromEntries(flat.map((c) => [c.id, c.slug]));
 
-  return { tree, flat, idBySlug, bySlug, slugById, loading };
+  // Subcategorias (filhas) de uma raiz, pelo slug da raiz.
+  function subcategoriesOf(rootSlug) {
+    const root = tree.find((c) => c.slug === rootSlug);
+
+    return root ? root.children || [] : [];
+  }
+
+  // Resolve os categoryIds do filtro hierárquico (FR-003):
+  // - sub válida sob a raiz → só a filha;
+  // - raiz sozinha → a raiz + todas as filhas (agregado);
+  // - nada → sem filtro.
+  function resolveCategoryIds(rootSlug, subSlug) {
+    if (!rootSlug) {
+      return [];
+    }
+
+    const root = tree.find((c) => c.slug === rootSlug);
+
+    if (!root) {
+      return [];
+    }
+
+    if (subSlug) {
+      const child = (root.children || []).find((c) => c.slug === subSlug);
+
+      if (child) {
+        return [child.id];
+      }
+      // sub inexistente sob a raiz → cai para o agregado da raiz.
+    }
+
+    return [root.id, ...(root.children || []).map((c) => c.id)];
+  }
+
+  return {
+    tree,
+    roots: tree,
+    flat,
+    idBySlug,
+    bySlug,
+    slugById,
+    subcategoriesOf,
+    resolveCategoryIds,
+    loading,
+  };
 }

@@ -375,15 +375,31 @@ describe("listPublicProducts (vitrine, feature 005)", () => {
     expect(whereMock).toHaveBeenCalledWith("status", "==", "ativo");
   });
 
-  it("busca usa array-contains e compõe com categoria (N2)", async () => {
+  it("uma categoria usa igualdade; busca compõe com ela", async () => {
     getDocsMock.mockResolvedValueOnce(snapshotWith([]));
 
-    await listPublicProducts({ search: "Camisa", categoryId: "cat-1" });
+    await listPublicProducts({ search: "Camisa", categoryIds: ["cat-1"] });
 
     expect(whereMock).toHaveBeenCalledWith("categoryId", "==", "cat-1");
     expect(whereMock).toHaveBeenCalledWith("searchKeywords", "array-contains", "camisa");
-    // durante busca, ordena por recentes
     expect(orderByMock).toHaveBeenCalledWith("createdAt", "desc");
+  });
+
+  it("várias categorias (raiz + filhas) usam `in` (hierarquia, FR-003)", async () => {
+    getDocsMock.mockResolvedValueOnce(snapshotWith([]));
+
+    await listPublicProducts({ categoryIds: ["raiz", "filha-1", "filha-2"] });
+
+    expect(whereMock).toHaveBeenCalledWith("categoryId", "in", ["raiz", "filha-1", "filha-2"]);
+  });
+
+  it("sem categoria não filtra por categoryId", async () => {
+    getDocsMock.mockResolvedValueOnce(snapshotWith([]));
+
+    await listPublicProducts({ categoryIds: [] });
+
+    const categoryCall = whereMock.mock.calls.find((c) => c[0] === "categoryId");
+    expect(categoryCall).toBeUndefined();
   });
 
   it("ordenação por preço fora de busca", async () => {

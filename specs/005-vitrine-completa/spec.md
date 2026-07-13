@@ -47,6 +47,11 @@ FR-014b). Persistência de carrinho, conta do cliente, checkout e pagamento são
   categoria** (índice dedicado); durante busca, a ordenação é por relevância/recência (ordenar por
   preço/nome só fora de busca). A paginação "carregar mais" preserva filtros na URL, mas não
   restaura a profundidade de scroll em deep-link.
+- Q (teste 2026-07-12): Como a vitrine trata a hierarquia de categorias (pai/filha)? → A: Os chips
+  de filtro mostram só categorias **raiz**; selecionar uma raiz com filhas revela uma segunda linha
+  de chips (subcategorias). Filtrar por uma **raiz** traz os produtos dela **e de todas as filhas**
+  (agregado); filtrar por uma **filha** traz só os dela. Estado na URL: `?categoria=<slug-raiz>` e,
+  ao refinar, `&sub=<slug-filha>`. Produto em múltiplas categorias não é suportado no M1.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -198,6 +203,11 @@ carregamento (ver skeletons) e falha de rede (ver mensagem com "tentar novamente
   vazar existência.
 - Categoria no filtro que não existe mais (URL antiga): estado vazio com ação de limpar filtros, sem
   erro.
+- Categoria raiz com muitas subcategorias: o agregado (raiz + filhas) usa `in` (limite de 30 valores
+  do Firestore); na taxonomia da loja (gênero + poucos tipos) fica muito abaixo do limite. Acima
+  disso, o excedente é truncado com segurança (documentado no plano).
+- `sub` na URL sem `categoria`, ou `sub` que não pertence à `categoria` informada: tratado como se
+  só a raiz (ou nenhum) filtro estivesse aplicado, sem erro.
 - Busca com termo de 1–2 caracteres: exige mínimo de 3 caracteres (ou mostra dica), evitando
   varredura ampla.
 - Promoção com preço promocional definido mas **sem datas de vigência**: considerada **sempre
@@ -220,7 +230,14 @@ carregamento (ver skeletons) e falha de rede (ver mensagem com "tentar novamente
   card — D5/FR-018), nome, preço, preço promocional vigente quando houver, badge "Esgotado" (D1) e
   o ícone de wishlist existente (visual; funcional só na Fase C).
 - **FR-003**: A vitrine MUST permitir filtrar por categoria via query param, com o estado inicial
-  lido da URL.
+  lido da URL. O filtro MUST respeitar a **hierarquia de 2 níveis**: os chips de primeiro nível
+  listam apenas categorias **raiz**; ao selecionar uma raiz com subcategorias, MUST aparecer um
+  segundo nível de chips com as filhas. Filtrar por uma **raiz** retorna os produtos dela e de
+  **todas as suas filhas** (agregado); filtrar por uma **filha** retorna só os dela. URL:
+  `?categoria=<slug-raiz>` e, ao refinar, `&sub=<slug-filha>`.
+- **FR-003a**: Os links de categoria do menu (Navbar) MUST apontar para o catálogo filtrado pela
+  categoria raiz correspondente (`/products?categoria=<slug-raiz>`), e apenas o item realmente
+  selecionado (comparando também o query param, não só o pathname) fica com o estilo de ativo.
 - **FR-004**: A vitrine MUST oferecer ordenação por mais recentes (padrão), menor preço, maior
   preço, nome A–Z e nome Z–A (D2). As combinações (categoria + cada ordenação) MUST ser atendidas
   por índices compostos do Firestore — verificar/criar os ausentes em `firestore.indexes.json`.

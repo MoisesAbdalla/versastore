@@ -1,3 +1,11 @@
+.wrapper {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
 .filter {
     display: flex;
 
@@ -6,6 +14,38 @@
     flex-wrap: wrap;
 
     min-height: 34px;
+}
+
+.subRow {
+    padding-left: 4px;
+
+    border-left: 2px solid var(--border);
+
+    padding-top: 2px;
+}
+
+.subChip {
+    padding: 5px 14px;
+
+    border: 1px solid var(--border);
+
+    background: var(--surface);
+
+    font-family: var(--font-body);
+
+    font-size: 12px;
+
+    color: var(--text-muted);
+
+    cursor: pointer;
+
+    transition: .2s;
+}
+
+.subChip:hover {
+    border-color: var(--text);
+
+    color: var(--text);
 }
 
 .chip {

@@ -11,7 +11,7 @@ deleted == false`.
 | Função | Assinatura | Notas |
 |---|---|---|
 | `withDerivedFields` (interno) | passa a gravar `searchKeywords` | via `buildSearchKeywords(name, sku, categoryName)`; afeta create/update do admin |
-| `listPublicProducts` | `({categoryId?, sort?, search?, cursor?, pageSize=20}) → {items, nextCursor, hasMore}` | força `deleted==false` **e** `status=="ativo"`; `search` → `array-contains` em `searchKeywords`, **componível com `categoryId`** (índice N2); `sort` ∈ {recentes, preço↑, preço↓, nome↑, nome↓}; durante `search`, ordenação fixa em `createdAt` (recentes) |
+| `listPublicProducts` | `({categoryIds?, sort?, search?, cursor?, pageSize=20}) → {items, nextCursor, hasMore}` | força `deleted==false` **e** `status=="ativo"`; `categoryIds` (array): 0 → sem filtro, 1 → `categoryId ==`, 2..30 → `categoryId in [...]` (agregado raiz+filhas, hierarquia); `search` → `array-contains` em `searchKeywords`, componível com uma categoria; `sort` ∈ {recentes, preço↑, preço↓, nome↑, nome↓}; durante `search`, ordenação fixa em `createdAt` |
 | `getPublicProduct` | `(id) → Product \| null` | `null` se inexistente, inativo ou `permission-denied` (404 sem vazar) |
 | `checkSkuAvailable`, `listProducts`, `getProduct`, `createProduct`, `updateProduct`, ... | inalteradas | continuam servindo o admin |
 

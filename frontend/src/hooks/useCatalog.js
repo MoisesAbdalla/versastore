@@ -11,9 +11,10 @@ const DEFAULT_SORT = "recentes";
 // a fonte de verdade dos filtros — mudar filtro reinicia a lista.
 export function useCatalog() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { idBySlug, loading: categoriesLoading } = usePublicCategories();
+  const { resolveCategoryIds, loading: categoriesLoading } = usePublicCategories();
 
   const categoria = searchParams.get("categoria") || "";
+  const sub = searchParams.get("sub") || "";
   const ordenar = searchParams.get("ordenar") || DEFAULT_SORT;
   const q = searchParams.get("q") || "";
 
@@ -25,9 +26,14 @@ export function useCatalog() {
   const cursorRef = useRef(null);
   const requestIdRef = useRef(0);
 
-  // Categoria na URL é slug; a consulta usa categoryId. Espera as categorias
-  // carregarem para resolver o slug (evita filtrar por id vazio e mostrar tudo).
-  const categoryId = categoria ? idBySlug[categoria] || "__none__" : "";
+  // Categoria/sub na URL são slugs; a consulta usa categoryIds (raiz + filhas,
+  // ou só a filha). O array é recriado a cada render — serializar em uma chave
+  // estável para as deps dos callbacks e ler o array por ref (evita re-fetch
+  // em loop).
+  const categoryIds = resolveCategoryIds(categoria, sub);
+  const categoryKey = categoryIds.join(",");
+  const categoryIdsRef = useRef(categoryIds);
+  categoryIdsRef.current = categoryIds;
 
   const fetchFirstPage = useCallback(async () => {
     const requestId = ++requestIdRef.current;
@@ -37,8 +43,7 @@ export function useCatalog() {
     cursorRef.current = null;
 
     try {
-      // Slug desconhecido (__none__) → sem resultados, sem consultar.
-      if (categoryId === "__none__") {
+      if (Boolean(categoria) && categoryIdsRef.current.length === 0) {
         if (requestId === requestIdRef.current) {
           setItems([]);
           setHasMore(false);
@@ -47,7 +52,7 @@ export function useCatalog() {
       }
 
       const result = await listPublicProducts({
-        categoryId,
+        categoryIds: categoryIdsRef.current,
         sort: ordenar,
         search: q,
         cursor: null,
@@ -69,7 +74,8 @@ export function useCatalog() {
         setLoading(false);
       }
     }
-  }, [categoryId, ordenar, q]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryKey, categoria, ordenar, q]);
 
   // Só consulta depois que as categorias carregaram (para resolver o slug).
   // Sem categoria, `ready` é sempre true — não depender de `categoriesLoading`
@@ -93,7 +99,7 @@ export function useCatalog() {
 
     try {
       const result = await listPublicProducts({
-        categoryId,
+        categoryIds: categoryIdsRef.current,
         sort: ordenar,
         search: q,
         cursor: cursorRef.current,
@@ -109,7 +115,8 @@ export function useCatalog() {
     } catch (err) {
       setError(err);
     }
-  }, [categoryId, ordenar, q, hasMore, loading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryKey, ordenar, q, hasMore, loading]);
 
   // Atualiza filtros na URL; mudar qualquer um reinicia a paginação.
   const setFilters = useCallback(
@@ -138,7 +145,7 @@ export function useCatalog() {
     hasMore,
     loadMore,
     refresh: fetchFirstPage,
-    filters: { categoria, ordenar, q },
+    filters: { categoria, sub, ordenar, q },
     setFilters,
   };
 }

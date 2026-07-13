@@ -8,9 +8,15 @@ vi.mock("../../services/productService", () => ({
   listPublicProducts: (...args) => listPublicProductsMock(...args),
 }));
 
+// Árvore: raiz "feminino" com filha "acessorios-femininos".
 vi.mock("../../services/categoryService", () => ({
   listCategories: vi.fn(async () => [
-    { id: "cat-1", name: "Camisetas", slug: "camisetas", children: [] },
+    {
+      id: "fem",
+      name: "Feminino",
+      slug: "feminino",
+      children: [{ id: "fem-aces", name: "Acessórios", slug: "acessorios-femininos" }],
+    },
   ]),
 }));
 
@@ -30,21 +36,58 @@ beforeEach(() => {
   listPublicProductsMock.mockReset();
 });
 
-describe("useCatalog", () => {
-  it("carrega a primeira página com os filtros da URL (categoria resolvida por slug)", async () => {
+describe("useCatalog — hierarquia de categorias", () => {
+  it("filtrar pela RAIZ agrega a raiz + todas as filhas (FR-003)", async () => {
     listPublicProductsMock.mockResolvedValueOnce(page([{ id: "p1" }]));
 
     const { result } = renderHook(() => useCatalog(), {
-      wrapper: wrapperFor("/products?categoria=camisetas&ordenar=preco-asc"),
+      wrapper: wrapperFor("/products?categoria=feminino"),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(listPublicProductsMock).toHaveBeenCalledWith(
-      expect.objectContaining({ categoryId: "cat-1", sort: "preco-asc", search: "" })
+      expect.objectContaining({ categoryIds: ["fem", "fem-aces"] })
     );
-    expect(result.current.items).toEqual([{ id: "p1" }]);
-    expect(result.current.filters.categoria).toBe("camisetas");
+  });
+
+  it("filtrar por uma FILHA (sub) traz só a filha", async () => {
+    listPublicProductsMock.mockResolvedValueOnce(page([{ id: "p1" }]));
+
+    const { result } = renderHook(() => useCatalog(), {
+      wrapper: wrapperFor("/products?categoria=feminino&sub=acessorios-femininos"),
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(listPublicProductsMock).toHaveBeenCalledWith(
+      expect.objectContaining({ categoryIds: ["fem-aces"] })
+    );
+  });
+
+  it("sem categoria não filtra (categoryIds vazio)", async () => {
+    listPublicProductsMock.mockResolvedValueOnce(page([{ id: "p1" }]));
+
+    const { result } = renderHook(() => useCatalog(), {
+      wrapper: wrapperFor("/products"),
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(listPublicProductsMock).toHaveBeenCalledWith(
+      expect.objectContaining({ categoryIds: [] })
+    );
+  });
+
+  it("categoria inexistente → sem resultados, sem consultar", async () => {
+    const { result } = renderHook(() => useCatalog(), {
+      wrapper: wrapperFor("/products?categoria=inexistente"),
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.items).toEqual([]);
+    expect(listPublicProductsMock).not.toHaveBeenCalled();
   });
 
   it("loadMore ANEXA a próxima página (R-8)", async () => {
@@ -64,31 +107,5 @@ describe("useCatalog", () => {
 
     expect(result.current.items).toEqual([{ id: "p1" }, { id: "p2" }]);
     expect(result.current.hasMore).toBe(false);
-  });
-
-  it("slug de categoria desconhecido → sem resultados, sem consultar", async () => {
-    const { result } = renderHook(() => useCatalog(), {
-      wrapper: wrapperFor("/products?categoria=inexistente"),
-    });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.items).toEqual([]);
-    expect(listPublicProductsMock).not.toHaveBeenCalled();
-  });
-
-  it("setFilters escreve na URL e omite a ordenação padrão", async () => {
-    listPublicProductsMock.mockResolvedValue(page([]));
-
-    const { result } = renderHook(() => useCatalog(), {
-      wrapper: wrapperFor("/products"),
-    });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    act(() => result.current.setFilters({ ordenar: "recentes", categoria: "camisetas" }));
-
-    await waitFor(() => expect(result.current.filters.categoria).toBe("camisetas"));
-    expect(result.current.filters.ordenar).toBe("recentes");
   });
 });

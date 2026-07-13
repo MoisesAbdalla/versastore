@@ -468,8 +468,11 @@ const PUBLIC_SORTS = {
   "nome-desc": { field: "nameLower", direction: "desc" },
 };
 
+// Limite de valores por operador `in` do Firestore.
+const IN_LIMIT = 30;
+
 export async function listPublicProducts({
-  categoryId = "",
+  categoryIds = [],
   sort = "recentes",
   search = "",
   cursor = null,
@@ -480,8 +483,14 @@ export async function listPublicProducts({
     where("status", "==", PRODUCT_STATUS.ATIVO),
   ];
 
-  if (categoryId) {
-    constraints.push(where("categoryId", "==", categoryId));
+  // Hierarquia: 1 categoria usa igualdade; várias (raiz + filhas) usam `in`
+  // — indexado como igualdade, reusa os índices existentes (firestore.md).
+  const ids = (categoryIds || []).filter(Boolean).slice(0, IN_LIMIT);
+
+  if (ids.length === 1) {
+    constraints.push(where("categoryId", "==", ids[0]));
+  } else if (ids.length > 1) {
+    constraints.push(where("categoryId", "in", ids));
   }
 
   const term = normalizeForSearch(search);

@@ -54,6 +54,11 @@ resultados.
 
 **Checkpoint**: catálogo navegável, filtrável e ordenável — MVP demonstrável (Home → catálogo)
 
+### Ajustes pós-teste do catálogo (2026-07-12)
+
+- [x] T010a [US1] Filtro hierárquico de categorias (FR-003): `listPublicProducts` passa a receber `categoryIds` (array) — 1 id usa `==`, 2..30 usam `categoryId in [...]` reusando os índices existentes (contracts/firestore.md); `usePublicCategories` expõe helpers de raiz/filhas e resolução de slug; `useCatalog` lê `?categoria=<raiz>&sub=<filha>` e monta o agregado (raiz + filhas quando só a raiz; só a filha quando há `sub`); `CategoryFilter` mostra chips de raiz e, ao selecionar uma raiz com filhas, um segundo nível de chips; `Products` renderiza os dois níveis — testes em `productService.test.js` (== vs in), `useCatalog.test.jsx` (agregado raiz+filhas; só filha) e `usePublicCategories`
+- [x] T010b [US1] Corrigir o "ativo" do `Navbar` (FR-003a): o `isActive` do NavLink só compara pathname, deixando todos os links `/products*` ativos ao mesmo tempo — computar ativo comparando também o query param `categoria` (Home só em `/`; "Produtos" só sem `categoria`; cada categoria só com seu slug) — testes em `frontend/src/components/Navbar/__tests__/Navbar.test.jsx`
+
 ---
 
 ## Phase 4: User Story 2 - Ver o produto e adicionar ao carrinho (Priority: P1)

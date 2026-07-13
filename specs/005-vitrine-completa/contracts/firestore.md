@@ -49,6 +49,10 @@ Notas:
   inversas (preço↓, nome Z–A) são servidas pela reversão de índice do Firestore (só igualdades
   antes do trailing `orderBy`) — **sem índice novo** (research R-9). Confirmar rodando cada
   ordenação.
+- **Filtro hierárquico (raiz + filhas) via `categoryId in [...]`**: o `in` é indexado como a
+  igualdade `categoryId ==`, então **reusa os índices `deleted+categoryId+status+{createdAt,price,
+  nameLower}`** já existentes — **sem índice novo**. Limite de 30 valores por `in` (Firestore);
+  raiz + filhas na taxonomia da loja fica muito abaixo. Confirmar com uma raiz que tenha filhas.
 
 ## Deploy
 

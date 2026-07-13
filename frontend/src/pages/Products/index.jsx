@@ -37,8 +37,9 @@ function Products() {
         </header>
 
         <CategoryFilter
-          value={filters.categoria}
-          onChange={(categoria) => setFilters({ categoria })}
+          categoria={filters.categoria}
+          sub={filters.sub}
+          onChange={(patch) => setFilters(patch)}
         />
 
         {error ? (
@@ -65,7 +66,7 @@ function Products() {
             {hasFilters && (
               <button
                 className={styles.retryButton}
-                onClick={() => setFilters({ categoria: "", q: "", ordenar: "recentes" })}
+                onClick={() => setFilters({ categoria: "", sub: "", q: "", ordenar: "recentes" })}
               >
                 Limpar filtros
               </button>
