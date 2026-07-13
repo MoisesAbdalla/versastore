@@ -29,7 +29,7 @@ inacessibilidade de produto inativo, normalizador de busca e o `CartContext`.
 
 **⚠️ CRITICAL**: bloqueia todas as user stories
 
-- [ ] T004 Auditoria de segurança (FR-015 / SC-008) **antes de codar**: no Rules Playground do console, confirmar que anônimo lê produto ativo, é **negado** em produto inativo, e não grava `searchKeywords`; confirmar `git diff firestore.rules` vazio (contracts/firestore.md §Auditoria)
+- [x] T004 Auditoria de segurança (FR-015 / SC-008) **antes de codar**: no Rules Playground do console, confirmar que anônimo lê produto ativo, é **negado** em produto inativo, e não grava `searchKeywords`; confirmar `git diff firestore.rules` vazio (contracts/firestore.md §Auditoria)
 - [x] T005 Estender `frontend/src/services/productService.js` com leituras **públicas** (contracts/services.md): `listPublicProducts({categoryId, sort, search, cursor, pageSize})` sempre com `deleted==false` **e** `status=="ativo"` (busca via `array-contains` em `searchKeywords`; ordenação recentes/preço↑↓/nome↑↓; durante busca, ordena por createdAt) e `getPublicProduct(id)` mapeando inativo/inexistente/`permission-denied` → `null` — testes em `frontend/src/services/__tests__/productService.test.js` (público sempre filtra ativo+não-excluído; getPublicProduct → null em inativo/negado — SC-002)
 - [x] T006 [P] Criar `frontend/src/components/PriceTag/index.jsx` + `styles.module.css`: preço normal, e quando `isPromoActive` (promo.js) preço riscado + promocional em destaque + % desconto (usado por card e página) — testes em `frontend/src/components/PriceTag/__tests__/PriceTag.test.jsx` (promo vigente mostra riscado+promocional+%; fora de vigência só normal — SC-003)
 
@@ -130,7 +130,7 @@ ver skeletons e o estado de erro offline; `document.title` correto.
 
 - [x] T025 [P] Atualizar `docs/design-system.md` com os padrões novos da vitrine (grade do catálogo, `PriceTag`, badge "Esgotado", `ProductGallery`/zoom, `VariationSelector`, `CartBadge`/mini-carrinho) — constituição, Princípio III
 - [x] T026 Gates finais: `npm run lint` (zero erros), `npm run test` (127 baseline + novos verdes — SC-008) e `npm run build` (bundle da loja íntegro; rotas da vitrine no bundle principal, `/admin` segue lazy)
-- [ ] T027 Executar a validação completa do quickstart.md (§0–6), incluindo backfill de `searchKeywords`, deploy do índice N1, e a regressão da loja (Home/login/registro e `/admin` inalterados)
+- [x] T027 Executar a validação completa do quickstart.md (§0–6), incluindo backfill de `searchKeywords`, deploy do índice N1, e a regressão da loja (Home/login/registro e `/admin` inalterados)
 
 ---
 
