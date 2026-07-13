@@ -1,9 +1,13 @@
 .card {
   position: relative;
+  display: block;
   width: 300px;
+  max-width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
   transition: .25s;
+  text-decoration: none;
+  color: inherit;
 }
 
 .card:hover {
@@ -61,6 +65,21 @@
   color: var(--secondary);
 }
 
+.soldOut {
+  position: absolute;
+  z-index: 2;
+  left: 15px;
+  bottom: 15px;
+  padding: 4px 12px;
+  background: var(--primary);
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+}
+
 .info {
   padding: 22px;
 }
@@ -77,50 +96,4 @@
   margin: 12px 0;
   font-size: 16px;
   font-weight: 500;
-}
-
-.rating {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #f59e0b;
-  margin-bottom: 15px;
-  font-size: 14px;
-}
-
-.price {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 22px;
-}
-
-.oldPrice {
-  text-decoration: line-through;
-  color: var(--text-muted);
-  font-size: 14px;
-}
-
-.currentPrice {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--primary);
-}
-
-.buyButton {
-  width: 100%;
-  padding: 15px;
-  border: none;
-  background: var(--secondary);
-  color: white;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: var(--tracking);
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: .25s;
-}
-
-.buyButton:hover {
-  background: var(--primary);
 }

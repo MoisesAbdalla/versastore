@@ -1,0 +1,39 @@
+.wrapper {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+.label {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+
+    white-space: nowrap;
+}
+
+.select {
+    padding: 7px 10px;
+
+    border: 1px solid var(--border);
+
+    background: var(--surface);
+
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: var(--text);
+
+    cursor: pointer;
+}
+
+.select:disabled {
+    opacity: .5;
+
+    cursor: not-allowed;
+}

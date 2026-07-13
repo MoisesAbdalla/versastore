@@ -3,6 +3,36 @@ import { IMAGE_UPLOAD } from "../constants/product";
 const UPLOAD_URL = "https://api.cloudinary.com/v1_1/stmjt15v/image/upload";
 const UPLOAD_PRESET = "versa-store";
 
+// Larguras por contexto da vitrine (feature 005 / D5). Servir a imagem no
+// tamanho de exibição evita baixar full-res no card/miniatura.
+export const IMAGE_WIDTHS = {
+  card: 400,
+  thumb: 120,
+  main: 800,
+  zoom: 1600,
+};
+
+// Insere transformações de entrega (f_auto,q_auto,w_) logo após o segmento
+// "/upload/" de uma URL do Cloudinary. URLs que não sigam esse padrão (ou
+// vazias) retornam inalteradas — fallback seguro para imagens legadas.
+export function cloudinaryUrl(url, { w, extra = "" } = {}) {
+  if (!url || typeof url !== "string" || !url.includes("/upload/")) {
+    return url || "";
+  }
+
+  const transforms = ["f_auto", "q_auto"];
+
+  if (w) {
+    transforms.push(`w_${w}`);
+  }
+
+  if (extra) {
+    transforms.push(extra);
+  }
+
+  return url.replace("/upload/", `/upload/${transforms.join(",")}/`);
+}
+
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

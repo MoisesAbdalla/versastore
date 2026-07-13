@@ -1,0 +1,51 @@
+.priceTag {
+    display: flex;
+
+    align-items: baseline;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+}
+
+.original {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+
+    text-decoration: line-through;
+}
+
+.current,
+.promo {
+    font-family: var(--font-heading);
+
+    font-size: 18px;
+
+    color: var(--text);
+}
+
+.promo {
+    color: var(--gold-text);
+}
+
+.discount {
+    font-family: var(--font-body);
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    color: #15803D;
+}
+
+.lg .current,
+.lg .promo {
+    font-size: 28px;
+}
+
+.lg .original {
+    font-size: 16px;
+}

@@ -453,3 +453,101 @@ export async function getFeaturedProducts() {
 
   return snapshot.docs.map(toItem);
 }
+
+// ---------------------------------------------------------------------------
+// Leituras PÚBLICAS da vitrine (feature 005). Sempre forçam ativo + não
+// excluído — a barreira das rules já nega inativos ao público, e estas
+// funções nunca os pedem (senão a rule negaria e a listagem quebraria).
+// ---------------------------------------------------------------------------
+
+const PUBLIC_SORTS = {
+  recentes: { field: "createdAt", direction: "desc" },
+  "preco-asc": { field: "price", direction: "asc" },
+  "preco-desc": { field: "price", direction: "desc" },
+  "nome-asc": { field: "nameLower", direction: "asc" },
+  "nome-desc": { field: "nameLower", direction: "desc" },
+};
+
+export async function listPublicProducts({
+  categoryId = "",
+  sort = "recentes",
+  search = "",
+  cursor = null,
+  pageSize = 20,
+} = {}) {
+  const constraints = [
+    where("deleted", "==", false),
+    where("status", "==", PRODUCT_STATUS.ATIVO),
+  ];
+
+  if (categoryId) {
+    constraints.push(where("categoryId", "==", categoryId));
+  }
+
+  const term = normalizeForSearch(search);
+
+  if (term) {
+    // Busca compõe com categoria (índice N2); durante busca, ordena por
+    // recentes (array-contains + orderBy(price) exigiria índice por ordenação
+    // — fora do escopo M1, FR-013/R-9).
+    constraints.push(where("searchKeywords", "array-contains", term));
+    constraints.push(orderBy("createdAt", "desc"));
+  } else {
+    const chosen = PUBLIC_SORTS[sort] || PUBLIC_SORTS.recentes;
+    constraints.push(orderBy(chosen.field, chosen.direction));
+  }
+
+  let cursorSnap = cursor;
+
+  if (typeof cursor === "string") {
+    cursorSnap = await getDoc(doc(db, "products", cursor));
+
+    if (!cursorSnap.exists()) {
+      cursorSnap = null;
+    }
+  }
+
+  if (cursorSnap) {
+    constraints.push(startAfter(cursorSnap));
+  }
+
+  constraints.push(limit(pageSize + 1));
+
+  const snapshot = await getDocs(query(collection(db, "products"), ...constraints));
+  const docs = snapshot.docs.slice(0, pageSize);
+
+  return {
+    items: docs.map(toItem),
+    nextCursor: docs.length ? docs[docs.length - 1] : null,
+    hasMore: snapshot.docs.length > pageSize,
+  };
+}
+
+// Leitura pública de um produto: null se inexistente, inativo, excluído ou se
+// as rules negarem a leitura (permission-denied) — para 404 sem vazar a
+// existência (SC-002). Erro de rede real propaga para a UI tratar.
+export async function getPublicProduct(id) {
+  let snapshot;
+
+  try {
+    snapshot = await getDoc(doc(db, "products", id));
+  } catch (error) {
+    if (error?.code === "permission-denied") {
+      return null;
+    }
+
+    throw error;
+  }
+
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  const data = snapshot.data();
+
+  if (data.deleted || data.status !== PRODUCT_STATUS.ATIVO) {
+    return null;
+  }
+
+  return { id: snapshot.id, ...data };
+}

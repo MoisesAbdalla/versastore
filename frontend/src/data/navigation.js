@@ -1,3 +1,6 @@
+// Itens fixos do menu da loja. As categorias são anexadas dinamicamente pelo
+// Navbar a partir da coleção `categories` (feature 005) — antes havia links
+// mortos (/male, /female, /accessories) para rotas inexistentes.
 const navigation = [
   {
     id: 1,
@@ -6,18 +9,8 @@ const navigation = [
   },
   {
     id: 2,
-    title: "Masculino",
-    path: "/male",
-  },
-  {
-    id: 3,
-    title: "Feminino",
-    path: "/female",
-  },
-  {
-    id: 4,
-    title: "Acessórios",
-    path: "/accessories",
+    title: "Produtos",
+    path: "/products",
   },
 ];
 

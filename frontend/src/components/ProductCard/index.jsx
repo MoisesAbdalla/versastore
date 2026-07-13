@@ -1,20 +1,38 @@
+import { Link } from "react-router-dom";
 import styles from "./styles.module.css";
 
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import { formatBRL } from "../../utils/format";
+import PriceTag from "../PriceTag";
+import { cloudinaryUrl, IMAGE_WIDTHS } from "../../services/cloudinaryService";
+import ROUTES from "../../constants/routes";
+
+function isSoldOut(product) {
+  if ((product.variations || []).length > 0) {
+    return (product.totalStock ?? 0) === 0;
+  }
+
+  return (product.stock ?? product.totalStock ?? 0) === 0;
+}
 
 function ProductCard({ product }) {
+  const soldOut = isSoldOut(product);
+  const image = cloudinaryUrl(product.image, { w: IMAGE_WIDTHS.card });
+
   return (
-    <div className={styles.card}>
-      <button className={styles.favorite}>
+    <Link className={styles.card} to={`${ROUTES.PRODUCT}/${product.id}`}>
+      <button
+        type="button"
+        className={styles.favorite}
+        aria-label="Adicionar à lista de desejos"
+        onClick={(e) => e.preventDefault()}
+      >
         <FavoriteBorderOutlinedIcon />
       </button>
 
       <div className={styles.imageWrap}>
-        {product.image ? (
+        {image ? (
           <img
-            src={product.image}
+            src={image}
             alt={product.imageAlt || product.name}
             className={styles.image}
             loading="lazy"
@@ -25,39 +43,20 @@ function ProductCard({ product }) {
             <span>VS</span>
           </div>
         )}
+
+        {soldOut && <span className={styles.soldOut}>Esgotado</span>}
       </div>
 
       <div className={styles.info}>
         <span className={styles.category}>
-          {product.category}
+          {product.categoryName || product.category}
         </span>
 
         <h3>{product.name}</h3>
 
-        {product.rating != null && (
-          <div className={styles.rating}>
-            <StarRoundedIcon />
-            {product.rating}
-          </div>
-        )}
-
-        <div className={styles.price}>
-          {product.oldPrice != null && (
-            <span className={styles.oldPrice}>
-              {formatBRL(product.oldPrice)}
-            </span>
-          )}
-
-          <span className={styles.currentPrice}>
-            {formatBRL(product.price)}
-          </span>
-        </div>
-
-        <button className={styles.buyButton}>
-          Comprar
-        </button>
+        <PriceTag product={product} />
       </div>
-    </div>
+    </Link>
   );
 }
 

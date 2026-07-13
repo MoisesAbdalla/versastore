@@ -1,6 +1,42 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { uploadImageWithRetry, validateImageFile } from "../cloudinaryService";
+import {
+  uploadImageWithRetry,
+  validateImageFile,
+  cloudinaryUrl,
+  IMAGE_WIDTHS,
+} from "../cloudinaryService";
+
+describe("cloudinaryUrl", () => {
+  const base =
+    "https://res.cloudinary.com/stmjt15v/image/upload/v123/versa-store/abc.jpg";
+
+  it("insere f_auto,q_auto,w_ logo após /upload/", () => {
+    expect(cloudinaryUrl(base, { w: IMAGE_WIDTHS.card })).toBe(
+      "https://res.cloudinary.com/stmjt15v/image/upload/f_auto,q_auto,w_400/v123/versa-store/abc.jpg"
+    );
+  });
+
+  it("sem largura, aplica só f_auto,q_auto", () => {
+    expect(cloudinaryUrl(base)).toBe(
+      "https://res.cloudinary.com/stmjt15v/image/upload/f_auto,q_auto/v123/versa-store/abc.jpg"
+    );
+  });
+
+  it("anexa transformação extra quando informada", () => {
+    expect(cloudinaryUrl(base, { w: 800, extra: "c_fill" })).toContain(
+      "f_auto,q_auto,w_800,c_fill"
+    );
+  });
+
+  it("retorna URL não-Cloudinary inalterada (fallback seguro)", () => {
+    expect(cloudinaryUrl("https://exemplo.com/foto.png", { w: 400 })).toBe(
+      "https://exemplo.com/foto.png"
+    );
+    expect(cloudinaryUrl("", { w: 400 })).toBe("");
+    expect(cloudinaryUrl(null)).toBe("");
+  });
+});
 
 function makeFile({ type = "image/jpeg", size = 1024 } = {}) {
   return { type, size, name: "foto.jpg" };

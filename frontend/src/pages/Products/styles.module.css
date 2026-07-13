@@ -1,0 +1,132 @@
+.page {
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    padding: 32px 24px 64px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+.header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    flex-wrap: wrap;
+}
+
+.title {
+    font-family: var(--font-heading);
+
+    font-size: 30px;
+
+    color: var(--text);
+}
+
+.grid {
+    display: grid;
+
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+
+    gap: 20px;
+
+    justify-items: center;
+}
+
+.skeleton {
+    width: 300px;
+
+    max-width: 100%;
+
+    height: 460px;
+
+    background: linear-gradient(100deg, var(--surface) 30%, var(--border) 50%, var(--surface) 70%);
+
+    background-size: 200% 100%;
+
+    animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+}
+
+.stateBox {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 64px 24px;
+
+    text-align: center;
+
+    font-family: var(--font-body);
+
+    color: var(--text-muted);
+}
+
+.emptyTitle {
+    font-family: var(--font-heading);
+
+    font-size: 20px;
+
+    color: var(--text);
+}
+
+.emptyText {
+    font-size: 14px;
+
+    color: var(--text-muted);
+}
+
+.retryButton,
+.loadMore {
+    padding: 12px 28px;
+
+    border: 1px solid var(--primary);
+
+    background: var(--surface);
+
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    letter-spacing: var(--tracking);
+
+    text-transform: uppercase;
+
+    color: var(--primary);
+
+    cursor: pointer;
+
+    transition: .2s;
+}
+
+.retryButton:hover,
+.loadMore:hover {
+    background: var(--primary);
+
+    color: var(--background);
+}
+
+.loadMoreWrap {
+    display: flex;
+
+    justify-content: center;
+
+    padding-top: 12px;
+}

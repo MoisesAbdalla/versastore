@@ -48,6 +48,8 @@ import {
   getFeaturedProducts,
   checkSkuAvailable,
   computeIncompleteFields,
+  listPublicProducts,
+  getPublicProduct,
 } from "../productService";
 
 function emptySnapshot() {
@@ -360,6 +362,84 @@ describe("listProducts — filtro de excluídos sempre presente", () => {
     expect(result.items).toHaveLength(2);
     expect(whereMock).toHaveBeenCalledWith("nameLower", ">=", "tenis");
     expect(whereMock).toHaveBeenCalledWith("skuUpper", ">=", "TÊNIS");
+  });
+});
+
+describe("listPublicProducts (vitrine, feature 005)", () => {
+  it("sempre força deleted==false E status==ativo", async () => {
+    getDocsMock.mockResolvedValueOnce(snapshotWith([fakeDoc("p1", { name: "A" })]));
+
+    await listPublicProducts({});
+
+    expect(whereMock).toHaveBeenCalledWith("deleted", "==", false);
+    expect(whereMock).toHaveBeenCalledWith("status", "==", "ativo");
+  });
+
+  it("busca usa array-contains e compõe com categoria (N2)", async () => {
+    getDocsMock.mockResolvedValueOnce(snapshotWith([]));
+
+    await listPublicProducts({ search: "Camisa", categoryId: "cat-1" });
+
+    expect(whereMock).toHaveBeenCalledWith("categoryId", "==", "cat-1");
+    expect(whereMock).toHaveBeenCalledWith("searchKeywords", "array-contains", "camisa");
+    // durante busca, ordena por recentes
+    expect(orderByMock).toHaveBeenCalledWith("createdAt", "desc");
+  });
+
+  it("ordenação por preço fora de busca", async () => {
+    getDocsMock.mockResolvedValueOnce(snapshotWith([]));
+
+    await listPublicProducts({ sort: "preco-asc" });
+
+    expect(orderByMock).toHaveBeenCalledWith("price", "asc");
+  });
+
+  it("pagina com limit(pageSize + 1) e reporta hasMore", async () => {
+    const docs = Array.from({ length: 21 }, (_, i) => fakeDoc(`p${i}`, { name: `P${i}` }));
+    getDocsMock.mockResolvedValueOnce(snapshotWith(docs));
+
+    const result = await listPublicProducts({ pageSize: 20 });
+
+    expect(result.items).toHaveLength(20);
+    expect(result.hasMore).toBe(true);
+  });
+});
+
+describe("getPublicProduct (vitrine)", () => {
+  it("retorna o produto quando ativo e não excluído", async () => {
+    getDocMock.mockResolvedValueOnce(
+      fakeDoc("p1", { name: "Ativo", status: "ativo", deleted: false })
+    );
+
+    const product = await getPublicProduct("p1");
+
+    expect(product.name).toBe("Ativo");
+  });
+
+  it("retorna null para produto inativo (404 sem vazar — SC-002)", async () => {
+    getDocMock.mockResolvedValueOnce(
+      fakeDoc("p1", { name: "Rascunho", status: "rascunho", deleted: false })
+    );
+
+    expect(await getPublicProduct("p1")).toBe(null);
+  });
+
+  it("retorna null para produto inexistente", async () => {
+    getDocMock.mockResolvedValueOnce({ exists: () => false });
+
+    expect(await getPublicProduct("fantasma")).toBe(null);
+  });
+
+  it("retorna null quando as rules negam a leitura (permission-denied)", async () => {
+    getDocMock.mockRejectedValueOnce({ code: "permission-denied" });
+
+    expect(await getPublicProduct("inativo")).toBe(null);
+  });
+
+  it("propaga erro de rede real", async () => {
+    getDocMock.mockRejectedValueOnce({ code: "unavailable" });
+
+    await expect(getPublicProduct("p1")).rejects.toMatchObject({ code: "unavailable" });
   });
 });
 
