@@ -1,0 +1,137 @@
+.field {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+.label {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    letter-spacing: .04em;
+
+    color: var(--text-muted);
+}
+
+.inputWrap {
+    position: relative;
+}
+
+.input {
+    width: 100%;
+
+    padding: 12px 44px 12px 14px;
+
+    border: 1px solid var(--border);
+
+    background: var(--surface);
+
+    font-family: var(--font-body);
+
+    font-size: 15px;
+
+    color: var(--text);
+
+    outline: none;
+
+    transition: border-color .2s;
+}
+
+.input:focus {
+    border-color: var(--primary);
+}
+
+.inputError {
+    border-color: #B3261E;
+}
+
+.toggle {
+    position: absolute;
+
+    top: 50%;
+
+    right: 8px;
+
+    transform: translateY(-50%);
+
+    border: none;
+
+    background: none;
+
+    color: var(--text-muted);
+
+    cursor: pointer;
+
+    display: flex;
+}
+
+.strength {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+.bars {
+    display: flex;
+
+    gap: 4px;
+
+    flex: 1;
+}
+
+.bar {
+    height: 4px;
+
+    flex: 1;
+
+    background: var(--border);
+}
+
+.bar1 {
+    background: #B3261E;
+}
+
+.bar2 {
+    background: #B45309;
+}
+
+.bar3 {
+    background: #A87420;
+}
+
+.bar4 {
+    background: #15803D;
+}
+
+.strengthLabel {
+    font-family: var(--font-body);
+
+    font-size: 12px;
+
+    color: var(--text-muted);
+
+    min-width: 80px;
+
+    text-align: right;
+}
+
+.hint {
+    font-family: var(--font-body);
+
+    font-size: 12px;
+
+    color: var(--text-muted);
+}
+
+.error {
+    font-family: var(--font-body);
+
+    font-size: 12px;
+
+    color: #B3261E;
+}

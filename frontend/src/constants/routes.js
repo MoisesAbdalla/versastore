@@ -12,6 +12,18 @@ const ROUTES = {
 
     REGISTER:"/register",
 
+    RECUPERAR_SENHA:"/recuperar-senha",
+
+    COMPLETAR_CADASTRO:"/completar-cadastro",
+
+    MEUS_PEDIDOS:"/meus-pedidos",
+
+    ENDERECOS:"/enderecos",
+
+    TERMOS:"/termos",
+
+    PRIVACIDADE:"/privacidade",
+
     ACCESS_DENIED:"/acesso-negado",
 
     ADMIN:"/admin",

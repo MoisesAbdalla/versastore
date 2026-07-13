@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 import db from "../firebase/firestore";
 import { ROLES, roleHasPermission } from "../constants/roles";
@@ -16,12 +16,19 @@ export async function getUserProfile(uid) {
   return { role, name, email };
 }
 
+// Perfil completo do cliente (feature 007) — usado pelo AuthContext e telas de
+// conta.
+export async function getFullProfile(uid) {
+  const snapshot = await getDoc(doc(db, "users", uid));
+
+  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+}
+
 // Garante o documento users/{uid} do usuário autenticado: cria como customer se
-// não existir (registro novo ou conta antiga anterior à coleção users). As rules
-// só permitem o próprio usuário criar o doc com role "customer" — o papel admin
-// é sempre atribuído por fora (bootstrap manual, quickstart §0).
-export async function ensureUserProfile(user) {
-  const existing = await getUserProfile(user.uid);
+// não existir. `extra` permite marcar a origem (authProvider) e dados vindos do
+// provedor (ex.: Google). Não sobrescreve doc existente.
+export async function ensureUserProfile(user, extra = {}) {
+  const existing = await getFullProfile(user.uid);
 
   if (existing) {
     return existing;
@@ -32,6 +39,10 @@ export async function ensureUserProfile(user) {
     nameLower: normalizeForSearch(user.displayName || ""),
     email: user.email,
     role: ROLES.CUSTOMER,
+    phone: extra.phone || "",
+    termsAcceptedAt: extra.termsAcceptedAt || null,
+    termsVersion: extra.termsVersion || null,
+    authProvider: extra.authProvider || "password",
     addresses: [],
     orderCount: 0,
     totalSpent: 0,
@@ -40,7 +51,97 @@ export async function ensureUserProfile(user) {
 
   await setDoc(doc(db, "users", user.uid), profile);
 
-  return { role: profile.role, name: profile.name, email: profile.email };
+  return { id: user.uid, ...profile };
+}
+
+// Escrita AUTORITATIVA do perfil de um cliente recém-cadastrado por e-mail
+// (feature 007, I1 do analyze). setDoc(merge) grava o doc completo — inclusive
+// nome — independentemente da corrida com o `ensureUserProfile` do AuthContext,
+// que pode criar um doc com `name: ""` antes. Só para cadastro NOVO (orderCount/
+// totalSpent 0 são corretos para um cliente sem pedidos).
+export async function createCustomerProfile(uid, { name, email, phone, termsAcceptedAt, termsVersion }) {
+  await setDoc(
+    doc(db, "users", uid),
+    {
+      name,
+      nameLower: normalizeForSearch(name),
+      email,
+      role: ROLES.CUSTOMER,
+      phone: phone || "",
+      termsAcceptedAt: termsAcceptedAt || serverTimestamp(),
+      termsVersion: termsVersion || null,
+      authProvider: "password",
+      addresses: [],
+      orderCount: 0,
+      totalSpent: 0,
+      createdAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+// Completa o cadastro (telefone + aceite) — usado no passo pós-Google.
+export async function completeProfile(uid, { phone, termsVersion }) {
+  await updateDoc(doc(db, "users", uid), {
+    phone: phone || "",
+    termsAcceptedAt: serverTimestamp(),
+    termsVersion: termsVersion || null,
+  });
+}
+
+// Perfil completo quando tem telefone E aceite de termos (feature 007).
+export function isProfileComplete(profile) {
+  return Boolean(profile?.phone) && profile?.termsAcceptedAt != null;
+}
+
+// --- Endereços (users.addresses) — editados pelo próprio usuário -------------
+
+export async function listAddresses(uid) {
+  const profile = await getFullProfile(uid);
+
+  return profile?.addresses || [];
+}
+
+// Marca `defaultId` como padrão e desmarca os demais (um só por vez).
+function normalizeDefault(addresses, defaultId) {
+  return addresses.map((a) => ({ ...a, isDefault: a.id === defaultId }));
+}
+
+export async function saveAddress(uid, address) {
+  const current = await listAddresses(uid);
+  const exists = current.some((a) => a.id === address.id);
+
+  let next = exists
+    ? current.map((a) => (a.id === address.id ? address : a))
+    : [...current, address];
+
+  // Se o endereço salvo é padrão, os demais deixam de ser.
+  if (address.isDefault) {
+    next = next.map((a) => ({ ...a, isDefault: a.id === address.id }));
+  } else if (!next.some((a) => a.isDefault)) {
+    // Sempre ao menos um padrão quando há endereços.
+    next = next.map((a, i) => ({ ...a, isDefault: i === 0 }));
+  }
+
+  await updateDoc(doc(db, "users", uid), { addresses: next });
+}
+
+export async function removeAddress(uid, addressId) {
+  const current = await listAddresses(uid);
+  let next = current.filter((a) => a.id !== addressId);
+
+  if (next.length > 0 && !next.some((a) => a.isDefault)) {
+    next = next.map((a, i) => ({ ...a, isDefault: i === 0 }));
+  }
+
+  await updateDoc(doc(db, "users", uid), { addresses: next });
+}
+
+export async function setDefaultAddress(uid, addressId) {
+  const current = await listAddresses(uid);
+  const next = normalizeDefault(current, addressId);
+
+  await updateDoc(doc(db, "users", uid), { addresses: next });
 }
 
 export function hasPermission(role, capability) {

@@ -1,15 +1,31 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import auth from "../firebase/auth";
-import { ensureUserProfile } from "../services/userService";
+import { ensureUserProfile, getFullProfile, isProfileComplete } from "../services/userService";
 import { ROLES } from "../constants/roles";
 
 const AuthContext = createContext({});
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Recarrega o perfil do usuário atual (após cadastro/edição de dados).
+  const reloadProfile = useCallback(async () => {
+    const current = auth.currentUser;
+
+    if (!current) {
+      setProfile(null);
+      return;
+    }
+
+    try {
+      setProfile(await getFullProfile(current.uid));
+    } catch {
+      setProfile(null);
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -17,18 +33,15 @@ export function AuthProvider({ children }) {
 
       if (currentUser) {
         try {
-          // ensureUserProfile cria o doc users/{uid} como customer se não
-          // existir — cobre contas registradas antes da coleção users existir.
-          const profile = await ensureUserProfile(currentUser);
-
-          setRole(profile ? profile.role : null);
+          // Rede de segurança p/ contas legadas sem doc; register/Google já
+          // gravam o doc de forma autoritativa.
+          await ensureUserProfile(currentUser);
+          setProfile(await getFullProfile(currentUser.uid));
         } catch {
-          // Sem perfil legível (ex.: rules negaram) trata como sem papel:
-          // o AdminRoute nega acesso e a loja continua funcionando.
-          setRole(null);
+          setProfile(null);
         }
       } else {
-        setRole(null);
+        setProfile(null);
       }
 
       setLoading(false);
@@ -37,13 +50,19 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
+  const role = profile?.role ?? null;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         setUser,
+        profile,
         role,
         isAdmin: role === ROLES.ADMIN,
+        // Logado, mas sem telefone/aceite (Google recém-entrado ou conta legada).
+        profileIncomplete: Boolean(user) && Boolean(profile) && !isProfileComplete(profile),
+        reloadProfile,
         loading,
       }}
     >

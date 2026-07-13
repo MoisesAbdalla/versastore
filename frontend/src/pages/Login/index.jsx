@@ -1,67 +1,108 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
+import FormField from "../../components/form/FormField";
+import PasswordField from "../../components/form/PasswordField";
 import { login } from "../../services/authService";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAuthForm } from "../../hooks/useAuthForm";
+import { validateEmail } from "../../utils/validation";
+import ROUTES from "../../constants/routes";
+import styles from "./styles.module.css";
+
+const schema = {
+  email: (v) => validateEmail(v),
+  password: (v) => (v ? null : "Informe sua senha."),
+};
+
+// Mensagens pt-BR para os códigos do Firebase Auth (sem alert genérico).
+const LOGIN_ERRORS = {
+  "auth/invalid-credential": "E-mail ou senha incorretos.",
+  "auth/wrong-password": "E-mail ou senha incorretos.",
+  "auth/user-not-found": "E-mail ou senha incorretos.",
+  "auth/too-many-requests": "Muitas tentativas. Tente novamente em instantes.",
+};
 
 function Login() {
-  const { setUser } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { setUser } = useAuth();
+  const { values, errors, touched, setField, blurField, validateAll } = useAuthForm(
+    { email: "", password: "" },
+    schema
+  );
 
-  async function handleLogin() {
+  const [submitError, setSubmitError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitError(null);
+
+    if (!validateAll()) {
+      return;
+    }
+
+    setSubmitting(true);
+
     try {
-      const currentUser = await login(email, password);
-
-      setUser(currentUser);
-
-      navigate("/");
+      const user = await login(values.email, values.password);
+      setUser(user);
+      navigate(ROUTES.HOME);
     } catch (error) {
-      alert(error.message);
+      setSubmitError(LOGIN_ERRORS[error.code] || "Não foi possível entrar. Tente novamente.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
     <MainLayout>
-      <div
-        style={{
-          maxWidth: 400,
-          margin: "80px auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 15,
-        }}
-      >
-        <h2>Entrar</h2>
+      <div className={styles.page}>
+        <form className={styles.card} onSubmit={handleSubmit} noValidate>
+          <h1 className={styles.title}>Entrar</h1>
+          <p className={styles.subtitle}>Acesse sua conta Versa Store.</p>
 
-        <input
-          type="email"
-          placeholder="E-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+          {submitError && (
+            <p className={styles.formError} role="alert">
+              {submitError}
+            </p>
+          )}
 
-        <input
-          type="password"
-          placeholder="Senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <FormField
+            label="E-mail"
+            type="email"
+            value={values.email}
+            onChange={(v) => setField("email", v)}
+            onBlur={() => blurField("email")}
+            error={errors.email}
+            touched={touched.email}
+            autoComplete="email"
+            inputMode="email"
+          />
 
-        <button onClick={handleLogin}>
-          Entrar
-        </button>
-        <p
-            style={{
-              textAlign: "center",
-              cursor: "pointer",
-              color: "#2563eb",
-            }}
-            onClick={() => navigate("/register")}
-          >
-            Não possui uma conta? Cadastre-se
+          <PasswordField
+            label="Senha"
+            value={values.password}
+            onChange={(v) => setField("password", v)}
+            onBlur={() => blurField("password")}
+            error={errors.password}
+            touched={touched.password}
+            autoComplete="current-password"
+          />
+
+          <Link className={styles.forgot} to={ROUTES.RECUPERAR_SENHA}>
+            Esqueci minha senha
+          </Link>
+
+          <button className={styles.submit} type="submit" disabled={submitting}>
+            {submitting ? "Entrando…" : "Entrar"}
+          </button>
+
+          <p className={styles.switch}>
+            Não tem conta?{" "}
+            <Link to={ROUTES.REGISTER}>Cadastre-se</Link>
           </p>
+        </form>
       </div>
     </MainLayout>
   );

@@ -7,6 +7,8 @@ import Product from "../pages/Product";
 import Cart from "../pages/Cart";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import Terms from "../pages/Legal/Terms";
+import Privacy from "../pages/Legal/Privacy";
 import NotFound from "../pages/NotFound";
 import AdminRoute from "./AdminRoute";
 
@@ -42,6 +44,10 @@ function AppRoutes() {
           <Route path="/login" element={<Login />} />
 
           <Route path="/register" element={<Register />} />
+
+          <Route path="/termos" element={<Terms />} />
+
+          <Route path="/privacidade" element={<Privacy />} />
 
           <Route path="/acesso-negado" element={<AccessDenied />} />
 

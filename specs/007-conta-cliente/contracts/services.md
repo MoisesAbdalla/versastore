@@ -10,7 +10,7 @@ campo. Escrita só no próprio `users/{uid}`.
 
 | Função | Assinatura | Notas |
 |---|---|---|
-| `register` | `({name, email, password, phone, termsAccepted}) → user` | cria o Auth user, `updateProfile({displayName: name})`, grava `users/{uid}` completo com `termsAcceptedAt` = agora e `termsVersion` = `TERMS_VERSION` (via userService); erro `auth/email-already-in-use` → `email-em-uso` |
+| `register` | `({name, email, password, phone, termsAccepted}) → user` | cria o Auth user, `updateProfile({displayName: name})`, e faz **escrita autoritativa** do perfil completo via `setDoc(merge)` — `name`, `nameLower`, `email`, `phone`, `termsAcceptedAt` = agora, `termsVersion` = `TERMS_VERSION`, `authProvider: "password"`. **Não** usar `ensureUserProfile` (create-if-absent) aqui: o `onAuthStateChanged` do AuthContext pode criar um doc com `name: ""` **antes** deste write; o merge autoritativo garante o nome independentemente da ordem (evita regredir o bug de nome — FR-009/SC-002). Erro `auth/email-already-in-use` → `email-em-uso` |
 | `login` | `(email, password) → user` | existente |
 | `loginWithGoogle` | `() → user` | `signInWithPopup(GoogleAuthProvider)`; garante `users/{uid}` (nome/e-mail do Google, `authProvider: "google"`) via userService |
 | `resetPassword` | `(email) → void` | `sendPasswordResetEmail`; **nunca** lança para `auth/user-not-found` (resposta neutra, SC-005); outros erros propagam p/ "tentar novamente" |
@@ -20,7 +20,7 @@ campo. Escrita só no próprio `users/{uid}`.
 
 | Função | Assinatura | Notas |
 |---|---|---|
-| `ensureUserProfile` | `(user, extra?) → profile` | existente, estendido: aceita `{phone, termsAcceptedAt, authProvider}`; cria com defaults se ausente (não sobrescreve doc existente) |
+| `ensureUserProfile` | `(user, extra?) → profile` | existente, estendido: aceita `{phone, termsAcceptedAt, termsVersion, authProvider}`; **cria com defaults se ausente** (não sobrescreve doc existente). Usado pelo AuthContext/Google; o cadastro por e-mail usa a escrita autoritativa do `register` (ver acima) — os dois convergem para o doc com nome |
 | `getFullProfile` | `(uid) → profile \| null` | doc completo (name, email, phone, termsAcceptedAt, authProvider, addresses, role) — usado pelo AuthContext |
 | `completeProfile` | `(uid, {phone}) → void` | grava telefone + aceite (`termsAcceptedAt` = agora, `termsVersion` = `TERMS_VERSION`) no passo pós-Google / completar cadastro |
 | `isProfileComplete` | `(profile) → boolean` | `Boolean(profile?.phone) && profile?.termsAcceptedAt != null` |
