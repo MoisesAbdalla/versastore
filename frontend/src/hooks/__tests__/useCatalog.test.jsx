@@ -90,6 +90,21 @@ describe("useCatalog — hierarquia de categorias", () => {
     expect(listPublicProductsMock).not.toHaveBeenCalled();
   });
 
+  it("q na URL dispara busca (passa search ao service)", async () => {
+    listPublicProductsMock.mockResolvedValueOnce(page([{ id: "p1" }]));
+
+    const { result } = renderHook(() => useCatalog(), {
+      wrapper: wrapperFor("/products?q=camisa"),
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(listPublicProductsMock).toHaveBeenCalledWith(
+      expect.objectContaining({ search: "camisa" })
+    );
+    expect(result.current.filters.q).toBe("camisa");
+  });
+
   it("loadMore ANEXA a próxima página (R-8)", async () => {
     listPublicProductsMock
       .mockResolvedValueOnce(page([{ id: "p1" }], true, "cursor1"))

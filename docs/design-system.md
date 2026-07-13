@@ -281,3 +281,50 @@ documentados aqui na mesma PR que os introduziu (constituição, Princípio III)
 
 - Botão "Exportar CSV" (ícone Download) nas listagens e relatórios; o arquivo reflete exatamente
   os filtros da tela; BOM UTF-8 + separador ";" (Excel pt-BR); toast com o nº de linhas.
+
+
+---
+
+# Vitrine / Loja (005-vitrine-completa, 2026-07-13)
+
+A vitrine pública (`/products`, `/product/:id`, `/cart`) compartilha os tokens de `variables.css` e
+o `MainLayout` (TopBar + Header + Navbar + Footer).
+
+## Catálogo (`/products`)
+
+- Grade responsiva `repeat(auto-fill, minmax(240px, 1fr))`; `ProductCard` de 300px (max-width 100%).
+- Filtro de categoria em **2 níveis** (FR-003): chips de categorias raiz; ao selecionar uma raiz com
+  filhas, um segundo nível de chips (com "Todos"). Estado na URL (`?categoria=<raiz>&sub=<filha>`).
+- Ordenação via `SortSelect` (recentes/preço↑↓/nome↑↓), desabilitada durante busca.
+- Estados: skeleton (shimmer), vazio (com "limpar filtros"), erro (com "tentar novamente").
+- Paginação "carregar mais" (anexa; cursor).
+
+## ProductCard
+
+- Card-link inteiro navega ao produto; imagem via Cloudinary por contexto (`w=400`); coração de
+  wishlist (visual); badge **"Esgotado"** (canto inferior, fundo `--primary`) quando `totalStock 0`.
+- Preço via `PriceTag`.
+
+## PriceTag
+
+- Preço normal; com promoção vigente (avaliada no fuso America/Sao_Paulo): preço original riscado +
+  promocional em `--gold-text` + selo de desconto `-N%` (verde `#15803D`). Tamanhos `md`/`lg`.
+
+## Página de produto (`/product/:id`)
+
+- Layout 1 coluna → 2 colunas em ≥860px. `ProductGallery`: imagem principal (`w=800`) + miniaturas
+  (`w=120`); zoom desktop por lupa (`background-position`), mobile por modal (imagem `w=1600` +
+  pinch nativo).
+- `VariationSelector`: chips por variação; esgotadas desabilitadas/riscadas.
+- Indicador "últimas unidades" quando estoque ≤ limiar do produto. Botão "Adicionar ao carrinho"
+  (esgotado desabilita). 404 amigável para produto inativo/inexistente.
+
+## Carrinho
+
+- `CartBadge` no header: ícone com contador (`--secondary`). Página `/cart` mínima (itens + subtotal
+  + quantidade/remover) — a completa e a persistência são do M2.
+
+## Busca
+
+- Campo no header submete no Enter/lupa → `/products?q=termo` (sem consulta ao vivo). Resultados por
+  relevância/recência; compõe com uma categoria.

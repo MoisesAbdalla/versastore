@@ -18,6 +18,7 @@ import {
 import db from "../firebase/firestore";
 import { PRODUCT_STATUS, DEFAULT_LOW_STOCK_THRESHOLD } from "../constants/product";
 import { normalizeForSearch } from "../utils/slugify";
+import { buildSearchKeywords, normalizeQueryTerm } from "../utils/searchKeywords";
 
 const PAGE_SIZE = 20;
 
@@ -96,6 +97,8 @@ function withDerivedFields(data) {
     images,
     nameLower: normalizeForSearch(data.name),
     skuUpper: (data.sku || "").trim().toUpperCase(),
+    // Tokens de busca da vitrine (feature 005): nome + SKU + nome da categoria.
+    searchKeywords: buildSearchKeywords(data.name, data.sku, data.categoryName || data.category),
     descriptionText,
     incomplete: incompleteFields.length > 0,
     incompleteFields,
@@ -483,25 +486,29 @@ export async function listPublicProducts({
     where("status", "==", PRODUCT_STATUS.ATIVO),
   ];
 
-  // Hierarquia: 1 categoria usa igualdade; várias (raiz + filhas) usam `in`
-  // — indexado como igualdade, reusa os índices existentes (firestore.md).
   const ids = (categoryIds || []).filter(Boolean).slice(0, IN_LIMIT);
-
-  if (ids.length === 1) {
-    constraints.push(where("categoryId", "==", ids[0]));
-  } else if (ids.length > 1) {
-    constraints.push(where("categoryId", "in", ids));
-  }
-
-  const term = normalizeForSearch(search);
+  const term = normalizeQueryTerm(search);
 
   if (term) {
-    // Busca compõe com categoria (índice N2); durante busca, ordena por
-    // recentes (array-contains + orderBy(price) exigiria índice por ordenação
-    // — fora do escopo M1, FR-013/R-9).
+    // Busca compõe com UMA categoria via `==` (índice N2). Firestore não
+    // combina `array-contains` com `in`, então o agregado hierárquico (raiz +
+    // filhas) não compõe com busca: nesse caso a busca é global (documentado,
+    // R-2). Durante busca, ordena por recentes (FR-013/R-9).
+    if (ids.length === 1) {
+      constraints.push(where("categoryId", "==", ids[0]));
+    }
+
     constraints.push(where("searchKeywords", "array-contains", term));
     constraints.push(orderBy("createdAt", "desc"));
   } else {
+    // Navegação: 1 categoria usa igualdade; várias (raiz + filhas) usam `in`
+    // — indexado como igualdade, reusa os índices existentes (firestore.md).
+    if (ids.length === 1) {
+      constraints.push(where("categoryId", "==", ids[0]));
+    } else if (ids.length > 1) {
+      constraints.push(where("categoryId", "in", ids));
+    }
+
     const chosen = PUBLIC_SORTS[sort] || PUBLIC_SORTS.recentes;
     constraints.push(orderBy(chosen.field, chosen.direction));
   }

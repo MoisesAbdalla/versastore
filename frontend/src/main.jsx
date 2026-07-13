@@ -24,6 +24,9 @@ if (import.meta.env.DEV) {
   import('./dev/backfillOrders').then((module) => {
     window.backfillOrders = module.backfillOrders;
   });
+  import('./dev/backfillSearchKeywords').then((module) => {
+    window.backfillSearchKeywords = module.backfillSearchKeywords;
+  });
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

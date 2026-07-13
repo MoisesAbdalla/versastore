@@ -21,7 +21,7 @@ inacessibilidade de produto inativo, normalizador de busca e o `CartContext`.
 
 - [x] T001 [P] Estender `frontend/src/services/cloudinaryService.js`: `cloudinaryUrl(url, {w, extra})` (insere `f_auto,q_auto,w_{w}` após `/upload/`; URL não-Cloudinary retorna inalterada) e const `IMAGE_WIDTHS = {card:400, thumb:120, main:800, zoom:1600}` (R-5) — testes em `frontend/src/services/__tests__/cloudinaryService.test.js` (injeção na posição certa + passthrough)
 - [x] T002 [P] Criar `frontend/src/utils/promo.js`: `isPromoActive(product, now)` e `effectivePrice(product, now)` avaliando a vigência no fuso **America/Sao_Paulo** (R-4; sem datas = sempre vigente) — testes em `frontend/src/utils/__tests__/promo.test.js` (vigente/expirada/futura/sem-datas + **fuso**: relógio simulado fora de Brasília dá o mesmo resultado, SC-003)
-- [ ] T003 [P] Criar `frontend/src/utils/searchKeywords.js`: `buildSearchKeywords(name, sku, categoryName)` (tokens + prefixos ≥3 normalizados, sem duplicatas, idempotente) e `normalizeQueryTerm(term)`, reusando `normalizeForSearch` de `utils/slugify.js` (R-2) — testes em `frontend/src/utils/__tests__/searchKeywords.test.js` (prefixos, nome+SKU+categoria, acento/caixa, idempotência, term casa com keyword — SC-006)
+- [x] T003 [P] Criar `frontend/src/utils/searchKeywords.js`: `buildSearchKeywords(name, sku, categoryName)` (tokens + prefixos ≥3 normalizados, sem duplicatas, idempotente) e `normalizeQueryTerm(term)`, reusando `normalizeForSearch` de `utils/slugify.js` (R-2) — testes em `frontend/src/utils/__tests__/searchKeywords.test.js` (prefixos, nome+SKU+categoria, acento/caixa, idempotência, term casa com keyword — SC-006)
 
 ---
 
@@ -89,10 +89,10 @@ renderizada em `/products?q=`.
 **Independent Test**: quickstart §4 — buscar fragmento de nome, SKU exato e nome de categoria, com e
 sem acento; estado vazio com sugestões; produto pré-backfill continua no catálogo.
 
-- [ ] T017 [US3] Gravar `searchKeywords` no write do admin: incluir `buildSearchKeywords(name, sku, categoryName)` no `withDerivedFields` de `frontend/src/services/productService.js` (create/update) — estender `frontend/src/services/__tests__/productService.test.js` (searchKeywords derivado no create/update)
-- [ ] T018 [US3] Criar `frontend/src/dev/backfillSearchKeywords.js` (idempotente; `window.backfillSearchKeywords` em dev, logado como admin — main.jsx já expõe utilitários dev) que recomputa `searchKeywords` para todos os produtos — testes em `frontend/src/dev/__tests__/backfillSearchKeywords.test.js` (idempotência: 2ª execução não muda nada)
-- [ ] T019 [US3] Adicionar os índices N1 e N2 em `firestore.indexes.json` — N1 (`deleted ASC, status ASC, searchKeywords ARRAY_CONTAINS, createdAt DESC`) para busca simples e N2 (`deleted ASC, status ASC, categoryId ASC, searchKeywords ARRAY_CONTAINS, createdAt DESC`) para **busca + categoria** (US3-S3) — e deployar (`npx firebase-tools deploy --only firestore:indexes`); confirmar "Enabled" no console (contracts/firestore.md)
-- [ ] T020 [US3] Ligar a busca do header: em `frontend/src/components/Header/index.jsx`, submeter no Enter/lupa navegando para `/products?q=termo` (FR-012, sem consulta ao vivo); garantir que `useCatalog` (T009) trata `?q=` chamando `listPublicProducts({search, categoryId})` — **busca compõe com o filtro de categoria** (usa N2 quando ambos presentes; durante busca a ordenação fica em recentes, US3-S3/FR-013) — e que a UI mostra estado vazio com sugestões — testes em `frontend/src/pages/Products/__tests__/search.test.jsx` (q na URL dispara busca; q+categoria compõem; vazio orienta)
+- [x] T017 [US3] Gravar `searchKeywords` no write do admin: incluir `buildSearchKeywords(name, sku, categoryName)` no `withDerivedFields` de `frontend/src/services/productService.js` (create/update) — estender `frontend/src/services/__tests__/productService.test.js` (searchKeywords derivado no create/update)
+- [x] T018 [US3] Criar `frontend/src/dev/backfillSearchKeywords.js` (idempotente; `window.backfillSearchKeywords` em dev, logado como admin — main.jsx já expõe utilitários dev) que recomputa `searchKeywords` para todos os produtos — testes em `frontend/src/dev/__tests__/backfillSearchKeywords.test.js` (idempotência: 2ª execução não muda nada)
+- [x] T019 [US3] Adicionar os índices N1 e N2 em `firestore.indexes.json` — N1 (`deleted ASC, status ASC, searchKeywords ARRAY_CONTAINS, createdAt DESC`) para busca simples e N2 (`deleted ASC, status ASC, categoryId ASC, searchKeywords ARRAY_CONTAINS, createdAt DESC`) para **busca + categoria** (US3-S3) — e deployar (`npx firebase-tools deploy --only firestore:indexes`); confirmar "Enabled" no console (contracts/firestore.md)
+- [x] T020 [US3] Ligar a busca do header: em `frontend/src/components/Header/index.jsx`, submeter no Enter/lupa navegando para `/products?q=termo` (FR-012, sem consulta ao vivo); garantir que `useCatalog` (T009) trata `?q=` chamando `listPublicProducts({search, categoryId})` — **busca compõe com o filtro de categoria** (usa N2 quando ambos presentes; durante busca a ordenação fica em recentes, US3-S3/FR-013) — e que a UI mostra estado vazio com sugestões — testes em `frontend/src/pages/Products/__tests__/search.test.jsx` (q na URL dispara busca; q+categoria compõem; vazio orienta)
 
 **Checkpoint**: busca abrangente funcional, componível com categoria
 
@@ -105,8 +105,8 @@ sem acento; estado vazio com sugestões; produto pré-backfill continua no catá
 **Independent Test**: quickstart §3 — produto com promoção vigente, futura e expirada renderizam
 corretamente; produto com `promoPrice` sem datas = sempre vigente; teste de fuso.
 
-- [ ] T021 [US4] Garantir que o `unitPrice` do carrinho e o preço "de compra" exibido na página usam `effectivePrice` (promo.js) — ajustar `useProductPage`/`Product` e `CartContext.addItem` se necessário; verificar que o card (T007) e a página (T015) já consomem `PriceTag`
-- [ ] T022 [US4] Teste de integração de promoção em `frontend/src/utils/__tests__/promo.integration.test.jsx`: card e página com promoção antes/durante/depois da janela e sem datas; **fuso** — mesma data-limite com relógio simulado em fuso ≠ Brasília produz o mesmo estado vigente/expirado (SC-003)
+- [x] T021 [US4] Garantir que o `unitPrice` do carrinho e o preço "de compra" exibido na página usam `effectivePrice` (promo.js) — ajustar `useProductPage`/`Product` e `CartContext.addItem` se necessário; verificar que o card (T007) e a página (T015) já consomem `PriceTag`
+- [x] T022 [US4] Teste de integração de promoção em `frontend/src/utils/__tests__/promo.integration.test.jsx`: card e página com promoção antes/durante/depois da janela e sem datas; **fuso** — mesma data-limite com relógio simulado em fuso ≠ Brasília produz o mesmo estado vigente/expirado (SC-003)
 
 **Checkpoint**: preço promocional correto e consistente entre superfícies e fusos
 
@@ -119,8 +119,8 @@ corretamente; produto com `promoPrice` sem datas = sempre vigente; teste de fuso
 **Independent Test**: quickstart §6 — percorrer catálogo e produto em 375px sem scroll horizontal;
 ver skeletons e o estado de erro offline; `document.title` correto.
 
-- [ ] T023 [US5] Auditoria responsiva (viewport 375px) do catálogo e da página de produto: grade fluida, galeria e zoom por pinch utilizáveis, sem scroll horizontal (SC-009) — ajustes de CSS nos `styles.module.css` das telas/componentes conforme necessário
-- [ ] T024 [US5] Confirmar estados de carregamento (skeletons) e erro (retry) em catálogo e produto e a normalização de `document.title` por rota/produto (FR-017); teste de erro em `frontend/src/pages/__tests__/storefront-error.test.jsx` (falha da consulta mostra retry, não quebra a página)
+- [x] T023 [US5] Auditoria responsiva (viewport 375px) do catálogo e da página de produto: grade fluida, galeria e zoom por pinch utilizáveis, sem scroll horizontal (SC-009) — ajustes de CSS nos `styles.module.css` das telas/componentes conforme necessário
+- [x] T024 [US5] Confirmar estados de carregamento (skeletons) e erro (retry) em catálogo e produto e a normalização de `document.title` por rota/produto (FR-017); teste de erro em `frontend/src/pages/__tests__/storefront-error.test.jsx` (falha da consulta mostra retry, não quebra a página)
 
 **Checkpoint**: vitrine sólida e responsiva em qualquer dispositivo
 
@@ -128,8 +128,8 @@ ver skeletons e o estado de erro offline; `document.title` correto.
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T025 [P] Atualizar `docs/design-system.md` com os padrões novos da vitrine (grade do catálogo, `PriceTag`, badge "Esgotado", `ProductGallery`/zoom, `VariationSelector`, `CartBadge`/mini-carrinho) — constituição, Princípio III
-- [ ] T026 Gates finais: `npm run lint` (zero erros), `npm run test` (127 baseline + novos verdes — SC-008) e `npm run build` (bundle da loja íntegro; rotas da vitrine no bundle principal, `/admin` segue lazy)
+- [x] T025 [P] Atualizar `docs/design-system.md` com os padrões novos da vitrine (grade do catálogo, `PriceTag`, badge "Esgotado", `ProductGallery`/zoom, `VariationSelector`, `CartBadge`/mini-carrinho) — constituição, Princípio III
+- [x] T026 Gates finais: `npm run lint` (zero erros), `npm run test` (127 baseline + novos verdes — SC-008) e `npm run build` (bundle da loja íntegro; rotas da vitrine no bundle principal, `/admin` segue lazy)
 - [ ] T027 Executar a validação completa do quickstart.md (§0–6), incluindo backfill de `searchKeywords`, deploy do índice N1, e a regressão da loja (Home/login/registro e `/admin` inalterados)
 
 ---
