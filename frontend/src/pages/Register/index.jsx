@@ -4,8 +4,10 @@ import MainLayout from "../../layouts/MainLayout";
 import FormField from "../../components/form/FormField";
 import PasswordField from "../../components/form/PasswordField";
 import Checkbox from "../../components/form/Checkbox";
-import { register } from "../../services/authService";
+import GoogleButton from "../../components/form/GoogleButton";
+import { register, loginWithGoogle } from "../../services/authService";
 import { useAuth } from "../../contexts/AuthContext";
+import { isProfileComplete } from "../../services/userService";
 import { useAuthForm } from "../../hooks/useAuthForm";
 import {
   validateName,
@@ -38,6 +40,25 @@ function Register() {
 
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  async function handleGoogle() {
+    setSubmitError(null);
+    setGoogleLoading(true);
+
+    try {
+      const user = await loginWithGoogle();
+      setUser(user);
+      const profile = await reloadProfile();
+      navigate(isProfileComplete(profile) ? ROUTES.HOME : ROUTES.COMPLETAR_CADASTRO);
+    } catch (error) {
+      if (error.code !== "auth/popup-closed-by-user" && error.code !== "auth/cancelled-popup-request") {
+        setSubmitError("Não foi possível entrar com o Google. Tente novamente.");
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -157,9 +178,15 @@ function Register() {
             .
           </Checkbox>
 
-          <button className={styles.submit} type="submit" disabled={submitting}>
+          <button className={styles.submit} type="submit" disabled={submitting || googleLoading}>
             {submitting ? "Criando conta…" : "Criar conta"}
           </button>
+
+          <div className={styles.divider}>
+            <span>ou</span>
+          </div>
+
+          <GoogleButton label="Cadastrar com Google" onClick={handleGoogle} disabled={submitting || googleLoading} />
 
           <p className={styles.switch}>
             Já tem conta?{" "}

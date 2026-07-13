@@ -1,0 +1,45 @@
+.button {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    width: 100%;
+
+    padding: 12px;
+
+    border: 1px solid var(--border);
+
+    background: var(--surface);
+
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    font-weight: 500;
+
+    color: var(--text);
+
+    cursor: pointer;
+
+    transition: border-color .2s;
+}
+
+.button:hover:not(:disabled) {
+    border-color: var(--text);
+}
+
+.button:disabled {
+    opacity: .6;
+
+    cursor: not-allowed;
+}
+
+.icon {
+    width: 18px;
+
+    height: 18px;
+}

@@ -108,6 +108,35 @@
     cursor: not-allowed;
 }
 
+.divider {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    font-family: var(--font-body);
+
+    font-size: 12px;
+
+    color: var(--text-muted);
+
+    text-transform: uppercase;
+
+    letter-spacing: var(--tracking);
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+
+    flex: 1;
+
+    height: 1px;
+
+    background: var(--border);
+}
+
 .switch {
     text-align: center;
 

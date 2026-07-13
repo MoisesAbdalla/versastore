@@ -17,13 +17,16 @@ export function AuthProvider({ children }) {
 
     if (!current) {
       setProfile(null);
-      return;
+      return null;
     }
 
     try {
-      setProfile(await getFullProfile(current.uid));
+      const fresh = await getFullProfile(current.uid);
+      setProfile(fresh);
+      return fresh;
     } catch {
       setProfile(null);
+      return null;
     }
   }, []);
 

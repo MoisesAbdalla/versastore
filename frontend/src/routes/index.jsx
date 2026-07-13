@@ -7,10 +7,12 @@ import Product from "../pages/Product";
 import Cart from "../pages/Cart";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import CompleteProfile from "../pages/CompleteProfile";
 import Terms from "../pages/Legal/Terms";
 import Privacy from "../pages/Legal/Privacy";
 import NotFound from "../pages/NotFound";
 import AdminRoute from "./AdminRoute";
+import CompleteProfileGuard from "./CompleteProfileGuard";
 
 // Rotas do painel com code splitting (constituição, Princípio IV): o bundle
 // inicial da loja não carrega nada do admin.
@@ -44,6 +46,15 @@ function AppRoutes() {
           <Route path="/login" element={<Login />} />
 
           <Route path="/register" element={<Register />} />
+
+          <Route
+            path="/completar-cadastro"
+            element={
+              <CompleteProfileGuard>
+                <CompleteProfile />
+              </CompleteProfileGuard>
+            }
+          />
 
           <Route path="/termos" element={<Terms />} />
 
