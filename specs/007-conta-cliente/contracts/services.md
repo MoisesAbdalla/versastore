@@ -10,7 +10,7 @@ campo. Escrita só no próprio `users/{uid}`.
 
 | Função | Assinatura | Notas |
 |---|---|---|
-| `register` | `({name, email, password, phone, termsAccepted}) → user` | cria o Auth user, `updateProfile({displayName: name})`, e grava `users/{uid}` completo (via userService); erro `auth/email-already-in-use` → `email-em-uso` |
+| `register` | `({name, email, password, phone, termsAccepted}) → user` | cria o Auth user, `updateProfile({displayName: name})`, grava `users/{uid}` completo com `termsAcceptedAt` = agora e `termsVersion` = `TERMS_VERSION` (via userService); erro `auth/email-already-in-use` → `email-em-uso` |
 | `login` | `(email, password) → user` | existente |
 | `loginWithGoogle` | `() → user` | `signInWithPopup(GoogleAuthProvider)`; garante `users/{uid}` (nome/e-mail do Google, `authProvider: "google"`) via userService |
 | `resetPassword` | `(email) → void` | `sendPasswordResetEmail`; **nunca** lança para `auth/user-not-found` (resposta neutra, SC-005); outros erros propagam p/ "tentar novamente" |
@@ -22,7 +22,7 @@ campo. Escrita só no próprio `users/{uid}`.
 |---|---|---|
 | `ensureUserProfile` | `(user, extra?) → profile` | existente, estendido: aceita `{phone, termsAcceptedAt, authProvider}`; cria com defaults se ausente (não sobrescreve doc existente) |
 | `getFullProfile` | `(uid) → profile \| null` | doc completo (name, email, phone, termsAcceptedAt, authProvider, addresses, role) — usado pelo AuthContext |
-| `completeProfile` | `(uid, {phone, termsAcceptedAt}) → void` | grava telefone + aceite (passo pós-Google / completar cadastro) |
+| `completeProfile` | `(uid, {phone}) → void` | grava telefone + aceite (`termsAcceptedAt` = agora, `termsVersion` = `TERMS_VERSION`) no passo pós-Google / completar cadastro |
 | `isProfileComplete` | `(profile) → boolean` | `Boolean(profile?.phone) && profile?.termsAcceptedAt != null` |
 | `listAddresses` | `(uid) → Endereço[]` | do `users.addresses` |
 | `saveAddress` | `(uid, address) → void` | cria/atualiza pelo `id`; se `isDefault`, zera o default dos demais (só um por vez) |
@@ -77,7 +77,7 @@ Carrega o perfil via `getFullProfile` após `onAuthStateChanged` (uma leitura po
   propaga outros erros.
 - `authService.loginWithGoogle`: garante `users/{uid}` com `authProvider: "google"`.
 - `userService.isProfileComplete` / `completeProfile`: completo só com phone + termos; completar
-  grava ambos.
+  grava `phone`, `termsAcceptedAt` **e** `termsVersion` (SC — versão registrada).
 - `userService` endereços: `saveAddress`/`setDefaultAddress` mantêm **um** padrão; remove funciona.
 - `orderService.getMyOrder`: retorna `null` para pedido de outro `uid` (SC-006).
 - `cepService.lookupCep`: sucesso mapeia campos; erro/timeout/CEP inexistente → `null` (SC-007).

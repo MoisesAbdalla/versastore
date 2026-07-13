@@ -16,13 +16,15 @@ Já existe (feature 003/R-15). O cadastro do M3 passa a preencher e adicionar:
 | `email` | string | do Auth |
 | `phone` | string | **NOVO. Obrigatório** (ambos os fluxos); guardado normalizado (só dígitos) + exibido com máscara |
 | `termsAcceptedAt` | Timestamp \| null | **NOVO.** Marca do aceite de termos/privacidade (LGPD); `null` = ainda não aceitou |
+| `termsVersion` | string \| null | **NOVO.** Versão do documento de termos/privacidade aceita (ex.: `"2026-07-13"`). Sem isto, quando o texto mudar no M8 não dá para saber quem aceitou qual versão — data sozinha não resolve. Constante única no código (`TERMS_VERSION`) |
 | `authProvider` | string | **NOVO.** `"password"` ou `"google"` — origem da conta |
 | `role` | `"customer"` | inalterado; **imutável pelo cliente** (rule) |
 | `addresses` | array\<Endereço\> | ver abaixo; editável pelo próprio usuário |
 | `orderCount` / `totalSpent` | number | mantidos pelas transações de pedido; **imutáveis pelo cliente** (rule) |
 | `createdAt` | Timestamp | `serverTimestamp()` na criação |
 
-**Perfil completo (derivado, sem campo próprio)**: `Boolean(phone) && termsAcceptedAt != null`.
+**Perfil completo (derivado, sem campo próprio)**: `Boolean(phone) && termsAcceptedAt != null`
+(o aceite grava `termsAcceptedAt` **e** `termsVersion` juntos).
 Contas por e-mail/senha nascem completas (o formulário coleta tudo); contas por Google nascem
 **incompletas** (Google fornece só nome/e-mail) e passam pelo "Complete seu cadastro". Contas
 legadas (feature 003) sem `phone`/`termsAcceptedAt` também contam como incompletas e são convidadas a
@@ -54,9 +56,12 @@ mesma forma do pedido (itens congelados, `statusHistory`, `trackingCode`, endere
 
 ## Consentimento LGPD (base para o M8)
 
-O aceite fica registrado em `users.termsAcceptedAt` (marca temporal). O **texto legal** dos termos e
-da política é responsabilidade do M8; o M3 exibe links/placeholder e grava o instante do aceite,
-exigido antes de a conta ser considerada completa.
+O aceite fica registrado em `users.termsAcceptedAt` (instante) **e** `users.termsVersion` (versão do
+documento aceita) — juntos permitem, quando o texto mudar no M8, saber **quem aceitou qual versão** e
+re-solicitar o aceite de quem está numa versão antiga. A versão vem de uma constante única no código
+(`TERMS_VERSION`, ex.: `"2026-07-13"`), atualizada sempre que os documentos mudarem. O **texto legal**
+em si é responsabilidade do M8; o M3 entrega páginas `/termos` e `/privacidade` com **conteúdo
+provisório** (placeholder claro de que serão substituídas) e grava o aceite com a versão vigente.
 
 ## Validações centralizadas (`utils/validation.js`)
 

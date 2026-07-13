@@ -252,6 +252,12 @@ remover; verificar que os endereços ficam no documento do próprio cliente.
   não forem preenchidos, a conta MUST ser marcada como **cadastro incompleto** e re-solicitada ao
   acessar a área de conta ou o checkout. Telefone e aceite são obrigatórios independentemente do
   método de entrada.
+- **FR-012b**: O aceite dos termos MUST registrar, além do instante (`termsAcceptedAt`), a **versão**
+  do documento aceita (`termsVersion`), para que a mudança dos termos no M8 permita saber quem aceitou
+  qual versão e re-solicitar o aceite de quem estiver numa versão antiga.
+- **FR-012c**: O checkbox de aceite MUST apontar para páginas `/termos` e `/privacidade` que **existem**
+  no M3 (conteúdo provisório, claramente marcado como sujeito a substituição no M8), sob o
+  `MainLayout`.
 
 **Recuperação de senha (US3)**
 
@@ -301,8 +307,11 @@ remover; verificar que os endereços ficam no documento do próprio cliente.
   flag de **padrão**. Mesma forma já usada em `orders.shippingAddress` (feature 003).
 - **Pedido** (`orders`): leitura pelo cliente dos **próprios** pedidos (filtro por `customerId`),
   sem alteração de escrita — o cliente não edita pedidos.
-- **Consentimento LGPD** (campos no usuário): aceite de termos e política com data/hora, preparando
-  a conformidade do M8.
+- **Consentimento LGPD** (campos no usuário): aceite de termos e política com **data/hora**
+  (`termsAcceptedAt`) **e versão aceita** (`termsVersion`), preparando a conformidade e a
+  re-solicitação de aceite quando o texto mudar no M8.
+- **Páginas legais** (`/termos`, `/privacidade`): documentos exibidos ao cliente; no M3 têm conteúdo
+  **provisório** (substituído no M8), mas já existem como destino do checkbox de aceite.
 
 ## Success Criteria *(mandatory)*
 
@@ -343,7 +352,9 @@ remover; verificar que os endereços ficam no documento do próprio cliente.
 - **Consulta de CEP**: serviço público e gratuito (ViaCEP); é uma dependência externa de **leitura**
   que, se falhar, cai para preenchimento manual — nunca bloqueia.
 - **Termos e política de privacidade**: o texto legal em si é responsabilidade do M8; o M3 registra o
-  **aceite** (com data/hora) e exibe links/placeholder para os documentos.
+  **aceite** (data/hora + **versão** aceita) e entrega as páginas `/termos` e `/privacidade` com
+  conteúdo provisório (destino real do checkbox), a serem substituídas no M8. A versão vem da
+  constante `TERMS_VERSION` no código.
 - **Contas antigas sem nome**: continuam funcionando; são convidadas a completar o nome ao logar ou
   no primeiro fluxo que precise dele (checkout/meus dados), sem migração forçada.
 - **Segurança**: as rules já permitem o usuário criar/editar o próprio `users/{uid}` (exceto

@@ -103,6 +103,9 @@ frontend/src/
 │   ├── Account/
 │   │   ├── Orders/              # NOVO — lista + detalhe dos próprios pedidos
 │   │   └── Addresses/           # NOVO — CRUD de endereços com CEP
+│   ├── Legal/
+│   │   ├── Terms/               # NOVO — /termos (conteúdo provisório, substituído no M8)
+│   │   └── Privacy/             # NOVO — /privacidade (conteúdo provisório)
 │   └── ...                      # Home/vitrine/admin inalterados
 ├── services/
 │   ├── authService.js           # ESTENDER — register(dados completos + displayName), loginWithGoogle,
@@ -117,8 +120,10 @@ frontend/src/
 │   ├── index.jsx                # ESTENDER — /recuperar-senha, /completar-cadastro, /minha-conta/*
 │   │                            #   (conta sob PrivateRoute); /login e /register já existem
 │   └── PrivateRoute.jsx         # REUSAR — guard de sessão (já implementado na 003)
-└── constants/
-    └── routes.js                # ESTENDER — rotas de conta
+├── constants/
+│   ├── routes.js                # ESTENDER — rotas de conta + /termos, /privacidade
+│   └── terms.js                 # NOVO — TERMS_VERSION (versão do aceite, gravada no perfil)
+└── ...
 ```
 
 **Structure Decision**: mantém o projeto único em `frontend/`. As telas de auth/conta vivem sob o
