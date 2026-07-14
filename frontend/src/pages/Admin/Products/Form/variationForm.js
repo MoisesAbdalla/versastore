@@ -48,6 +48,82 @@ export function newVariationId() {
   return `var-${Date.now()}-${idCounter}`;
 }
 
+// Normaliza um valor de atributo digitado, para a loja não exibir caixa
+// inconsistente ("preto" vs "AZUL" vs "gg"). Siglas curtas e alfanuméricos em
+// CAIXA ALTA (P, GG, 110V); palavras em Capitalizada (Preta, Azul).
+export function normalizeAttributeValue(raw) {
+  const clean = String(raw || "").trim().replace(/\s+/g, " ");
+
+  if (!clean) {
+    return "";
+  }
+
+  if (clean.length <= 3 || /\d/.test(clean)) {
+    return clean.toUpperCase();
+  }
+
+  return clean[0].toUpperCase() + clean.slice(1).toLowerCase();
+}
+
+// Produto cartesiano dos valores declarados: gera as combinações que ainda
+// não existem (linhas novas com id novo); as existentes são preservadas
+// intactas (id estável). O lojista só preenche SKU/estoque/preço e apaga as
+// combinações que não existem.
+export function generateCombinations(attributes, existingRows) {
+  const axes = (attributes || [])
+    .map((attr) => ({ name: (attr.name || "").trim(), values: (attr.values || []).filter(Boolean) }))
+    .filter((attr) => attr.name && attr.values.length);
+
+  if (axes.length === 0) {
+    return existingRows || [];
+  }
+
+  let combos = [{}];
+
+  for (const axis of axes) {
+    combos = combos.flatMap((partial) =>
+      axis.values.map((value) => ({ ...partial, [axis.name]: value }))
+    );
+  }
+
+  const names = axes.map((axis) => axis.name);
+  const keyOf = (values) => names.map((name) => String(values?.[name] ?? "")).join(" / ");
+  const existingKeys = new Set((existingRows || []).map((row) => keyOf(row.values)));
+
+  const added = combos
+    .filter((values) => !existingKeys.has(keyOf(values)))
+    .map((values) => ({ id: newVariationId(), values, sku: "", priceText: "", stock: "" }));
+
+  return [...(existingRows || []), ...added];
+}
+
+// Renomear um atributo remapeia a chave correspondente nas linhas de variação
+// — sem isso, os valores escolhidos ficariam órfãos sob o nome antigo.
+export function remapAttributeName(formVariations, oldName, newName) {
+  const from = (oldName || "").trim();
+  const to = (newName || "").trim();
+
+  if (!from || from === to) {
+    return formVariations || [];
+  }
+
+  return (formVariations || []).map((row) => {
+    if (!row.values || !(from in row.values)) {
+      return row;
+    }
+
+    const values = { ...row.values };
+
+    if (to) {
+      values[to] = values[from];
+    }
+
+    delete values[from];
+
+    return { ...row, values };
+  });
+}
+
 // Conflitos de fusão ao remover um atributo: grupos de variações que colapsam
 // na mesma combinação sob o conjunto de atributos restante.
 export function conflictsForRemoval(formVariations, nextNames) {

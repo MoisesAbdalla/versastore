@@ -5,6 +5,7 @@ import ProductGallery from "../../components/ProductGallery";
 import VariationSelector from "../../components/VariationSelector";
 import PriceTag from "../../components/PriceTag";
 import { useProductPage } from "../../hooks/useProductPage";
+import { useVariationSelection } from "../../hooks/useVariationSelection";
 import { usePublicCategories } from "../../hooks/usePublicCategories";
 import { useCart } from "../../contexts/CartContext";
 import { useFeedback } from "../../contexts/FeedbackContext";
@@ -13,15 +14,17 @@ import ROUTES from "../../constants/routes";
 import styles from "./styles.module.css";
 
 const ADD_ERRORS = {
-  "variacao-obrigatoria": "Selecione uma opção antes de adicionar.",
+  "variacao-obrigatoria": "Selecione as opções antes de adicionar.",
   "sem-estoque": "Esta opção está esgotada.",
   "estoque-insuficiente": "Quantidade acima do estoque disponível.",
 };
 
 function Product() {
   const { id } = useParams();
-  const { product, loading, notFound, error, selection, selectVariation, hasVariations, currentStock, canBuy, refresh } =
-    useProductPage(id);
+  const { product, loading, notFound, error, refresh } = useProductPage(id);
+  // Seleção POR ATRIBUTO (feature 008): uma escolha por atributo, ordem livre.
+  const { hasVariations, selected, select, optionsByAttribute, resolvedVariation, currentStock, canBuy } =
+    useVariationSelection(product);
   const { slugById } = usePublicCategories();
   const { addItem } = useCart();
   const { toastSuccess, toastError } = useFeedback();
@@ -35,7 +38,7 @@ function Product() {
   function handleAdd() {
     setAttempted(true);
 
-    const result = addItem(product, selection, 1);
+    const result = addItem(product, resolvedVariation, 1);
 
     if (result.ok) {
       toastSuccess("Produto adicionado ao carrinho.");
@@ -88,10 +91,10 @@ function Product() {
   const showLowStock = currentStock != null && currentStock > 0 && currentStock <= threshold;
   const categorySlug = slugById[product.categoryId];
 
-  // Botão: esgotado (desabilitado) quando a opção escolhida — ou o produto
-  // simples — está sem estoque. Sem variação escolhida, o botão fica ativo e o
-  // clique orienta a selecionar.
-  const selectionResolved = selection || !hasVariations;
+  // Botão: esgotado (desabilitado) quando a combinação resolvida — ou o produto
+  // simples — está sem estoque. Com seleção incompleta, o botão fica ativo e o
+  // clique orienta a completar a escolha.
+  const selectionResolved = Boolean(resolvedVariation) || !hasVariations;
   const isSoldOut = selectionResolved && !canBuy;
 
   return (
@@ -117,9 +120,9 @@ function Product() {
 
           {hasVariations && (
             <VariationSelector
-              variations={product.variations}
-              selectedId={selection?.id}
-              onSelect={selectVariation}
+              optionsByAttribute={optionsByAttribute}
+              selected={selected}
+              onSelect={select}
             />
           )}
 
@@ -129,7 +132,7 @@ function Product() {
               {showLowStock && <span className={styles.lowStock}> · últimas unidades!</span>}
             </p>
           ) : (
-            <p className={styles.stockHint}>Selecione uma opção para ver a disponibilidade.</p>
+            <p className={styles.stockHint}>Selecione as opções para ver a disponibilidade.</p>
           )}
 
           <button
@@ -141,8 +144,8 @@ function Product() {
             {isSoldOut ? "Esgotado" : "Adicionar ao carrinho"}
           </button>
 
-          {attempted && hasVariations && !selection && (
-            <p className={styles.selectHint}>Escolha uma opção acima.</p>
+          {attempted && hasVariations && !resolvedVariation && (
+            <p className={styles.selectHint}>Escolha as opções acima.</p>
           )}
 
           {product.description && (

@@ -249,6 +249,30 @@ describe("CartContext — revalidação contra o Firestore (M2)", () => {
     expect(result.current.items[0].unitPrice).toBe(4500);
   });
 
+  it("item PERMANECE após edição que preserva o id da variação (feature 008, R-2)", async () => {
+    // Item salvo aponta para p2::v1; o admin renomeou o atributo e reordenou
+    // valores, mas o id "v1" foi preservado (id estável) — a revalidação
+    // mantém o item, só atualizando preço/estoque.
+    seedCart([{ ...line, lineId: "p2::v1", productId: "p2", variationId: "v1", name: "Camiseta", unitPrice: 8000, maxStock: 2 }]);
+    getPublicProductMock.mockResolvedValueOnce({
+      id: "p2",
+      price: 8000,
+      attributes: [{ name: "Tamanho", values: ["M"] }],
+      variations: [{ id: "v1", attributes: { Tamanho: "M" }, price: null, stock: 4 }],
+    });
+
+    const { result } = renderHook(() => useCart(), { wrapper });
+
+    let changes;
+    await act(async () => {
+      changes = await result.current.revalidate();
+    });
+
+    expect(changes).toEqual([]);
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].maxStock).toBe(4);
+  });
+
   it("remove item cuja variação não existe mais", async () => {
     seedCart([{ ...line, lineId: "p2::vx", productId: "p2", variationId: "vx", name: "Camiseta" }]);
     getPublicProductMock.mockResolvedValueOnce({

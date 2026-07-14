@@ -23,6 +23,9 @@ import {
   valueInUse,
   applyAttributeRemoval,
   newVariationId,
+  normalizeAttributeValue,
+  generateCombinations,
+  remapAttributeName,
 } from "./variationForm";
 import { validateVariations } from "../../../../utils/variationValidation";
 import { getProduct, createProduct, updateProduct } from "../../../../services/productService";
@@ -315,14 +318,30 @@ function ProductFormPage() {
   }
 
   function renameAttribute(index, name) {
-    setAttributes(form.attributes.map((attr, i) => (i === index ? { ...attr, name } : attr)));
+    const oldName = form.attributes[index]?.name || "";
+
+    // Remapeia a chave nas variações junto — senão os valores escolhidos
+    // ficariam órfãos sob o nome antigo (ex.: renomear "tamanho" → "Tamanho").
+    setForm((current) => ({
+      ...current,
+      attributes: current.attributes.map((attr, i) => (i === index ? { ...attr, name } : attr)),
+      variations: remapAttributeName(current.variations, oldName, name),
+    }));
   }
 
   function addValue(index, value) {
+    // Normaliza a caixa na entrada ("preto"/"AZUL"/"gg" → "Preto"/"Azul"/"GG")
+    // p/ a loja não exibir valores visualmente inconsistentes.
+    const normalized = normalizeAttributeValue(value);
+
+    if (!normalized) {
+      return;
+    }
+
     setAttributes(
       form.attributes.map((attr, i) =>
-        i === index && !(attr.values || []).includes(value)
-          ? { ...attr, values: [...(attr.values || []), value] }
+        i === index && !(attr.values || []).includes(normalized)
+          ? { ...attr, values: [...(attr.values || []), normalized] }
           : attr
       )
     );
@@ -418,6 +437,13 @@ function ProductFormPage() {
       ...form.variations,
       { id: newVariationId(), values: {}, sku: "", priceText: "", stock: "" },
     ]);
+  }
+
+  // Produto cartesiano dos valores declarados (ex.: 4 tamanhos × 3 cores = 12
+  // linhas de uma vez); linhas existentes ficam intactas (id estável) e o
+  // lojista apaga as combinações que não existem.
+  function generateAllCombinations() {
+    setField("variations", generateCombinations(form.attributes, form.variations));
   }
 
   function updateVariationField(index, field, value) {
@@ -657,14 +683,28 @@ function ProductFormPage() {
               : "Adicione atributos acima para criar variações"}
           </span>
 
-          <Button
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={addVariation}
-            disabled={attributeNames.length === 0}
-          >
-            Adicionar variação
-          </Button>
+          <div className={styles.variationActions}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={generateAllCombinations}
+              disabled={
+                attributeNames.length === 0 ||
+                form.attributes.some((attr) => attr.name.trim() && !(attr.values || []).length)
+              }
+            >
+              Gerar combinações
+            </Button>
+
+            <Button
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={addVariation}
+              disabled={attributeNames.length === 0}
+            >
+              Adicionar variação
+            </Button>
+          </div>
         </div>
 
         {variationError && (

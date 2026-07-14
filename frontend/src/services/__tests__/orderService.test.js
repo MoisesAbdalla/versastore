@@ -391,6 +391,47 @@ describe("preço congelado (SC-007)", () => {
   });
 });
 
+describe("concorrência lojista-edita × cliente-compra (feature 008, R-3)", () => {
+  it("variação removida no meio da compra → aborta sem baixar estoque de outra", async () => {
+    // O lojista removeu a variação v1 ANTES do commit da transação: o produto
+    // agora só tem v-nova. A compra referencia o variationId antigo.
+    store.set("products/prod-2", {
+      ...store.get("products/prod-2"),
+      variations: [{ id: "v-nova", attributes: { tamanho: "G" }, sku: "CAM-G2", price: null, stock: 9 }],
+    });
+
+    await expect(
+      createOrder({
+        customerId: "cliente-1",
+        items: [{ productId: "prod-2", variationId: "v1", quantity: 1 }],
+        paymentMethod: "pix",
+      })
+    ).rejects.toMatchObject({ code: "nao-encontrado" });
+
+    // Nada foi baixado: estoque da variação restante intacto, nenhum pedido criado.
+    expect(store.get("products/prod-2").variations[0].stock).toBe(9);
+    expect(findOrderPath()).toBeUndefined();
+  });
+
+  it("edição cosmética preservando o id (renomear atributo) → compra conclui", async () => {
+    // Mesmo id v1, atributos renomeados/reordenados (id estável — R-2).
+    store.set("products/prod-2", {
+      ...store.get("products/prod-2"),
+      attributes: [{ name: "Tamanho", values: ["M"] }],
+      variations: [{ id: "v1", attributes: { Tamanho: "M" }, sku: "CAM-M", price: null, stock: 2 }],
+    });
+
+    const result = await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-2", variationId: "v1", quantity: 1 }],
+      paymentMethod: "pix",
+    });
+
+    expect(result.orderNumber).toBe(1);
+    expect(store.get("products/prod-2").variations[0].stock).toBe(1);
+  });
+});
+
 describe("getMyOrder — isolamento por cliente (SC-006)", () => {
   it("retorna o pedido para o próprio dono", async () => {
     await createOrder({

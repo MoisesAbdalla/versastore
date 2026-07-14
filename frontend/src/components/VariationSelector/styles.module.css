@@ -3,6 +3,14 @@
 
     flex-direction: column;
 
+    gap: 16px;
+}
+
+.attribute {
+    display: flex;
+
+    flex-direction: column;
+
     gap: 8px;
 }
 
@@ -56,16 +64,10 @@
     color: #FFFFFF;
 }
 
-.soldOut {
+.unavailable {
     opacity: .45;
 
     cursor: not-allowed;
 
     text-decoration: line-through;
-}
-
-.soldOutTag {
-    font-size: 11px;
-
-    text-transform: uppercase;
 }

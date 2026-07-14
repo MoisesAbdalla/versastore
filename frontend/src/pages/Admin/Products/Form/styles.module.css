@@ -130,6 +130,12 @@
     color: var(--text);
 }
 
+.variationActions {
+    display: flex;
+
+    gap: 8px;
+}
+
 .variationError {
     padding: 10px 14px;
 
