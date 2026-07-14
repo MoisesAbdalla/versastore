@@ -4,7 +4,26 @@ Roteiro de validação ponta a ponta. Rodar `npm run dev`, `npm run test`, `npm 
 
 ## Pré-requisitos
 - Logado como **admin** para o painel; base com pelo menos: um produto 2-atributos consistente, um produto simples, e um produto legado inconsistente (ex.: uma variação "azul" sem tamanho).
-- Rodar a migração uma vez (dev, console): `await backfillVariations()`.
+
+## Passos manuais do usuário (deploy + migração) — fora do código
+
+Estes dois passos são seus (como foi no M1 com os índices N1/N2), na ordem:
+
+1. **Deploy dos índices compostos novos** (necessário para a vitrine excluir os produtos sinalizados em produção). Só depois de `firestore.indexes.json` estar atualizado (tarefa de código T-índices):
+   ```bash
+   firebase deploy --only firestore:indexes
+   ```
+   Aguardar o Firebase terminar de construir os índices (pode levar alguns minutos) antes de validar a vitrine em produção.
+
+2. **Rodar a migração** `backfillVariations` — **depois** de o modelo/validação/service e o **editor do admin** estarem prontos (assim, ao ver os sinalizados, você já consegue corrigi-los). Em dev, logado como admin, no console do navegador:
+   ```js
+   await backfillVariations()
+   ```
+   Conferir a saída `{ updated, flagged, skipped }`:
+   - `updated` = quantos produtos ganharam/atualizaram `attributes`;
+   - `flagged` = quantos foram **sinalizados para revisão** (variações discordantes — corrija-os no admin);
+   - `skipped` = já estavam ok.
+   Rodar **de novo** deve dar `updated: 0` (idempotente — a 2ª execução é no-op).
 
 ## 1. Admin — editor dinâmico + validação (US1)
 1. Novo produto → em Atributos, adicionar "Tamanho" [P, M, G, GG] e "Cor" [preta, azul]. A tabela de variações passa a ter colunas Tamanho e Cor (selects).
@@ -38,4 +57,4 @@ Roteiro de validação ponta a ponta. Rodar `npm run dev`, `npm run test`, `npm 
 
 ## Gates
 - `npm run test` verde (novos: variationValidation, useVariationSelection, productService consistência/hide, orderService concorrência, backfillVariations); `npm run lint` sem erros; `npm run build` íntegro.
-- Deploy dos índices (`firestore.indexes.json`) é passo manual do lojista antes de a vitrine excluir inconsistentes em produção.
+- Os dois passos manuais (deploy dos índices e `backfillVariations`) estão descritos na seção "Passos manuais do usuário" acima.
