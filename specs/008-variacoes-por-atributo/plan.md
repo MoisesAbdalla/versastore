@@ -84,7 +84,7 @@ frontend/src/
 │       ├── Products/List/index.jsx     # badge "Variação inconsistente" na linha
 │       └── Dashboard/index.jsx         # card de Alertas: "N produtos ocultos por inconsistência"
 ├── dev/backfillVariations.js           # NOVO — migração idempotente + sinalização
-└── firestore.indexes.json              # + índices p/ excluir variationsInconsistent das consultas públicas
+(raiz) firestore.indexes.json           # + índices p/ excluir variationsInconsistent das consultas públicas (arquivo na RAIZ do repo, não em frontend/)
 ```
 
 **Structure Decision**: single-frontend existente. Toda a mudança fica em `frontend/src` (mais 1 entrada em `firestore.indexes.json` e a doc `docs/design-system.md`). Sem backend, sem novas coleções, sem mudança nas security rules (a vitrine continua lendo `products` com `status ativo && !deleted`; a exclusão de inconsistentes é filtro adicional de igualdade). Variações seguem embutidas no produto.
