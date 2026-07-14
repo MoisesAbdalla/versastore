@@ -138,10 +138,10 @@ manual; marcar padrão (um só); editar/remover.
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T022 [P] Atualizar `docs/design-system.md` com o padrão de formulários da loja (`FormField`, `PasswordField`/força, `Checkbox` de aceite) e as telas de auth/conta (login, cadastro, completar cadastro, recuperar senha, meus pedidos, endereços)
-- [ ] T023 Auditoria responsiva (375px) das telas de auth e conta (SC-008) e de acessibilidade (labels associados aos inputs, foco/Esc nos formulários)
-- [ ] T024 Gates finais: `npm run lint` (zero erros), `npm run test` (201 baseline + novos verdes — SC-009), `npm run build` (bundle da loja íntegro)
-- [ ] T025 Executar a validação completa do quickstart.md (§0–7), incluindo habilitar o provedor Google no console e a regressão de Home/vitrine/carrinho/admin
+- [x] T022 [P] Atualizar `docs/design-system.md` com o padrão de formulários da loja (`FormField`, `PasswordField`/força, `Checkbox` de aceite, `GoogleButton`) e as telas de auth/conta (login, cadastro, completar cadastro, recuperar senha, meus pedidos, endereços) + `PageContainer`/`narrow` e chave do carrinho por identidade
+- [ ] T023 Auditoria responsiva (375px) das telas de auth e conta (SC-008) e de acessibilidade (labels associados aos inputs, foco/Esc nos formulários) — **validação manual do usuário**
+- [x] T024 Gates finais: `npm run lint` (só 3 warnings fast-refresh conhecidos), `npm run test` (254 verdes — SC-009), `npm run build` (bundle da loja íntegro)
+- [ ] T025 Executar a validação completa do quickstart.md (§0–7), incluindo habilitar o provedor Google no console e a regressão de Home/vitrine/carrinho/admin — **validação manual do usuário**
 
 ---
 

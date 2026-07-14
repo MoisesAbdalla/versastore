@@ -323,11 +323,62 @@ o `MainLayout` (TopBar + Header + Navbar + Footer).
 
 - `CartBadge` no header: ícone com contador (`--secondary`).
 - Página `/cart` (M2): itens + quantidade/remover + subtotal, persistida em `localStorage`
-  (`versastore:cart`). Ao abrir, **revalida** cada item contra o Firestore (preço/estoque atuais,
-  remove indisponíveis) e mostra um **aviso** listando o que mudou (borda dourada). CTA "Finalizar
-  compra" desabilitado até o checkout (M4).
+  **por identidade** (`versastore:cart:<uid>`, `:guest` p/ anônimo — feature 007). Ao abrir,
+  **revalida** cada item contra o Firestore (preço/estoque atuais, remove indisponíveis) e mostra um
+  **aviso** listando o que mudou (borda dourada). CTA "Finalizar compra" desabilitado até o checkout
+  (M4).
 
 ## Busca
 
 - Campo no header submete no Enter/lupa → `/products?q=termo` (sem consulta ao vivo). Resultados por
   relevância/recência; compõe com uma categoria.
+
+# Conta do Cliente (007-conta-cliente, 2026-07-13)
+
+Telas de autenticação e área de conta, sob o `MainLayout`, responsivas (usáveis em 375px), com
+feedback de erro **campo a campo** em pt-BR (nunca `alert`).
+
+## Formulários da loja (`components/form/`)
+
+- **`FormField`**: rótulo + input + mensagem de erro no próprio campo (só após `touched`/blur ou
+  tentativa de submit); `aria-invalid`/`aria-describedby`. Aceita `disabled` e `hint` (campo somente
+  leitura, ex.: e-mail em "Meus dados").
+- **`PasswordField`**: mostrar/ocultar (ícone MUI) + indicador de força (0..4 barras) via
+  `passwordStrength` de `utils/validation.js`.
+- **`Checkbox`**: aceite de termos com links embutidos (LGPD).
+- **`GoogleButton`**: "Entrar/Cadastrar com Google" — ícone G em SVG inline (sem asset externo);
+  divisor "ou" separando do formulário.
+- Orquestração de estado/validação: hook `useAuthForm(initialValues, schema)`
+  (`values/errors/touched/setField/blurField/validateAll`).
+
+## Telas
+
+- **Login** (`/login`), **Cadastro** (`/register`), **Recuperar senha** (`/recuperar-senha`),
+  **Completar cadastro** (`/completar-cadastro`, passo pós-Google): card centralizado (max-width
+  420–460px) sobre `--surface` com borda. Recuperação mostra **sempre** a mesma confirmação neutra
+  (não vaza existência de conta).
+- **Páginas legais** (`/termos`, `/privacidade`): conteúdo provisório (aviso de substituição no M8),
+  exibem `TERMS_VERSION`; destino do checkbox de aceite.
+
+## Área de conta (`/conta`)
+
+- **`AccountLayout`**: uma página com **abas** (`NavLink` + `Outlet`) — Meus dados / Meus pedidos /
+  Meus endereços. Estrutura extensível (Lista de Desejos entra como aba na Fase C). Usa o
+  `PageContainer` na variante **`narrow`** (max-width 760px) — área majoritariamente de formulário.
+- **Menu do usuário** (`UserMenu`, no header quando logado): dropdown com Minha conta / Meus pedidos
+  / Meus endereços, **separador** e Sair; item **Painel admin** quando `isAdmin`; fecha em
+  clique-fora/Esc.
+- **Meus dados**: edita nome+telefone (mantém `nameLower`/displayName), e-mail somente leitura,
+  "alterar senha" por e-mail de redefinição.
+- **Meus pedidos**: lista (nº, data, status, valor) + detalhe (itens com preço do momento, endereço,
+  status, rastreio); badge de status local; estados carregando/vazio/erro. Vazio → CTA "Ver produtos".
+- **Meus endereços**: CRUD com busca por CEP (ViaCEP; falha cai para preenchimento manual), marcar
+  padrão (um só). Vazio → CTA **"+ Adicionar endereço"** (a ação que resolve o vazio).
+
+## `PageContainer` (container compartilhado)
+
+- Fonte única de `max-width` + `padding: 32px 24px 64px` + centralização. Padrão **1200px**
+  (catálogo/produto); variante **`narrow` 760px** (conta). `html { scrollbar-gutter: stable }` mantém
+  o eixo central idêntico entre páginas curtas e longas.
+- **`EmptyState`** aceita `actionOnClick` (ação na própria página) além de `actionTo` (link): o CTA do
+  vazio deve ser a ação que resolve o vazio.
