@@ -17,11 +17,19 @@ Hoje o admin salva variações com atributos vazios (sem validação) e a vitrin
 
 O objetivo é: cada produto declara seus atributos (ex.: Tamanho, Cor; ou só Voltagem; ou Tamanho + Cor + Material); todas as variações compartilham exatamente esse conjunto; e o cliente escolhe uma opção por atributo, com o sistema resolvendo a variação correspondente.
 
+## Clarifications
+
+### Session 2026-07-13
+
+- Q: De onde vêm os valores de cada atributo (ex.: P, M, G, GG) e em que ordem aparecem no seletor? → A: O produto declara, por atributo, uma **lista ordenada de valores permitidos**; as variações escolhem valores dessa lista (ordem e consistência garantidas por construção, sem "preta" vs "Preta"). O admin permite **reordenar** os valores; **remover** um valor que já tem variação/estoque associado é bloqueado ou tratado explicitamente.
+- Q: Um produto já publicado (com variações/vendas) pode ter os atributos alterados depois? → A: Sim — pode adicionar/remover/renomear atributos e valores mesmo publicado, mas **salvar exige todas as variações consistentes** com o novo conjunto (validação da US1) e **publicar fica bloqueado até consistente**. Remoção de um atributo (ou de um valor) que **colapse variações distintas em duplicatas** (ex.: remover "Cor" faz "P/preta" e "P/azul" virarem "P" com estoques diferentes) MUST ser detectada e **resolvida explicitamente pelo lojista** (qual variação sobrevive / somar estoques) — nunca automático nem silencioso. Pedidos antigos permanecem congelados.
+- Q: O que a vitrine faz com um produto sinalizado como inconsistente enquanto não corrigido? → A: **Esconder do catálogo** (listagem e página) enquanto sinalizado, com alerta **impossível de ignorar** no admin: badge na linha do produto na listagem, contador/aviso no dashboard ("N produtos ocultos por inconsistência de variação") e mensagem clara na tela de edição explicando o que corrigir. Mesmo tratamento para os produtos sinalizados pela migração.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Lojista cadastra variações consistentes por atributo (Priority: P1)
 
-O lojista define, no cadastro/edição de um produto, **quais atributos** aquele produto tem (ex.: Tamanho e Cor) e adiciona variações preenchendo **um valor para cada atributo**, mais estoque, SKU e preço opcional por variação. O sistema impede salvar/publicar variações inconsistentes.
+O lojista define, no cadastro/edição de um produto, **quais atributos** aquele produto tem e a **lista ordenada de valores** de cada um (ex.: Tamanho → P, M, G, GG; Cor → preta, azul), e adiciona variações **escolhendo um valor por atributo**, mais estoque, SKU e preço opcional por variação. O sistema impede salvar/publicar variações inconsistentes.
 
 **Why this priority**: é a fundação — sem dados consistentes (todas as variações com o mesmo conjunto de atributos, todos preenchidos), o seletor por atributo da vitrine não tem como funcionar. Também é a raiz do bug de dados relatado.
 
@@ -29,11 +37,13 @@ O lojista define, no cadastro/edição de um produto, **quais atributos** aquele
 
 **Acceptance Scenarios**:
 
-1. **Given** um produto novo, **When** o lojista adiciona os atributos "Tamanho" e "Cor", **Then** o editor de variações passa a pedir um valor de Tamanho e um de Cor por variação (uma coluna por atributo).
-2. **Given** uma variação com "Cor" preenchida e "Tamanho" vazio, **When** o lojista tenta salvar, **Then** o sistema bloqueia e aponta o campo faltante.
-3. **Given** duas variações com a mesma combinação (ex.: "P / Azul" repetida), **When** o lojista tenta salvar, **Then** o sistema bloqueia e sinaliza a duplicidade.
+1. **Given** um produto novo, **When** o lojista adiciona o atributo "Tamanho" com valores [P, M, G, GG] e "Cor" com [preta, azul], **Then** o editor de variações passa a oferecer um seletor de Tamanho e um de Cor por variação (valor escolhido da lista declarada, uma coluna por atributo).
+2. **Given** uma variação com "Cor" escolhida e "Tamanho" sem valor, **When** o lojista tenta salvar, **Then** o sistema bloqueia e aponta o campo faltante.
+3. **Given** duas variações com a mesma combinação (ex.: "P / azul" repetida), **When** o lojista tenta salvar, **Then** o sistema bloqueia e sinaliza a duplicidade.
 4. **Given** um produto com variações válidas mas com um atributo faltando em uma delas, **When** o lojista tenta mudar o status para "ativo" (publicar), **Then** a publicação é bloqueada até a inconsistência ser corrigida.
-5. **Given** um produto com atributos Tamanho e Cor, **When** o lojista adiciona um terceiro atributo "Material", **Then** o editor passa a exigir Material em todas as variações (comportamento detalhado depende da decisão de mutabilidade — ver Clarifications).
+5. **Given** um produto publicado com atributos Tamanho e Cor e variações cadastradas, **When** o lojista adiciona um terceiro atributo "Material", **Then** o editor exige Material em todas as variações e o salvar/publicar fica bloqueado até todas ficarem consistentes (FR-020).
+6. **Given** um produto com "P/preta" e "P/azul" (estoques diferentes), **When** o lojista remove o atributo "Cor", **Then** o sistema detecta que ambas colapsam em "P" e exige que o lojista resolva o conflito (qual sobrevive ou somar estoques) antes de salvar (FR-008a).
+7. **Given** um atributo Tamanho com valores [P, M, G, GG], **When** o lojista reordena para [GG, G, M, P], **Then** essa passa a ser a ordem exibida no seletor da vitrine (FR-002a).
 
 ---
 
@@ -79,9 +89,10 @@ Os produtos já cadastrados (modelo antigo, sem lista de atributos declarada e p
 - **Todas as combinações esgotadas**: produto aparece com "Esgotado"; seletor visível mas compra bloqueada.
 - **Seleção parcial**: enquanto faltar escolher algum atributo, não há estoque/preço de variação resolvido nem compra.
 - **Combinação inexistente**: um par de valores que não corresponde a nenhuma variação cadastrada fica indisponível (desabilitado), nunca resolve compra.
-- **Produto sinalizado como inconsistente na vitrine**: comportamento a definir — ver Clarifications (esconder do catálogo / mostrar sem seletor bloqueando compra / bloquear só a compra).
+- **Produto sinalizado como inconsistente**: escondido da vitrine (listagem + página) enquanto sinalizado; alerta impossível de ignorar no admin (badge na listagem, contador no dashboard, mensagem na edição) — ver FR-017/FR-017a.
+- **Remoção que gera duplicidade**: remover um atributo/valor que colapsa variações distintas na mesma combinação (ex.: remover "Cor" → "P/preta" e "P/azul" viram "P") exige resolução explícita do lojista (qual sobrevive / somar estoques); nunca automático — ver FR-008a.
+- **Remover valor com estoque**: tirar um valor da lista (ex.: "GG") quando já há variação com estoque nesse valor é bloqueado/tratado explicitamente — ver FR-008a.
 - **Pedidos e carrinho já existentes**: itens de pedido são congelados no momento da compra e guardam o rótulo da variação; a mudança de modelo NÃO os altera (pedido histórico é imutável). Carrinho salvo continua válido: o rótulo já gravado é preservado e a revalidação contra o produto atual segue funcionando.
-- **Mudar atributos de um produto já publicado/vendido**: ver Clarifications (impacto em migração e integridade).
 - **Muitos valores/atributos**: um produto com muitas combinações (ex.: 3 atributos) ainda deve exibir o seletor de forma legível (uma linha por atributo, não a explosão de combinações).
 
 ## Requirements *(mandatory)*
@@ -90,17 +101,19 @@ Os produtos já cadastrados (modelo antigo, sem lista de atributos declarada e p
 
 **Modelo e consistência**
 
-- **FR-001**: O sistema MUST permitir que cada produto declare uma lista **ordenada** de nomes de atributos (0..N), representando os eixos de variação daquele produto (ex.: [Tamanho, Cor]).
-- **FR-002**: Toda variação de um produto MUST fornecer um valor **não vazio** para **cada** atributo declarado do produto — nem mais, nem menos.
+- **FR-001**: O sistema MUST permitir que cada produto declare uma lista **ordenada** de atributos (0..N), onde cada atributo tem um **nome** e uma **lista ordenada de valores permitidos** (ex.: Tamanho → [P, M, G, GG]; Cor → [preta, azul, verde]).
+- **FR-002**: Toda variação de um produto MUST escolher, para **cada** atributo declarado, exatamente **um valor** da lista de valores permitidos daquele atributo (não vazio) — nem mais atributos, nem menos.
+- **FR-002a**: A ordem de exibição dos valores no seletor MUST seguir a ordem declarada dos valores no atributo (não a ordem de cadastro das variações nem ordem alfabética).
 - **FR-003**: Um produto MAY não ter atributos nem variações (produto simples); nesse caso a disponibilidade e a compra usam o estoque geral do produto, sem seletor.
 - **FR-004**: A mudança MUST ser **aditiva e retrocompatível**: produtos e variações existentes continuam legíveis; a introdução da lista de atributos não invalida documentos antigos antes da migração.
 
 **Admin (cadastro/edição)**
 
-- **FR-005**: O lojista MUST poder definir e reordenar os nomes de atributos de um produto, e o editor de variações MUST refletir dinamicamente um campo por atributo declarado (em vez de campos fixos de Tamanho/Cor).
-- **FR-006**: Ao salvar, o sistema MUST bloquear e sinalizar, campo a campo, quando (a) alguma variação tem atributo vazio, (b) há combinação de atributos duplicada entre variações, ou (c) as variações não compartilham o mesmo conjunto de atributos.
+- **FR-005**: O lojista MUST poder definir, renomear e **reordenar** os atributos de um produto e, dentro de cada atributo, definir e **reordenar** a lista de valores permitidos; o editor de variações MUST refletir dinamicamente um seletor por atributo declarado (valor escolhido da lista permitida), em vez de campos fixos de Tamanho/Cor.
+- **FR-006**: Ao salvar, o sistema MUST bloquear e sinalizar, campo a campo, quando (a) alguma variação tem atributo sem valor, (b) há combinação de valores duplicada entre variações, ou (c) as variações não cobrem exatamente o conjunto de atributos declarado.
 - **FR-007**: O sistema MUST impedir **publicar** (status ativo) um produto com variações inconsistentes segundo FR-006, com mensagem clara do que corrigir.
 - **FR-008**: Estoque, SKU e preço opcional MUST continuar sendo **por variação** (comportamento atual preservado).
+- **FR-008a**: Remover um **atributo** ou um **valor** que possua variação/estoque associado MUST ser tratado explicitamente — nunca descartado ou mesclado em silêncio. Quando a remoção **colapsa variações distintas em uma combinação duplicada** (ex.: remover "Cor" faz "P/preta" e "P/azul" virarem ambas "P"), o sistema MUST detectar o conflito e **exigir que o lojista resolva** (escolher qual variação sobrevive ou somar os estoques) antes de salvar.
 
 **Vitrine (página do produto)**
 
@@ -112,21 +125,22 @@ Os produtos já cadastrados (modelo antigo, sem lista de atributos declarada e p
 
 **Migração e integridade**
 
-- **FR-014**: O sistema MUST oferecer uma rotina de migração **idempotente** que, por produto, deriva a lista de atributos a partir das chaves preenchidas em **todas** as variações e remove chaves vazias; rodar a rotina novamente NÃO MUST produzir mudanças adicionais.
+- **FR-014**: O sistema MUST oferecer uma rotina de migração **idempotente** que, por produto, deriva a lista de atributos a partir das chaves preenchidas em **todas** as variações (removendo chaves vazias) e, para cada atributo, a **lista de valores permitidos** a partir dos valores distintos já usados (ordem inicial = primeira aparição; o lojista pode reordenar depois no admin); rodar a rotina novamente NÃO MUST produzir mudanças adicionais.
 - **FR-015**: A migração MUST **sinalizar para revisão manual** (sem alterar) os produtos cujas variações discordam do conjunto de atributos, e NÃO MUST inventar/adivinhar valores.
 - **FR-016**: O lojista MUST poder identificar quais produtos estão sinalizados para revisão e, ao corrigi-los conforme FR-006, a sinalização MUST ser removida.
-- **FR-017**: A vitrine MUST tratar de forma definida um produto sinalizado como inconsistente enquanto não corrigido [NEEDS CLARIFICATION: comportamento na vitrine para produto inconsistente — esconder do catálogo, mostrar sem seletor bloqueando a compra, ou bloquear apenas a compra?].
+- **FR-017**: Um produto sinalizado como inconsistente MUST ser **escondido da vitrine** (não aparece na listagem do catálogo nem na página do produto) enquanto sinalizado.
+- **FR-017a**: O admin MUST tornar a sinalização **impossível de ignorar**: (a) badge de alerta na linha do produto na listagem do admin; (b) contador/aviso no dashboard ("N produtos ocultos por inconsistência de variação"); (c) mensagem clara na tela de edição do produto, explicando o problema e como corrigir. O mesmo tratamento vale para produtos sinalizados pela migração (FR-015).
 - **FR-018**: Itens de pedidos já existentes MUST permanecer imutáveis e preservar o rótulo da variação comprada; a mudança de modelo NÃO MUST alterar pedidos históricos nem remover a informação da variação já congelada.
 - **FR-019**: Carrinhos já salvos MUST continuar válidos: o rótulo de variação já gravado é preservado e a revalidação de disponibilidade/preço contra o produto atual segue funcionando.
 
 **Mutabilidade após publicação**
 
-- **FR-020**: O sistema MUST definir se e como os atributos de um produto **já publicado** (com variações e possivelmente com vendas) podem ser alterados [NEEDS CLARIFICATION: permitir livremente / permitir só quando não há variações / permitir exigindo re-preenchimento de todas as variações / travar após publicado].
+- **FR-020**: Os atributos e valores de um produto **já publicado** (com variações e possivelmente vendas) MAY ser alterados (adicionar/remover/renomear), porém **salvar MUST exigir todas as variações consistentes** com o novo conjunto (validação de FR-006) e **publicar MUST ficar bloqueado** enquanto inconsistente. A remoção que gere duplicidade de combinação segue FR-008a (resolução explícita pelo lojista). Pedidos já existentes permanecem congelados (FR-018).
 
 ### Key Entities *(include if feature involves data)*
 
-- **Produto**: item do catálogo. Novo atributo: **lista ordenada de nomes de atributos** (eixos de variação; vazia para produto simples). Estado adicional: **sinalização de "precisa de revisão"** para casos inconsistentes detectados na migração. Mantém estoque geral (usado quando simples), status (rascunho/ativo/inativo), etc.
-- **Variação**: opção comprável de um produto. Guarda um **valor por atributo declarado** (conjunto idêntico entre todas as variações do produto), além de estoque, SKU e preço opcional. A combinação de valores é única dentro do produto.
+- **Produto**: item do catálogo. Novo atributo: **lista ordenada de atributos**, cada um com **nome** e **lista ordenada de valores permitidos** (vazia para produto simples). Estado adicional: **sinalização de "precisa de revisão"** para casos inconsistentes detectados na migração (produto escondido da vitrine enquanto sinalizado). Mantém estoque geral (usado quando simples), status (rascunho/ativo/inativo), etc.
+- **Variação**: opção comprável de um produto. Guarda **um valor por atributo declarado**, escolhido da lista de valores permitidos daquele atributo (conjunto idêntico entre todas as variações do produto), além de estoque, SKU e preço opcional. A combinação de valores é única dentro do produto.
 - **Item de pedido (congelado)**: registro imutável do que foi comprado, incluindo o **rótulo da variação** no momento da compra. Não é afetado por mudanças no produto/variação vivos.
 - **Item de carrinho**: linha persistida com identidade por produto+variação e rótulo já derivado; revalidada contra o produto atual ao abrir o carrinho.
 
@@ -142,10 +156,13 @@ Os produtos já cadastrados (modelo antigo, sem lista de atributos declarada e p
 - **SC-006**: Nenhum produto é alterado automaticamente quando suas variações são inconsistentes — todos esses casos ficam sinalizados para revisão manual.
 - **SC-007**: Produtos simples (sem variação) continuam compráveis exatamente como antes (nenhuma regressão no fluxo de compra do caso simples).
 - **SC-008**: Nenhum pedido histórico perde a informação da variação comprada após a mudança de modelo (o rótulo permanece idêntico ao gravado na compra).
+- **SC-009**: Os valores de cada atributo aparecem no seletor da vitrine na ordem declarada pelo lojista (reordenar no admin muda a ordem exibida).
+- **SC-010**: Nenhuma remoção de atributo/valor descarta ou mescla estoque em silêncio — todo conflito de duplicidade é apresentado ao lojista para resolução explícita antes de salvar.
+- **SC-011**: Todo produto sinalizado como inconsistente fica invisível na vitrine e, ao mesmo tempo, visível no admin em pelo menos três pontos (linha da listagem, dashboard e tela de edição).
 
 ## Assumptions
 
-- O armazenamento atual da variação já é um mapa de atributos por variação, então declarar a lista de atributos do produto é uma extensão **aditiva** — produtos antigos permanecem legíveis até a migração normalizá-los.
+- O armazenamento atual da variação já é um mapa de atributos por variação, então declarar no produto a lista ordenada de atributos **com seus valores permitidos** é uma extensão **aditiva** — produtos antigos permanecem legíveis até a migração normalizá-los (derivando os valores permitidos a partir dos valores já usados nas variações).
 - Os nomes de atributos são livres (definidos pelo lojista), não um conjunto fixo — o modelo precisa suportar atributos como Voltagem ou Material, não só Tamanho/Cor.
 - A quantidade de atributos por produto é pequena na prática (tipicamente 1 a 3); o seletor prioriza legibilidade para esses casos, sem meta de suportar dezenas de eixos.
 - A migração é uma rotina operacional do lojista/dev (no padrão dos backfills já existentes), executada uma vez após o deploy; não é um fluxo do cliente.

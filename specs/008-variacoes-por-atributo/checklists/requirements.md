@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,7 +31,8 @@
 
 ## Notes
 
-- **2 marcadores [NEEDS CLARIFICATION] deixados de propósito para o `/speckit-clarify`**, a pedido do usuário:
-  - **FR-017** — comportamento da vitrine para produto sinalizado como inconsistente (esconder / mostrar sem seletor bloqueando compra / bloquear só a compra).
-  - **FR-020** — mutabilidade dos atributos de um produto já publicado com variações/vendas (permitir livremente / só sem variações / exigindo re-preenchimento / travar após publicado).
-- Demais itens do checklist passam. Resolver os dois marcadores no `/speckit-clarify` antes do `/speckit-plan`.
+- Clarificações resolvidas no `/speckit-clarify` (Session 2026-07-13):
+  - **Valores por atributo**: produto declara lista **ordenada de valores permitidos** por atributo; variações escolhem da lista (ordem/consistência por construção); admin reordena; remoção de valor com estoque tratada explicitamente.
+  - **FR-020** — produto publicado pode ter atributos alterados, mas salvar exige variações consistentes e publicar fica bloqueado até lá; remoção que colapse variações em duplicata exige resolução explícita do lojista (FR-008a).
+  - **FR-017** — produto inconsistente fica escondido da vitrine, com alerta impossível de ignorar no admin (listagem + dashboard + edição).
+- Todos os itens do checklist passam. Pronto para `/speckit-plan`.
