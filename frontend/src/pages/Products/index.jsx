@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import MainLayout from "../../layouts/MainLayout";
+import PageContainer from "../../components/PageContainer";
 import ProductCard from "../../components/ProductCard";
 import CategoryFilter from "../../components/CategoryFilter";
 import SortSelect from "../../components/SortSelect";
@@ -23,7 +24,7 @@ function Products() {
 
   return (
     <MainLayout>
-      <div className={styles.page}>
+      <PageContainer className={styles.page}>
         <header className={styles.header}>
           <h1 className={styles.title}>
             {filters.q ? `Resultados para "${filters.q}"` : "Produtos"}
@@ -89,7 +90,7 @@ function Products() {
             )}
           </>
         )}
-      </div>
+      </PageContainer>
     </MainLayout>
   );
 }

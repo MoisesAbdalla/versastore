@@ -15,3 +15,11 @@
     font-display: swap;
     src: url("../assets/fonts/playfair-display-latin.woff2") format("woff2");
 }
+
+/* Reserva o espaço da barra de rolagem vertical sempre — assim o eixo dos
+   containers centralizados (margin:0 auto) é idêntico em páginas curtas (ex.:
+   conta vazia) e longas (ex.: catálogo). Sem isso, a barra que só aparece nas
+   páginas longas deslocava o conteúdo centralizado entre uma página e outra. */
+html {
+    scrollbar-gutter: stable;
+}

@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import MainLayout from "../MainLayout";
+import PageContainer from "../../components/PageContainer";
 import ROUTES from "../../constants/routes";
 import styles from "./styles.module.css";
 
@@ -17,7 +18,7 @@ const TABS = [
 function AccountLayout() {
   return (
     <MainLayout>
-      <div className={styles.page}>
+      <PageContainer>
         <h1 className={styles.title}>Minha conta</h1>
 
         <nav className={styles.tabs} aria-label="Seções da conta">
@@ -38,7 +39,7 @@ function AccountLayout() {
         <div className={styles.panel}>
           <Outlet />
         </div>
-      </div>
+      </PageContainer>
     </MainLayout>
   );
 }
