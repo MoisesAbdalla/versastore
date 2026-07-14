@@ -39,6 +39,8 @@
 
     border: 1px solid var(--primary);
 
+    background: none;
+
     color: var(--primary);
 
     font-family: var(--font-body);
@@ -50,6 +52,10 @@
     text-transform: uppercase;
 
     text-decoration: none;
+
+    cursor: pointer;
+
+    transition: background .2s, color .2s;
 }
 
 .action:hover {

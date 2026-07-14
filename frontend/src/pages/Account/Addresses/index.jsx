@@ -5,7 +5,6 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { saveAddress, removeAddress, setDefaultAddress } from "../../../services/userService";
 import { lookupCep } from "../../../services/cepService";
 import { validateCep, maskCep, onlyDigits } from "../../../utils/validation";
-import ROUTES from "../../../constants/routes";
 import styles from "./styles.module.css";
 
 const EMPTY_FORM = {
@@ -159,8 +158,8 @@ function AccountAddresses() {
         <EmptyState
           title="Você ainda não cadastrou endereços"
           description="Cadastre um endereço para agilizar suas compras."
-          actionLabel="Ver produtos"
-          actionTo={ROUTES.PRODUCTS}
+          actionLabel="+ Adicionar endereço"
+          actionOnClick={openNew}
         />
       )}
 
@@ -291,9 +290,11 @@ function AccountAddresses() {
           </div>
         </form>
       ) : (
-        <button type="button" className={styles.addBtn} onClick={openNew}>
-          + Adicionar endereço
-        </button>
+        addresses.length > 0 && (
+          <button type="button" className={styles.addBtn} onClick={openNew}>
+            + Adicionar endereço
+          </button>
+        )
       )}
     </div>
   );
