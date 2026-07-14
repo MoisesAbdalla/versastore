@@ -468,7 +468,10 @@ export async function getFeaturedProducts() {
     collection(db, "products"),
     where("destaque", "==", true),
     where("deleted", "==", false),
-    where("status", "==", PRODUCT_STATUS.ATIVO)
+    where("status", "==", PRODUCT_STATUS.ATIVO),
+    // Produto sinalizado como inconsistente fica fora da vitrine (feature 008,
+    // FR-017). Exige o campo populado em todos os docs — backfillVariations.
+    where("variationsInconsistent", "==", false)
   );
 
   const snapshot = await getDocs(featuredQuery);
@@ -503,6 +506,9 @@ export async function listPublicProducts({
   const constraints = [
     where("deleted", "==", false),
     where("status", "==", PRODUCT_STATUS.ATIVO),
+    // Fora da vitrine enquanto sinalizado (feature 008, FR-017). Pré-requisito
+    // de produção: índices novos deployados + backfillVariations executado.
+    where("variationsInconsistent", "==", false),
   ];
 
   const ids = (categoryIds || []).filter(Boolean).slice(0, IN_LIMIT);
@@ -581,6 +587,11 @@ export async function getPublicProduct(id) {
   const data = snapshot.data();
 
   if (data.deleted || data.status !== PRODUCT_STATUS.ATIVO) {
+    return null;
+  }
+
+  // Sinalizado como inconsistente → 404 amigável, como inativo (FR-017).
+  if (data.variationsInconsistent === true) {
     return null;
   }
 

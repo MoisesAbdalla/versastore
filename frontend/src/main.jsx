@@ -14,6 +14,7 @@ import { CartProvider } from './contexts/CartContext';
 // como admin, no console do navegador:
 //   await backfillProducts()      migração one-time de produtos legados
 //   await seedOrders({ count })   pedidos de exemplo p/ quickstart §4-7
+//   await backfillVariations()    migração p/ variações por atributo (008)
 if (import.meta.env.DEV) {
   import('./dev/backfillProducts').then((module) => {
     window.backfillProducts = module.backfillProducts;
@@ -26,6 +27,9 @@ if (import.meta.env.DEV) {
   });
   import('./dev/backfillSearchKeywords').then((module) => {
     window.backfillSearchKeywords = module.backfillSearchKeywords;
+  });
+  import('./dev/backfillVariations').then((module) => {
+    window.backfillVariations = module.backfillVariations;
   });
 }
 

@@ -213,10 +213,34 @@ function Dashboard() {
           {alerts.outOfStock.length === 0 &&
           alerts.lowStock.length === 0 &&
           alerts.awaitingShipment.length === 0 &&
-          alerts.incompleteProducts.length === 0 ? (
+          alerts.incompleteProducts.length === 0 &&
+          (alerts.inconsistentVariations || []).length === 0 ? (
             <p className={styles.muted}>Tudo em ordem — nenhum alerta no momento.</p>
           ) : (
             <ul className={styles.alertList}>
+              {/* Ocultos da vitrine por inconsistência de variação (008, FR-017a):
+                  contador + até 5 itens acionáveis, no topo da lista. */}
+              {(alerts.inconsistentVariations || []).length > 0 && (
+                <li className={styles.alertItem}>
+                  <span className={styles.alertBadgeCritical}>Ocultos da loja</span>
+                  <span className={styles.alertText}>
+                    {alerts.inconsistentVariations.length}
+                    {alerts.inconsistentVariations.length === 25 ? "+" : ""} produto(s) oculto(s) por
+                    inconsistência de variação
+                  </span>
+                </li>
+              )}
+
+              {(alerts.inconsistentVariations || []).slice(0, 5).map((product) => (
+                <li key={`var-${product.id}`} className={styles.alertItem}>
+                  <span className={styles.alertBadgeCritical}>Variação inconsistente</span>
+                  <span className={styles.alertText}>{product.name || "(sem nome)"}</span>
+                  <Link className={styles.alertAction} to={`${ROUTES.ADMIN_PRODUCTS}/${product.id}`}>
+                    Corrigir
+                  </Link>
+                </li>
+              ))}
+
               {alerts.outOfStock.map((product) => (
                 <li key={`out-${product.id}`} className={styles.alertItem}>
                   <span className={styles.alertBadgeCritical}>Sem estoque</span>

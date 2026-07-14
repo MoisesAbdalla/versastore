@@ -368,13 +368,15 @@ describe("listProducts — filtro de excluídos sempre presente", () => {
 });
 
 describe("listPublicProducts (vitrine, feature 005)", () => {
-  it("sempre força deleted==false E status==ativo", async () => {
+  it("sempre força deleted==false E status==ativo E variationsInconsistent==false", async () => {
     getDocsMock.mockResolvedValueOnce(snapshotWith([fakeDoc("p1", { name: "A" })]));
 
     await listPublicProducts({});
 
     expect(whereMock).toHaveBeenCalledWith("deleted", "==", false);
     expect(whereMock).toHaveBeenCalledWith("status", "==", "ativo");
+    // Feature 008 (FR-017): produto sinalizado não aparece na listagem.
+    expect(whereMock).toHaveBeenCalledWith("variationsInconsistent", "==", false);
   });
 
   it("uma categoria usa igualdade; busca compõe com ela", async () => {
@@ -454,6 +456,14 @@ describe("getPublicProduct (vitrine)", () => {
     expect(await getPublicProduct("inativo")).toBe(null);
   });
 
+  it("retorna null para produto sinalizado como inconsistente (FR-017)", async () => {
+    getDocMock.mockResolvedValueOnce(
+      fakeDoc("p1", { name: "Quebrado", status: "ativo", deleted: false, variationsInconsistent: true })
+    );
+
+    expect(await getPublicProduct("p1")).toBe(null);
+  });
+
   it("propaga erro de rede real", async () => {
     getDocMock.mockRejectedValueOnce({ code: "unavailable" });
 
@@ -470,6 +480,7 @@ describe("getFeaturedProducts (compat loja, T030)", () => {
     expect(whereMock).toHaveBeenCalledWith("destaque", "==", true);
     expect(whereMock).toHaveBeenCalledWith("deleted", "==", false);
     expect(whereMock).toHaveBeenCalledWith("status", "==", "ativo");
+    expect(whereMock).toHaveBeenCalledWith("variationsInconsistent", "==", false);
   });
 });
 

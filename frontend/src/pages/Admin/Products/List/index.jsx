@@ -85,7 +85,21 @@ function ProductListPage() {
             <span className={styles.thumbFallback}>VS</span>
           ),
       },
-      { key: "nameLower", label: "Nome", sortable: true, render: (row) => row.name },
+      {
+        key: "nameLower",
+        label: "Nome",
+        sortable: true,
+        render: (row) => (
+          <span className={styles.nameCell}>
+            {row.name}
+            {/* Sinalizado pela migração/validação (feature 008): oculto na
+                vitrine até o lojista corrigir — alerta impossível de ignorar. */}
+            {row.variationsInconsistent && (
+              <Chip size="small" label="Variação inconsistente" color="error" variant="outlined" />
+            )}
+          </span>
+        ),
+      },
       { key: "sku", label: "SKU", render: (row) => row.sku || "—" },
       {
         key: "category",

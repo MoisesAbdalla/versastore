@@ -189,7 +189,7 @@ export async function getRecentOrders(count = 5) {
 
 // Alertas acionáveis (FR-014): cada lista com limit — nada de varredura.
 export async function getAlerts() {
-  const [stockSnap, awaitingSnap, incompleteSnap] = await Promise.all([
+  const [stockSnap, awaitingSnap, incompleteSnap, inconsistentSnap] = await Promise.all([
     getDocs(
       query(
         collection(db, "products"),
@@ -215,6 +215,16 @@ export async function getAlerts() {
         limit(5)
       )
     ),
+    // Produtos OCULTOS da vitrine por inconsistência de variação (feature 008,
+    // FR-017a) — alerta impossível de ignorar até o lojista corrigir.
+    getDocs(
+      query(
+        collection(db, "products"),
+        where("deleted", "==", false),
+        where("variationsInconsistent", "==", true),
+        limit(25)
+      )
+    ),
   ]);
 
   const stockProducts = stockSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -230,5 +240,6 @@ export async function getAlerts() {
       .slice(0, 5),
     awaitingShipment: awaitingSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
     incompleteProducts: incompleteSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
+    inconsistentVariations: inconsistentSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
   };
 }

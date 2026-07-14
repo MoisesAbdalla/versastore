@@ -198,6 +198,12 @@ function ProductFormPage() {
         }
 
         setForm(productToForm(product));
+
+        // Sinalizado (migração/validação, feature 008): banner explicando o
+        // que corrigir — o produto está OCULTO da vitrine até isso (FR-017a).
+        if (product.variationsInconsistent) {
+          setInconsistencyBanner(product.variationIssues || []);
+        }
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoaded(true));
@@ -307,6 +313,8 @@ function ProductFormPage() {
   // Conflito de fusão pendente (remoção de atributo que colapsa variações — FR-008a).
   const [mergeConflict, setMergeConflict] = useState(null); // { attrName, nextNames, conflicts, resolutions }
   const [variationError, setVariationError] = useState(null);
+  // Banner de produto sinalizado como inconsistente (oculto da vitrine — FR-017a).
+  const [inconsistencyBanner, setInconsistencyBanner] = useState(null);
 
   // ---- Atributos ------------------------------------------------------------
   function setAttributes(next) {
@@ -517,6 +525,18 @@ function ProductFormPage() {
           <Button size="small" onClick={discardDraft}>
             Descartar
           </Button>
+        </div>
+      )}
+
+      {inconsistencyBanner && (
+        <div className={styles.inconsistencyBanner} role="alert">
+          <strong>Este produto está oculto da loja</strong> — as variações estão inconsistentes.
+          Corrija abaixo e salve para ele voltar à vitrine:
+          <ul>
+            {inconsistencyBanner.map((issue) => (
+              <li key={issue}>{issue}</li>
+            ))}
+          </ul>
         </div>
       )}
 

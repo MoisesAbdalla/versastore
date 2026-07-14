@@ -101,3 +101,13 @@
 
     color: var(--text-muted);
 }
+
+.nameCell {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    flex-wrap: wrap;
+}
