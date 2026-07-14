@@ -18,7 +18,7 @@ const TABS = [
 function AccountLayout() {
   return (
     <MainLayout>
-      <PageContainer>
+      <PageContainer narrow>
         <h1 className={styles.title}>Minha conta</h1>
 
         <nav className={styles.tabs} aria-label="Seções da conta">

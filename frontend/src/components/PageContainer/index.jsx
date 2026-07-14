@@ -1,10 +1,15 @@
 import styles from "./styles.module.css";
 
-// Container padrão das páginas da loja (mesmo eixo/largura em todo o site).
-// Fonte única do max-width + padding + centralização — reutilizado pelo
-// catálogo e pela área de conta para que os eixos nunca divirjam.
-function PageContainer({ children, className = "" }) {
-  return <div className={`${styles.container} ${className}`.trim()}>{children}</div>;
+// Container padrão das páginas da loja (mesmo eixo/padding/centralização).
+// `narrow` reduz o max-width para áreas majoritariamente de formulário (conta),
+// onde 1200px deixaria campos largos demais e conteúdo empurrado à esquerda; o
+// padrão (1200px) fica para catálogo/produto, que usam a largura de verdade.
+function PageContainer({ children, className = "", narrow = false }) {
+  const classes = [styles.container, narrow && styles.narrow, className]
+    .filter(Boolean)
+    .join(" ");
+
+  return <div className={classes}>{children}</div>;
 }
 
 export default PageContainer;
