@@ -120,6 +120,54 @@
     color: var(--text-muted);
 }
 
+.subLabel {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    color: var(--text);
+}
+
+.variationError {
+    padding: 10px 14px;
+
+    margin: 4px 0;
+
+    border: 1px solid #B3261E;
+
+    background: rgba(179, 38, 30, .06);
+
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: #B3261E;
+}
+
+.conflictGroup {
+    display: flex;
+
+    flex-direction: column;
+
+    margin-top: 12px;
+
+    padding-top: 8px;
+
+    border-top: 1px solid var(--border);
+}
+
+.conflictTitle {
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: var(--text);
+}
+
 .variationRow {
     display: flex;
 

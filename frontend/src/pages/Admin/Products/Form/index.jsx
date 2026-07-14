@@ -14,6 +14,17 @@ import RichTextField from "../../../../components/RichTextField";
 import ConfirmDialog from "../../../../components/ConfirmDialog";
 import EmptyState from "../../../../components/EmptyState";
 import ImagesSection from "./ImagesSection";
+import AttributeEditor from "./AttributeEditor";
+import {
+  attributesFromProduct,
+  variationsToForm,
+  formVariationsToProduct,
+  conflictsForRemoval,
+  valueInUse,
+  applyAttributeRemoval,
+  newVariationId,
+} from "./variationForm";
+import { validateVariations } from "../../../../utils/variationValidation";
 import { getProduct, createProduct, updateProduct } from "../../../../services/productService";
 import { useProducts } from "../../../../hooks/useProducts";
 import { useCategories } from "../../../../hooks/useCategories";
@@ -48,6 +59,7 @@ const EMPTY_FORM = {
   sku: "",
   stock: "",
   lowStockThreshold: String(DEFAULT_LOW_STOCK_THRESHOLD),
+  attributes: [],
   variations: [],
   status: PRODUCT_STATUS.RASCUNHO,
   destaque: false,
@@ -81,14 +93,10 @@ function productToForm(product) {
     sku: product.sku || "",
     stock: product.stock != null ? String(product.stock) : "",
     lowStockThreshold: String(product.lowStockThreshold ?? DEFAULT_LOW_STOCK_THRESHOLD),
-    variations: (product.variations || []).map((variation) => ({
-      id: variation.id,
-      tamanho: variation.attributes?.tamanho || "",
-      cor: variation.attributes?.cor || "",
-      sku: variation.sku || "",
-      priceText: centsToInput(variation.price),
-      stock: variation.stock != null ? String(variation.stock) : "",
-    })),
+    // Atributos do produto (ou derivados das variações legadas) + variações
+    // com valores num mapa por atributo (feature 008).
+    attributes: attributesFromProduct(product),
+    variations: variationsToForm(product.variations),
     status: product.status || PRODUCT_STATUS.RASCUNHO,
     destaque: Boolean(product.destaque),
   };
@@ -118,13 +126,18 @@ function formToProduct(form, categoryName) {
     sku: form.sku.trim(),
     stock: form.stock === "" ? null : Number(form.stock),
     lowStockThreshold: Number(form.lowStockThreshold) || DEFAULT_LOW_STOCK_THRESHOLD,
-    variations: form.variations.map((variation) => ({
-      id: variation.id,
-      attributes: { tamanho: variation.tamanho.trim(), cor: variation.cor.trim() },
-      sku: variation.sku.trim(),
-      price: parseBRLInput(variation.priceText),
-      stock: Number(variation.stock) || 0,
-    })),
+    // Atributos ordenados (nome + valores) e variações chaveadas por eles,
+    // reusando o id de cada variação (R-2: id estável).
+    attributes: (form.attributes || [])
+      .map((attr) => ({
+        name: (attr.name || "").trim(),
+        values: (attr.values || []).map((value) => value.trim()).filter(Boolean),
+      }))
+      .filter((attr) => attr.name),
+    variations: formVariationsToProduct(
+      form.variations,
+      (form.attributes || []).map((attr) => (attr.name || "").trim()).filter(Boolean)
+    ),
     status: form.status,
     destaque: form.destaque,
   };
@@ -228,11 +241,23 @@ function ProductFormPage() {
       }
     }
 
+    const selectedCategory = categoryOptions.find((option) => option.id === form.categoryId);
+    const product = formToProduct(form, selectedCategory?.name);
+
+    // Bloqueia salvar variações inconsistentes (FR-006): vazio, duplicado ou
+    // conjunto divergente. O botão só prossegue com tudo válido.
+    const consistency = validateVariations(product);
+
+    if (!consistency.ok) {
+      setVariationError(consistency.issues.join(" "));
+      toastError("Corrija as variações antes de salvar.");
+      return;
+    }
+
+    setVariationError(null);
     setSaving(true);
 
     try {
-      const selectedCategory = categoryOptions.find((option) => option.id === form.categoryId);
-      const product = formToProduct(form, selectedCategory?.name);
 
       if (isEdit) {
         await updateProduct(id, product);
@@ -271,26 +296,144 @@ function ProductFormPage() {
   }
 
   const variationRows = useMemo(() => form.variations, [form.variations]);
+  const attributeNames = useMemo(
+    () => (form.attributes || []).map((attr) => (attr.name || "").trim()).filter(Boolean),
+    [form.attributes]
+  );
 
+  // Conflito de fusão pendente (remoção de atributo que colapsa variações — FR-008a).
+  const [mergeConflict, setMergeConflict] = useState(null); // { attrName, nextNames, conflicts, resolutions }
+  const [variationError, setVariationError] = useState(null);
+
+  // ---- Atributos ------------------------------------------------------------
+  function setAttributes(next) {
+    setForm((current) => ({ ...current, attributes: next }));
+  }
+
+  function addAttribute() {
+    setAttributes([...(form.attributes || []), { name: "", values: [] }]);
+  }
+
+  function renameAttribute(index, name) {
+    setAttributes(form.attributes.map((attr, i) => (i === index ? { ...attr, name } : attr)));
+  }
+
+  function addValue(index, value) {
+    setAttributes(
+      form.attributes.map((attr, i) =>
+        i === index && !(attr.values || []).includes(value)
+          ? { ...attr, values: [...(attr.values || []), value] }
+          : attr
+      )
+    );
+  }
+
+  function moveValue(index, valueIndex, dir) {
+    const target = valueIndex + dir;
+
+    setAttributes(
+      form.attributes.map((attr, i) => {
+        if (i !== index) return attr;
+
+        const values = [...attr.values];
+
+        if (target < 0 || target >= values.length) return attr;
+
+        [values[valueIndex], values[target]] = [values[target], values[valueIndex]];
+
+        return { ...attr, values };
+      })
+    );
+  }
+
+  function removeValue(index, value) {
+    const attrName = (form.attributes[index]?.name || "").trim();
+
+    // Bloqueia remover valor em uso por alguma variação (FR-008a).
+    if (attrName && valueInUse(form.variations, attrName, value)) {
+      toastError(`Há variações usando "${value}". Remova ou altere essas variações antes.`);
+      return;
+    }
+
+    setAttributes(
+      form.attributes.map((attr, i) =>
+        i === index ? { ...attr, values: attr.values.filter((v) => v !== value) } : attr
+      )
+    );
+  }
+
+  function removeAttribute(index) {
+    const attrName = (form.attributes[index]?.name || "").trim();
+    const nextAttributes = form.attributes.filter((_, i) => i !== index);
+    const nextNames = nextAttributes.map((attr) => (attr.name || "").trim()).filter(Boolean);
+
+    const conflicts = attrName ? conflictsForRemoval(form.variations, nextNames) : [];
+
+    if (conflicts.length > 0) {
+      // Abre o passo de resolução (default: manter a primeira de cada grupo).
+      setMergeConflict({
+        attrName,
+        nextAttributes,
+        nextNames,
+        conflicts,
+        resolutions: Object.fromEntries(
+          conflicts.map((group) => [group.combination, { mode: "keep", keepId: group.variationIds[0] }])
+        ),
+      });
+      return;
+    }
+
+    // Sem conflito: remove o atributo e a chave dele das variações.
+    setForm((current) => ({
+      ...current,
+      attributes: nextAttributes,
+      variations: applyAttributeRemoval(current.variations, attrName, nextNames),
+    }));
+  }
+
+  function confirmMergeConflict() {
+    const { attrName, nextAttributes, nextNames, resolutions } = mergeConflict;
+
+    setForm((current) => ({
+      ...current,
+      attributes: nextAttributes,
+      variations: applyAttributeRemoval(current.variations, attrName, nextNames, resolutions),
+    }));
+    setMergeConflict(null);
+  }
+
+  function setConflictResolution(combination, patch) {
+    setMergeConflict((current) => ({
+      ...current,
+      resolutions: {
+        ...current.resolutions,
+        [combination]: { ...current.resolutions[combination], ...patch },
+      },
+    }));
+  }
+
+  // ---- Variações ------------------------------------------------------------
   function addVariation() {
     setField("variations", [
       ...form.variations,
-      {
-        id: `var-${Date.now()}-${form.variations.length}`,
-        tamanho: "",
-        cor: "",
-        sku: "",
-        priceText: "",
-        stock: "",
-      },
+      { id: newVariationId(), values: {}, sku: "", priceText: "", stock: "" },
     ]);
   }
 
-  function updateVariation(index, field, value) {
+  function updateVariationField(index, field, value) {
     setField(
       "variations",
       form.variations.map((variation, i) =>
         i === index ? { ...variation, [field]: value } : variation
+      )
+    );
+  }
+
+  function updateVariationValue(index, attrName, value) {
+    setField(
+      "variations",
+      form.variations.map((variation, i) =>
+        i === index ? { ...variation, values: { ...variation.values, [attrName]: value } } : variation
       )
     );
   }
@@ -495,43 +638,73 @@ function ProductFormPage() {
       </section>
 
       <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Variações</h2>
+        <h2 className={styles.sectionTitle}>Variações</h2>
 
-          <Button size="small" startIcon={<AddIcon />} onClick={addVariation}>
+        <AttributeEditor
+          attributes={form.attributes}
+          onAddAttribute={addAttribute}
+          onRenameAttribute={renameAttribute}
+          onRemoveAttribute={removeAttribute}
+          onAddValue={addValue}
+          onMoveValue={moveValue}
+          onRemoveValue={removeValue}
+        />
+
+        <div className={styles.sectionHeader}>
+          <span className={styles.subLabel}>
+            {attributeNames.length
+              ? `Combinações (${attributeNames.join(" × ")})`
+              : "Adicione atributos acima para criar variações"}
+          </span>
+
+          <Button
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={addVariation}
+            disabled={attributeNames.length === 0}
+          >
             Adicionar variação
           </Button>
         </div>
 
+        {variationError && (
+          <p className={styles.variationError} role="alert">
+            {variationError}
+          </p>
+        )}
+
         {variationRows.length === 0 ? (
           <p className={styles.hint}>
-            Produto sem variações usa o estoque geral acima. Adicione variações para
-            tamanhos/cores com estoque e SKU próprios.
+            Produto sem variações usa o estoque geral acima.
           </p>
         ) : (
           variationRows.map((variation, index) => (
             <div key={variation.id} className={styles.variationRow}>
-              <TextField
-                size="small"
-                label="Tamanho"
-                value={variation.tamanho}
-                onChange={(e) => updateVariation(index, "tamanho", e.target.value)}
-                className={styles.variationField}
-              />
-
-              <TextField
-                size="small"
-                label="Cor"
-                value={variation.cor}
-                onChange={(e) => updateVariation(index, "cor", e.target.value)}
-                className={styles.variationField}
-              />
+              {attributeNames.map((name) => (
+                <TextField
+                  key={name}
+                  select
+                  size="small"
+                  label={name}
+                  value={variation.values?.[name] || ""}
+                  onChange={(e) => updateVariationValue(index, name, e.target.value)}
+                  className={styles.variationField}
+                >
+                  {(form.attributes.find((attr) => attr.name.trim() === name)?.values || []).map(
+                    (value) => (
+                      <MenuItem key={value} value={value}>
+                        {value}
+                      </MenuItem>
+                    )
+                  )}
+                </TextField>
+              ))}
 
               <TextField
                 size="small"
                 label="SKU da variação"
                 value={variation.sku}
-                onChange={(e) => updateVariation(index, "sku", e.target.value)}
+                onChange={(e) => updateVariationField(index, "sku", e.target.value)}
                 className={styles.variationField}
               />
 
@@ -539,7 +712,7 @@ function ProductFormPage() {
                 size="small"
                 label="Preço (opcional)"
                 value={variation.priceText}
-                onChange={(e) => updateVariation(index, "priceText", e.target.value)}
+                onChange={(e) => updateVariationField(index, "priceText", e.target.value)}
                 className={styles.variationField}
                 helperText="Vazio herda o preço do produto"
               />
@@ -549,14 +722,11 @@ function ProductFormPage() {
                 type="number"
                 label="Estoque"
                 value={variation.stock}
-                onChange={(e) => updateVariation(index, "stock", e.target.value)}
+                onChange={(e) => updateVariationField(index, "stock", e.target.value)}
                 className={styles.variationField}
               />
 
-              <IconButton
-                onClick={() => removeVariation(index)}
-                aria-label="Remover variação"
-              >
+              <IconButton onClick={() => removeVariation(index)} aria-label="Remover variação">
                 <DeleteOutlineOutlinedIcon />
               </IconButton>
             </div>
@@ -615,6 +785,63 @@ function ProductFormPage() {
         onConfirm={handleDelete}
         onClose={() => setConfirmDelete(false)}
       />
+
+      <ConfirmDialog
+        open={Boolean(mergeConflict)}
+        title="Resolver variações duplicadas"
+        message={
+          mergeConflict
+            ? `Remover "${mergeConflict.attrName}" faz variações diferentes virarem a mesma combinação. Escolha o que manter em cada caso:`
+            : ""
+        }
+        confirmLabel="Aplicar"
+        onConfirm={confirmMergeConflict}
+        onClose={() => setMergeConflict(null)}
+      >
+        {mergeConflict?.conflicts.map((group) => {
+          const resolution = mergeConflict.resolutions[group.combination];
+
+          return (
+            <div key={group.combination} className={styles.conflictGroup}>
+              <p className={styles.conflictTitle}>Combinação “{group.combination}”</p>
+
+              {group.variationIds.map((variationId) => {
+                const row = form.variations.find((variation) => variation.id === variationId);
+
+                return (
+                  <FormControlLabel
+                    key={variationId}
+                    control={
+                      <Checkbox
+                        checked={resolution.mode === "keep" && resolution.keepId === variationId}
+                        onChange={() =>
+                          setConflictResolution(group.combination, { mode: "keep", keepId: variationId })
+                        }
+                      />
+                    }
+                    label={`Manter esta (estoque ${row?.stock || 0}${row?.sku ? `, SKU ${row.sku}` : ""})`}
+                  />
+                );
+              })}
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={resolution.mode === "sum"}
+                    onChange={() =>
+                      setConflictResolution(group.combination, {
+                        mode: "sum",
+                        keepId: group.variationIds[0],
+                      })
+                    }
+                  />
+                }
+                label="Somar os estoques numa única variação"
+              />
+            </div>
+          );
+        })}
+      </ConfirmDialog>
     </div>
   );
 }

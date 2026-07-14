@@ -104,6 +104,7 @@ describe("createProduct — derivações", () => {
 
     await createProduct({
       ...validProduct,
+      attributes: [{ name: "tamanho", values: ["M", "G"] }],
       variations: [
         { id: "v1", attributes: { tamanho: "M" }, sku: "NIKE-001-M", stock: 3 },
         { id: "v2", attributes: { tamanho: "G" }, sku: "NIKE-001-G", stock: 4 },
@@ -158,9 +159,10 @@ describe("createProduct — validações", () => {
     await expect(
       createProduct({
         ...validProduct,
+        attributes: [{ name: "Tamanho", values: ["P", "M"] }],
         variations: [
-          { id: "v1", sku: "DUP-1", stock: 1 },
-          { id: "v2", sku: "DUP-1", stock: 2 },
+          { id: "v1", attributes: { Tamanho: "P" }, sku: "DUP-1", stock: 1 },
+          { id: "v2", attributes: { Tamanho: "M" }, sku: "DUP-1", stock: 2 },
         ],
       })
     ).rejects.toMatchObject({ code: "sku-duplicado" });
@@ -486,5 +488,80 @@ describe("checkSkuAvailable", () => {
       .mockResolvedValueOnce(snapshotWith([fakeDoc("outro", {})]));
 
     expect(await checkSkuAvailable("NIKE-001")).toBe(false);
+  });
+});
+
+describe("variações por atributo — consistência (feature 008)", () => {
+  const attrs = [
+    { name: "Tamanho", values: ["P", "M"] },
+    { name: "Cor", values: ["preta", "azul"] },
+  ];
+
+  it("produto consistente grava attributes e variationsInconsistent=false", async () => {
+    addDocMock.mockResolvedValueOnce({ id: "id-1" });
+
+    await createProduct({
+      ...validProduct,
+      attributes: attrs,
+      variations: [
+        { id: "v1", attributes: { Tamanho: "P", Cor: "preta" }, sku: "A-1", stock: 2 },
+        { id: "v2", attributes: { Tamanho: "P", Cor: "azul" }, sku: "A-2", stock: 1 },
+      ],
+    });
+
+    const [, data] = addDocMock.mock.calls[0];
+    expect(data.attributes).toEqual(attrs);
+    expect(data.variationsInconsistent).toBe(false);
+    expect(data.variationIssues).toEqual([]);
+  });
+
+  it("bloqueia PUBLICAR (ativo) com variação inconsistente", async () => {
+    await expect(
+      createProduct({
+        ...validProduct,
+        status: "ativo",
+        attributes: attrs,
+        variations: [
+          { id: "v1", attributes: { Tamanho: "P", Cor: "preta" }, sku: "A-1", stock: 2 },
+          { id: "v2", attributes: { Tamanho: "M", Cor: "" }, sku: "A-2", stock: 1 },
+        ],
+      })
+    ).rejects.toThrow(/Corrija as variações antes de publicar/);
+  });
+
+  it("permite salvar como RASCUNHO inconsistente, marcando variationsInconsistent=true", async () => {
+    addDocMock.mockResolvedValueOnce({ id: "id-2" });
+
+    await createProduct({
+      ...validProduct,
+      status: "rascunho",
+      attributes: attrs,
+      variations: [
+        { id: "v1", attributes: { Tamanho: "P", Cor: "preta" }, sku: "A-1", stock: 2 },
+        { id: "v2", attributes: { Tamanho: "M", Cor: "" }, sku: "A-2", stock: 1 },
+      ],
+    });
+
+    const [, data] = addDocMock.mock.calls[0];
+    expect(data.variationsInconsistent).toBe(true);
+    expect(data.variationIssues.length).toBeGreaterThan(0);
+  });
+
+  it("updateProduct preserva os ids das variações (id estável — R-2)", async () => {
+    getDocMock.mockResolvedValueOnce(
+      fakeDoc("prod-1", { ...validProduct, status: "rascunho", attributes: attrs, variations: [] })
+    );
+
+    await updateProduct("prod-1", {
+      status: "rascunho",
+      attributes: attrs,
+      variations: [
+        { id: "keep-1", attributes: { Tamanho: "P", Cor: "preta" }, sku: "K-1", stock: 3 },
+        { id: "keep-2", attributes: { Tamanho: "M", Cor: "azul" }, sku: "K-2", stock: 4 },
+      ],
+    });
+
+    const [, data] = updateDocMock.mock.calls[0];
+    expect(data.variations.map((v) => v.id)).toEqual(["keep-1", "keep-2"]);
   });
 });

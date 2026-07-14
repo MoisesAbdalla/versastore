@@ -19,6 +19,7 @@ import db from "../firebase/firestore";
 import { PRODUCT_STATUS, DEFAULT_LOW_STOCK_THRESHOLD } from "../constants/product";
 import { normalizeForSearch } from "../utils/slugify";
 import { buildSearchKeywords, normalizeQueryTerm } from "../utils/searchKeywords";
+import { validateVariations } from "../utils/variationValidation";
 
 const PAGE_SIZE = 20;
 
@@ -91,8 +92,16 @@ function withDerivedFields(data) {
   // TODO save via computeIncompleteFields (critério = campos de publicação).
   const incompleteFields = computeIncompleteFields(data);
 
+  // Flag derivada de consistência das variações por atributo (feature 008).
+  // Recalculada em TODO save (mesma regra do backfill). Produto sinalizado é
+  // escondido da vitrine e alertado no admin.
+  const consistency = validateVariations(data);
+
   return {
     ...data,
+    attributes: data.attributes || [],
+    variationsInconsistent: !consistency.ok,
+    variationIssues: consistency.issues,
     variations,
     images,
     nameLower: normalizeForSearch(data.name),
@@ -149,6 +158,16 @@ function validateProduct(data) {
       throw serviceError(
         "publicacao-incompleta",
         `Para publicar o produto, preencha: ${missing.join(", ")}. Você pode salvar como rascunho.`
+      );
+    }
+
+    // Não publica produto com variações inconsistentes (feature 008, FR-007).
+    const consistency = validateVariations(data);
+
+    if (!consistency.ok) {
+      throw serviceError(
+        "variacoes-inconsistentes",
+        `Corrija as variações antes de publicar: ${consistency.issues.join(" ")} Você pode salvar como rascunho.`
       );
     }
   }
