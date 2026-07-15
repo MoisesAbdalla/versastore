@@ -132,6 +132,7 @@ function Checkout() {
                 error={c.cpfError}
                 touched={Boolean(c.cpfError)}
                 inputMode="numeric"
+                autoComplete="off"
                 placeholder="000.000.000-00"
               />
               <Checkbox checked={c.saveCpfOptIn} onChange={c.setSaveCpfOptIn}>
