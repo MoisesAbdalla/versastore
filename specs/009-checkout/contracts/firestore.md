@@ -10,7 +10,8 @@ allow create: admin
            || ( isSelf(request.resource.data.customerId)
                 && request.resource.data.status == "aguardando_pagamento"
                 && request.resource.data.aggregatesApplied == false )
-allow update: (mantém) admin, hasOnly([...status, statusHistory, tracking, notes, customer*...])
+allow update: admin, hasOnly([status, statusHistory, tracking, notes, customer*, aggregatesApplied, statsDay])
+              // aggregatesApplied/statsDay são gravados na transição `pago` (feature 009)
 allow delete: (mantém) admin
 ```
 - O cliente cria **só o próprio** pedido, **só** `aguardando_pagamento`, **não** avança status (update segue admin-only). Itens/número/total são gravados pelo `orderService` na transação; a rule garante posse e status inicial.

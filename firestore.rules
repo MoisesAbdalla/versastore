@@ -61,7 +61,10 @@ service cloud.firestore {
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['status', 'statusHistory', 'trackingCode', 'internalNotes',
-                    'customerName', 'customerNameLower', 'customerEmailLower']);
+                    'customerName', 'customerNameLower', 'customerEmailLower',
+                    // Aplicados na transição `pago` (feature 009): receita/totais
+                    // do cliente contam quando o pedido é pago.
+                    'aggregatesApplied', 'statsDay']);
     }
 
     match /users/{userId} {
