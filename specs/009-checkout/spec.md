@@ -20,6 +20,7 @@ O ponto de integração do pagamento é deixado como uma **interface abstrata** 
 
 - Q: O CPF é salvo no perfil do cliente para reuso, ou só no pedido? → A: **Opt-in**. O pedido **sempre** guarda uma cópia do CPF (congelado); e, se o cliente marcar "salvar para as próximas compras", o CPF é gravado no perfil (`users/{uid}`) e pré-preenchido no próximo checkout. Sem opt-in, não persiste no perfil.
 - Q: Como o resumo do checkout trata o frete (cálculo real fora de escopo)? → A: Mostrar **"Frete: a combinar"**. **Estruturalmente**: o documento do pedido MUST já ter o campo **`shipping`** desde a M4a (valor 0/null + um status tipo **`a_calcular`**), e o **`total` MUST ser computado como `subtotal + shipping`** já agora (mesmo com `shipping = 0`). Assim o M5 (frete real) apenas **preenche** o campo existente, sem alterar a estrutura do pedido nem a lógica do total — evita migração e retrabalho.
+- Q: Como o cliente cria o pedido sem abrir brecha de forja nas security rules (sem servidor)? → A: **O cliente cria o pedido + baixa o estoque + incrementa o número sequencial; mas NÃO escreve receita nem totais do cliente.** `dailyStats` (receita) e `users.totalSpent`/`orderCount` **movem-se para a transição `pago`** (M4b via servidor/webhook, ou admin) — pedido `aguardando_pagamento` não é venda, então contar receita/totais na criação inflaria o faturamento. As rules do cliente permitem: criar o próprio pedido (pending); **baixar estoque apenas de forma decremental e não-negativa** (nunca aumentar); **incrementar o contador em +1**. O cliente **não** escreve em `dailyStats` nem em `users.totalSpent`. O `createOrder` MUST ser refatorado para **separar a baixa de estoque (na criação) da atualização de agregados (no `pago`)**, de modo que o M4b apenas ligue os agregados ao webhook, sem reescrever a criação do pedido.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -96,14 +97,15 @@ O cliente escolhe um dos endereços salvos (M3) como entrega e informa um CPF v�
 
 **Criação do pedido**
 
-- **FR-008**: Ao confirmar, o sistema MUST criar o pedido com status **"aguardando pagamento"** de forma transacional, reusando a lógica de estoque existente: congelar os itens (preço/rótulo de variação do momento), **baixar o estoque**, gerar o número sequencial e gravar endereço de entrega, método de pagamento, CPF e os agregados do cliente/estatísticas do dia.
+- **FR-008**: Ao confirmar, o sistema MUST criar o pedido com status **"aguardando pagamento"** de forma transacional: congelar os itens (preço/rótulo de variação do momento), **baixar o estoque** (decremental), gerar o número sequencial e gravar endereço de entrega, método de pagamento, CPF, `subtotal`/`shipping`/`total`.
+- **FR-008a**: A receita do dia (`dailyStats`) e os totais do cliente (`users.totalSpent`/`orderCount`) MUST NOT ser atualizados na criação do pedido pendente. Eles passam a ser atualizados na **transição para `pago`**. O serviço de pedidos MUST ser refatorado para: (a) `createOrder` = congelar itens + baixar estoque + número, **sem** agregados; (b) o avanço para `pago` = **aplicar** os agregados (receita + totais do cliente). Em M4a esse `pago` é acionado pelo **admin** (fluxo M3 existente, que já conta a receita corretamente); em M4b, pelo **webhook** — reusando a mesma transição, sem reescrever a criação. O **cancelamento/devolução** MUST reverter os agregados **apenas se o pedido já havia sido pago** (um pedido pendente cancelado devolve estoque, mas não mexe em agregados que nunca foram somados).
 - **FR-009**: Se o estoque for insuficiente na confirmação, a criação MUST falhar atomicamente (nada baixado, nenhum pedido criado) com mensagem clara para o cliente revisar o carrinho.
 - **FR-010**: Após a criação bem-sucedida, o carrinho do cliente MUST ser esvaziado e o cliente MUST ver uma tela de confirmação com o número do pedido e a informação de que está "aguardando pagamento".
 - **FR-011**: O pedido criado MUST aparecer em "Meus pedidos" (M3) com status "aguardando pagamento", e o detalhe MUST mostrar itens, endereço, método e CPF.
 
 **Segurança**
 
-- **FR-012**: As regras de acesso MUST permitir que o cliente **dono** crie o próprio pedido (vinculado ao seu identificador), restrito ao status inicial "aguardando pagamento"; o cliente MUST NOT poder criar pedido para outro, forjar total/itens fora do previsto, nem avançar/alterar o status (mudança de status continua exclusiva do admin — M3).
+- **FR-012**: As regras de acesso MUST permitir que o cliente **dono** crie o próprio pedido (`customerId == uid`), restrito ao status inicial "aguardando pagamento". Como a criação é transacional no cliente, as rules MUST também permitir, ao cliente autenticado: **baixar estoque de `products`** apenas de forma **decremental e não-negativa** (nunca aumentar estoque) e **incrementar o contador sequencial em +1**. O cliente MUST NOT: criar pedido para outro, avançar/alterar o status (exclusivo do admin — M3), escrever em `dailyStats`, nem alterar `users.totalSpent`/`orderCount` (permanecem bloqueados para o próprio usuário, como hoje).
 
 **Ponto de integração de pagamento (preparação para M4b)**
 
@@ -130,12 +132,13 @@ O cliente escolhe um dos endereços salvos (M3) como entrega e informa um CPF v�
 - **SC-007**: Confirmar duas vezes (duplo clique) não gera dois pedidos.
 - **SC-008**: Nenhuma cobrança, chamada a gateway, QR code, dado de cartão ou avanço para "pago" ocorre na M4a — o pagamento fica encapsulado numa interface substituível pela M4b.
 - **SC-009**: Todo pedido criado já traz o campo `shipping` (0/null, status `a_calcular`) e `total = subtotal + shipping`, de modo que o cálculo de frete futuro (M5) preencha o campo sem migração de pedidos nem mudança na lógica do total.
+- **SC-010**: A criação do pedido pendente NÃO altera a receita do dia nem os totais do cliente (`dailyStats`/`totalSpent`/`orderCount` inalterados na criação); esses agregados só se movem no `pago` (M4b). Um cliente não consegue, pelas rules, aumentar estoque, mexer em `dailyStats`, nem inflar o próprio `totalSpent`.
 
 ## Out of Scope — pendente para o M4b (documentado, NÃO implementado aqui)
 
 - Geração de cobrança real no Mercado Pago a partir do pedido "aguardando pagamento".
 - Webhook do gateway com validação de assinatura, idempotência e reconciliação via API.
-- Avanço automático do pedido para **"pago"** — que na M4b ocorre SOMENTE via webhook (nunca pelo cliente).
+- Avanço automático do pedido para **"pago"** — que na M4b ocorre SOMENTE via webhook (nunca pelo cliente) — e, nessa transição, a atualização da **receita do dia (`dailyStats`)** e dos **totais do cliente (`totalSpent`/`orderCount`)**, que a M4a deixa preparados para serem ligados ao webhook.
 - Expiração de pagamentos pendentes: rotina agendada que cancela o pedido não pago e **devolve o estoque** (reusando o cancelamento existente).
 - Cálculo de frete real e cobrança do frete.
 - Migração do papel de admin para custom claims.
