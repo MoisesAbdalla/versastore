@@ -33,5 +33,10 @@
     "oxlint": "^1.71.0",
     "vite": "^8.1.1",
     "vitest": "^4.1.10"
+  },
+  "allowScripts": {
+    "firebase@12.15.0": true,
+    "@firebase/util@1.15.1": true,
+    "protobufjs@7.6.5": true
   }
 }
