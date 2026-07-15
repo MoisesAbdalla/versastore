@@ -14,6 +14,13 @@ Hoje o cliente monta o carrinho (M2), mas não há como fechar a compra: o botã
 
 O ponto de integração do pagamento é deixado como uma **interface abstrata** (um provedor de pagamento) que na M4a apenas registra "pendente", para a M4b plugar o gateway sem reescrever o checkout.
 
+## Clarifications
+
+### Session 2026-07-15
+
+- Q: O CPF é salvo no perfil do cliente para reuso, ou só no pedido? → A: **Opt-in**. O pedido **sempre** guarda uma cópia do CPF (congelado); e, se o cliente marcar "salvar para as próximas compras", o CPF é gravado no perfil (`users/{uid}`) e pré-preenchido no próximo checkout. Sem opt-in, não persiste no perfil.
+- Q: Como o resumo do checkout trata o frete (cálculo real fora de escopo)? → A: Mostrar **"Frete: a combinar"**. **Estruturalmente**: o documento do pedido MUST já ter o campo **`shipping`** desde a M4a (valor 0/null + um status tipo **`a_calcular`**), e o **`total` MUST ser computado como `subtotal + shipping`** já agora (mesmo com `shipping = 0`). Assim o M5 (frete real) apenas **preenche** o campo existente, sem alterar a estrutura do pedido nem a lógica do total — evita migração e retrabalho.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cliente finaliza a compra e gera o pedido (Priority: P1)
@@ -82,9 +89,9 @@ O cliente escolhe um dos endereços salvos (M3) como entrega e informa um CPF v�
 - **FR-001**: O checkout MUST ser acessível apenas ao cliente autenticado (rota protegida); visitante é direcionado ao login e retorna ao checkout após entrar.
 - **FR-002**: O checkout MUST exibir os itens do carrinho já **revalidados** contra o catálogo atual (preço/estoque), com aviso explícito quando a revalidação alterou/removeu itens, e MUST impedir confirmar enquanto o cliente não revisar as mudanças.
 - **FR-003**: O checkout MUST permitir selecionar o endereço de entrega entre os endereços salvos do cliente, com o padrão pré-selecionado; sem endereço, MUST orientar o cadastro e bloquear a confirmação.
-- **FR-004**: O checkout MUST coletar e validar o CPF pelos dígitos verificadores (com máscara), bloqueando a confirmação com CPF inválido. [NEEDS CLARIFICATION: o CPF é salvo no perfil do cliente para reuso futuro, ou fica só no pedido?]
+- **FR-004**: O checkout MUST coletar e validar o CPF pelos dígitos verificadores (com máscara), bloqueando a confirmação com CPF inválido. O pedido MUST guardar uma cópia do CPF; e o checkout MUST oferecer uma opção **opt-in** ("salvar para as próximas compras") que, quando marcada, grava o CPF no perfil do cliente e o **pré-preenche** no próximo checkout. Sem opt-in, o CPF não é persistido no perfil.
 - **FR-005**: O checkout MUST permitir escolher **um** método de pagamento entre Pix, cartão e boleto — apenas a **seleção** (registrada no pedido); nenhuma cobrança/processamento ocorre nesta feature.
-- **FR-006**: O checkout MUST exibir um resumo com o **subtotal** dos itens. [NEEDS CLARIFICATION: frete no M4a — exibir "frete a combinar"/"grátis" ou omitir? O cálculo de frete real está fora do escopo.]
+- **FR-006**: O checkout MUST exibir um resumo com o **subtotal** dos itens e uma linha de **frete "a combinar"**. O documento do pedido MUST incluir, desde a M4a, um campo **`shipping`** (0/null) com um status **`a_calcular`**, e o **`total`** MUST ser computado como **`subtotal + shipping`** (mesmo com `shipping = 0`), para que o cálculo real de frete (M5) apenas preencha o campo sem alterar a estrutura nem a lógica do total.
 - **FR-007**: O botão de confirmar MUST só prosseguir com carrinho válido e não vazio, endereço selecionado, CPF válido e método escolhido; e MUST bloquear reenvio durante a criação (sem pedido duplicado).
 
 **Criação do pedido**
@@ -104,7 +111,8 @@ O cliente escolhe um dos endereços salvos (M3) como entrega e informa um CPF v�
 
 ### Key Entities *(include if feature involves data)*
 
-- **Pedido**: já existe (M3). A M4a passa a criá-lo pelo **cliente** (antes só admin/seed). Nasce `aguardando_pagamento` com: itens congelados (preço + rótulo de variação do momento), número sequencial, endereço de entrega (cópia do endereço escolhido), método de pagamento, **CPF do comprador**, cliente (uid + nome/e-mail), subtotal/total, histórico de status.
+- **Pedido**: já existe (M3). A M4a passa a criá-lo pelo **cliente** (antes só admin/seed). Nasce `aguardando_pagamento` com: itens congelados (preço + rótulo de variação do momento), número sequencial, endereço de entrega (cópia do endereço escolhido), método de pagamento, **CPF do comprador** (cópia congelada), cliente (uid + nome/e-mail), **`subtotal`**, **`shipping`** (0/null com status **`a_calcular`** — preparado para o M5) e **`total` = `subtotal + shipping`**, histórico de status.
+- **Perfil do cliente**: se o opt-in de CPF for marcado, o CPF é gravado em `users/{uid}` para reuso (pré-preenchimento em compras futuras) — escrita do próprio usuário no próprio documento.
 - **Endereço de entrega**: cópia do endereço salvo do cliente (M3) no momento da compra — o pedido guarda o endereço "congelado", não uma referência mutável.
 - **Item do carrinho**: origem dos itens do pedido; revalidado contra o catálogo antes da criação (M2).
 - **Provedor de pagamento (interface)**: abstração do processamento; na M4a um stub que marca "pendente". Contrato estável para a M4b.
@@ -121,6 +129,7 @@ O cliente escolhe um dos endereços salvos (M3) como entrega e informa um CPF v�
 - **SC-006**: Um cliente não consegue criar pedido em nome de outro nem definir o status como pago — apenas o próprio pedido, "aguardando pagamento".
 - **SC-007**: Confirmar duas vezes (duplo clique) não gera dois pedidos.
 - **SC-008**: Nenhuma cobrança, chamada a gateway, QR code, dado de cartão ou avanço para "pago" ocorre na M4a — o pagamento fica encapsulado numa interface substituível pela M4b.
+- **SC-009**: Todo pedido criado já traz o campo `shipping` (0/null, status `a_calcular`) e `total = subtotal + shipping`, de modo que o cálculo de frete futuro (M5) preencha o campo sem migração de pedidos nem mudança na lógica do total.
 
 ## Out of Scope — pendente para o M4b (documentado, NÃO implementado aqui)
 
@@ -139,5 +148,5 @@ O cliente escolhe um dos endereços salvos (M3) como entrega e informa um CPF v�
 - A criação transacional de pedido com baixa de estoque e congelamento de itens já existe (M1/003) e é reutilizada — a M4a não reescreve essa lógica, apenas a expõe ao cliente.
 - O CPF é validado por dígitos verificadores no cliente; a autoridade fiscal do CPF é do M8.
 - Após criar o pedido, o carrinho é esvaziado (evita pedido duplicado ao voltar).
-- Frete real e impostos estão fora do escopo do M4a (subtotal = soma dos itens).
+- Frete real e impostos estão fora do escopo do M4a: `subtotal` = soma dos itens; `shipping` nasce 0/null (`a_calcular`) e `total = subtotal + shipping`, prontos para o M5 preencher.
 - A feature não introduz backend/servidor: tudo roda no cliente + Firestore com regras; o pagamento é um stub até o M4b.

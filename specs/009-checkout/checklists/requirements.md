@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,8 +31,7 @@
 
 ## Notes
 
-- **2 marcadores [NEEDS CLARIFICATION] deixados de propósito para o `/speckit-clarify`**:
-  - **FR-004** — CPF salvo no perfil para reuso ou só no pedido.
-  - **FR-006** — exibição de frete no M4a (a combinar / grátis / omitir).
-- Escopo do M4b explicitamente separado na seção "Out of Scope".
-- Demais itens passam. Resolver os dois marcadores no `/speckit-clarify` antes do `/speckit-plan`.
+- Clarificações resolvidas no `/speckit-clarify` (Session 2026-07-15):
+  - **FR-004** — CPF: sempre no pedido; no perfil só com **opt-in** ("salvar para próximas compras").
+  - **FR-006** — Frete: "a combinar"; o pedido já traz `shipping` (0/null, `a_calcular`) e `total = subtotal + shipping` desde a M4a (M5 só preenche).
+- Escopo do M4b explicitamente separado na seção "Out of Scope". Todos os itens do checklist passam — pronto para `/speckit-plan`.
