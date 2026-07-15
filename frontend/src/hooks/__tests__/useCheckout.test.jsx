@@ -94,6 +94,23 @@ describe("useCheckout", () => {
     expect(saveCpfMock).toHaveBeenCalledWith("u1", VALID_CPF);
   });
 
+  it("pré-preenche o CPF salvo uma vez, mas deixa apagar/trocar (não repreenche)", async () => {
+    auth.profile = { addresses: auth.profile.addresses, cpf: "52998224725" };
+
+    const { result } = renderHook(() => useCheckout());
+    await waitFor(() => expect(result.current.revalidating).toBe(false));
+
+    // Pré-preenchido (mascarado) a partir do perfil salvo
+    await waitFor(() => expect(result.current.cpf).toBe("529.982.247-25"));
+
+    // Cliente apaga tudo para digitar outro → NÃO repreenche
+    act(() => result.current.setCpf(""));
+    expect(result.current.cpf).toBe("");
+
+    act(() => result.current.setCpf("111.444.777-35"));
+    expect(result.current.cpf).toBe("111.444.777-35");
+  });
+
   it("mudança na revalidação bloqueia até revisar", async () => {
     cart.revalidate.mockResolvedValueOnce([{ name: "Boné", type: "preco" }]);
 

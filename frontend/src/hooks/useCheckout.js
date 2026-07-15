@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useCart } from "../contexts/CartContext";
@@ -65,11 +65,17 @@ export function useCheckout() {
     }
   }, [addresses, selectedAddressId]);
 
+  // Pré-preenche o CPF salvo UMA única vez (quando o perfil carrega). Depois
+  // disso — inclusive se o cliente apagar o campo para digitar outro — nunca
+  // repreenche, senão seria impossível trocar de CPF.
+  const cpfPrefilledRef = useRef(false);
+
   useEffect(() => {
-    if (profile?.cpf && !cpf) {
+    if (!cpfPrefilledRef.current && profile?.cpf) {
       setCpf(maskCpf(profile.cpf));
+      cpfPrefilledRef.current = true;
     }
-  }, [profile, cpf]);
+  }, [profile]);
 
   const cpfError = cpfTouched ? validateCpf(cpf) : null;
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId) || null;
@@ -86,7 +92,11 @@ export function useCheckout() {
     validateCpf(cpf) === null &&
     PAYMENT_METHODS.includes(paymentMethod);
 
-  const setCpfMasked = useCallback((value) => setCpf(maskCpf(value)), []);
+  const setCpfMasked = useCallback((value) => {
+    // O cliente editou → não repreencher mais com o CPF salvo (permite trocar).
+    cpfPrefilledRef.current = true;
+    setCpf(maskCpf(value));
+  }, []);
 
   const confirm = useCallback(async () => {
     if (!canConfirm || !user) {
