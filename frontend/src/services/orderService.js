@@ -58,6 +58,14 @@ function emptyStats() {
   return { revenue: 0, orderCount: 0, unitsSold: 0, unitsByProduct: {} };
 }
 
+// Feature 009: agregados (receita + totais do cliente) contam na transição
+// `pago`, não na criação. Um pedido "aplicou" agregados quando `aggregatesApplied`
+// é true; pedidos LEGADOS (criados antes do refactor, sem o campo) sempre
+// aplicaram na criação → `?? true`.
+function aggregatesApplied(order) {
+  return order.aggregatesApplied ?? true;
+}
+
 // Aplica o delta do pedido nos agregados do dia (direction: +1 criação, -1
 // cancelamento/devolução) — sempre dentro da mesma transação do pedido (R-2/R-3).
 function applyStatsDelta(stats, order, direction) {
@@ -110,9 +118,11 @@ function productWithStockDelta(product, items, direction) {
 }
 
 // Criação de pedido — transação única (R-3): valida e baixa estoque, gera o
-// número sequencial, grava o pedido com itens CONGELADOS (FR-053), incrementa
-// dailyStats e os agregados do cliente. Estoque insuficiente aborta tudo.
-export async function createOrder({ customerId, items, shippingAddress, paymentMethod }) {
+// número sequencial e grava o pedido com itens CONGELADOS (FR-053) no status
+// `aguardando_pagamento`. Feature 009: NÃO conta receita/totais do cliente aqui
+// — isso se move para a transição `pago` (createOrder ≠ venda confirmada).
+// Estoque insuficiente aborta tudo.
+export async function createOrder({ customerId, items, shippingAddress, paymentMethod, cpf }) {
   if (!items || items.length === 0) {
     throw serviceError("pedido-vazio", "O pedido precisa de ao menos um item.");
   }
@@ -143,10 +153,6 @@ export async function createOrder({ customerId, items, shippingAddress, paymentM
 
     const counterRef = doc(db, "counters", "orders");
     const counterSnap = await tx.get(counterRef);
-
-    const key = dayKey();
-    const statsRef = doc(db, "dailyStats", key);
-    const statsSnap = await tx.get(statsRef);
 
     // ---- VALIDAÇÃO DE ESTOQUE + itens congelados
     const frozenItems = [];
@@ -184,7 +190,9 @@ export async function createOrder({ customerId, items, shippingAddress, paymentM
       });
     }
 
-    const total = frozenItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    const subtotal = frozenItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    const shipping = null; // frete "a combinar" (M4a); o M5 preenche o valor real.
+    const total = subtotal + (shipping || 0);
     const orderNumber = (counterSnap.exists() ? counterSnap.data().current : 0) + 1;
 
     const order = {
@@ -196,9 +204,12 @@ export async function createOrder({ customerId, items, shippingAddress, paymentM
       customerEmailLower: normalizeForSearch(customer.email || ""),
       shippingAddress: shippingAddress || null,
       paymentMethod: paymentMethod || "",
+      cpf: cpf || "",
       items: frozenItems,
       productIds,
-      subtotal: total,
+      subtotal,
+      shipping,
+      shippingStatus: "a_calcular",
       total,
       status: ORDER_STATUS.AGUARDANDO_PAGAMENTO,
       statusHistory: [
@@ -209,11 +220,14 @@ export async function createOrder({ customerId, items, shippingAddress, paymentM
       ],
       trackingCode: null,
       internalNotes: null,
-      statsDay: key,
+      // Agregados (receita/totais) contam só no `pago` (feature 009).
+      aggregatesApplied: false,
+      statsDay: null,
       createdAt: serverTimestamp(),
     };
 
-    // ---- ESCRITAS
+    // ---- ESCRITAS: estoque (baixa) + número + pedido. SEM dailyStats nem
+    // totais do cliente (movidos para a transição `pago`).
     for (const productId of productIds) {
       const itemsOfProduct = frozenItems.filter((item) => item.productId === productId);
 
@@ -228,14 +242,6 @@ export async function createOrder({ customerId, items, shippingAddress, paymentM
     const orderRef = doc(collection(db, "orders"));
     tx.set(orderRef, order);
 
-    const stats = statsSnap.exists() ? statsSnap.data() : emptyStats();
-    tx.set(statsRef, { ...applyStatsDelta(stats, order, +1), updatedAt: serverTimestamp() });
-
-    tx.update(customerRef, {
-      orderCount: (customer.orderCount || 0) + 1,
-      totalSpent: (customer.totalSpent || 0) + total,
-    });
-
     return { id: orderRef.id, orderNumber };
   });
 }
@@ -243,8 +249,11 @@ export async function createOrder({ customerId, items, shippingAddress, paymentM
 // Avanço de status sem efeito de estoque (pago, em separação, enviado,
 // entregue). Cancelamento e devolução têm funções próprias porque devolvem
 // estoque — bloqueados aqui para impedir mudança de status sem o efeito.
+// Feature 009: ao marcar como PAGO pela 1ª vez, APLICA os agregados (receita do
+// dia + totais do cliente) — a venda só conta quando paga.
 export async function advanceStatus(id, nextStatus, { byUid, byName }) {
   await runTransaction(db, async (tx) => {
+    // ---- LEITURAS
     const ref = doc(db, "orders", id);
     const snap = await tx.get(ref);
 
@@ -268,9 +277,40 @@ export async function advanceStatus(id, nextStatus, { byUid, byName }) {
       );
     }
 
+    const applyingPaid = nextStatus === ORDER_STATUS.PAGO && !aggregatesApplied(order);
+    const payDay = dayKey();
+
+    let statsRef;
+    let statsSnap;
+    let customerRef;
+    let customerSnap;
+
+    if (applyingPaid) {
+      statsRef = doc(db, "dailyStats", payDay);
+      statsSnap = await tx.get(statsRef);
+      customerRef = doc(db, "users", order.customerId);
+      customerSnap = await tx.get(customerRef);
+    }
+
+    // ---- ESCRITAS
+    if (applyingPaid) {
+      const stats = statsSnap.exists() ? statsSnap.data() : emptyStats();
+      tx.set(statsRef, { ...applyStatsDelta(stats, order, +1), updatedAt: serverTimestamp() });
+
+      if (customerSnap.exists()) {
+        const customer = customerSnap.data();
+
+        tx.update(customerRef, {
+          orderCount: (customer.orderCount || 0) + 1,
+          totalSpent: (customer.totalSpent || 0) + order.total,
+        });
+      }
+    }
+
     tx.update(ref, {
       status: nextStatus,
       statusHistory: [...(order.statusHistory || []), historyEntry(nextStatus, { byUid, byName })],
+      ...(applyingPaid ? { aggregatesApplied: true, statsDay: payDay } : {}),
     });
   });
 }
@@ -308,11 +348,22 @@ async function restockAndClose(id, targetStatus, { reason, byUid, byName }) {
       // mantém o doc — estoque ainda é devolvido para auditoria correta.
     }
 
-    const statsRef = doc(db, "dailyStats", order.statsDay || dayKey());
-    const statsSnap = await tx.get(statsRef);
+    // Feature 009: só reverte agregados se o pedido chegou a aplicá-los (foi
+    // pago). Um pedido pendente cancelado devolve estoque sem mexer em receita/
+    // totais (que nunca foram somados).
+    const reverseAggregates = aggregatesApplied(order);
 
-    const customerRef = doc(db, "users", order.customerId);
-    const customerSnap = await tx.get(customerRef);
+    let statsRef;
+    let statsSnap;
+    let customerRef;
+    let customerSnap;
+
+    if (reverseAggregates) {
+      statsRef = doc(db, "dailyStats", order.statsDay || dayKey());
+      statsSnap = await tx.get(statsRef);
+      customerRef = doc(db, "users", order.customerId);
+      customerSnap = await tx.get(customerRef);
+    }
 
     // ---- ESCRITAS
     for (const [productId, product] of Object.entries(productSnaps)) {
@@ -324,14 +375,14 @@ async function restockAndClose(id, targetStatus, { reason, byUid, byName }) {
       );
     }
 
-    if (statsSnap.exists()) {
+    if (reverseAggregates && statsSnap.exists()) {
       tx.set(statsRef, {
         ...applyStatsDelta(statsSnap.data(), order, -1),
         updatedAt: serverTimestamp(),
       });
     }
 
-    if (customerSnap.exists()) {
+    if (reverseAggregates && customerSnap.exists()) {
       const customer = customerSnap.data();
 
       tx.update(customerRef, {

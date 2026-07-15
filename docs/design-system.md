@@ -332,8 +332,30 @@ o `MainLayout` (TopBar + Header + Navbar + Footer).
 - Página `/cart` (M2): itens + quantidade/remover + subtotal, persistida em `localStorage`
   **por identidade** (`versastore:cart:<uid>`, `:guest` p/ anônimo — feature 007). Ao abrir,
   **revalida** cada item contra o Firestore (preço/estoque atuais, remove indisponíveis) e mostra um
-  **aviso** listando o que mudou (borda dourada). CTA "Finalizar compra" desabilitado até o checkout
-  (M4).
+  **aviso** listando o que mudou (borda dourada). O CTA **"Finalizar compra"** leva ao checkout
+  (feature 009).
+
+## Checkout (009-checkout / M4a, 2026-07-15)
+
+- Rota `/checkout` sob `PrivateRoute` (visitante → login). **Uma página**, coluna principal +
+  resumo fixo (sticky), colapsando em 1 coluna < 860px.
+- **Itens**: revalidados de novo ao entrar (reusa a revalidação do carrinho); mudanças aparecem num
+  bloco de aviso (borda `--secondary`) com botão "Revisei, pode continuar" que **destrava** a
+  confirmação.
+- **Endereço**: rádios entre os endereços salvos (M3), padrão pré-selecionado; sem endereço, CTA para
+  `/conta/enderecos` e bloqueio.
+- **CPF**: `FormField` + `maskCpf`, validado por `validateCpf` (2 DVs); checkbox **opt-in** "salvar para
+  as próximas compras".
+- **Pagamento**: rádios Pix / Cartão / Boleto — **só a seleção** (o pagamento real é o M4b, atrás da
+  interface `paymentProvider`).
+- **Resumo**: Subtotal + **Frete "A combinar"** + Total (`= subtotal + frete`, com frete 0/null na
+  M4a); botão "Confirmar pedido" desabilitado até endereço + CPF válido + método + itens revisados;
+  hints de bloqueio abaixo do botão.
+- **Sucesso** (`/checkout/sucesso`): card centralizado com "Pedido criado / aguardando pagamento", o
+  número do pedido e CTAs "Ver meus pedidos" / "Continuar comprando".
+- Lógica no hook `useCheckout` (revalidação, endereço/CPF/método, `canConfirm`, `confirm`); a criação
+  do pedido reusa a transação de estoque (`orderService.createOrder`) — receita/totais do cliente só
+  contam na transição **`pago`** (admin em M4a; webhook no M4b).
 
 ## Busca
 

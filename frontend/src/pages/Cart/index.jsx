@@ -144,12 +144,9 @@ function Cart() {
             </div>
 
             <div className={styles.checkoutRow}>
-              <button className={styles.checkout} disabled title="Disponível em breve">
+              <Link className={styles.checkout} to={ROUTES.CHECKOUT}>
                 Finalizar compra
-              </button>
-              <span className={styles.note}>
-                O fechamento de compra (pagamento e frete) estará disponível em breve.
-              </span>
+              </Link>
             </div>
           </>
         )}

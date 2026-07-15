@@ -124,7 +124,7 @@ beforeEach(() => {
 });
 
 describe("createOrder — transação de criação", () => {
-  it("baixa estoque, congela itens, numera sequencialmente e agrega dailyStats + cliente", async () => {
+  it("baixa estoque, congela itens, numera sequencialmente — SEM agregados na criação (feature 009)", async () => {
     const result = await createOrder({
       customerId: "cliente-1",
       items: [
@@ -133,6 +133,7 @@ describe("createOrder — transação de criação", () => {
       ],
       shippingAddress: { cidade: "São Paulo", uf: "SP" },
       paymentMethod: "pix",
+      cpf: "529.982.247-25",
     });
 
     expect(result.orderNumber).toBe(1);
@@ -143,30 +144,26 @@ describe("createOrder — transação de criação", () => {
     expect(store.get("products/prod-2").variations[0].stock).toBe(0);
     expect(store.get("products/prod-2").totalStock).toBe(10);
 
-    // Pedido com itens congelados e productIds p/ soft delete
+    // Pedido com itens congelados, campos de frete/total e agregados NÃO aplicados
     const order = store.get(findOrderPath());
 
-    expect(order.total).toBe(19990 + 2 * 4990);
+    expect(order.subtotal).toBe(19990 + 2 * 4990);
+    expect(order.shipping).toBe(null);
+    expect(order.shippingStatus).toBe("a_calcular");
+    expect(order.total).toBe(order.subtotal); // shipping null → total = subtotal
+    expect(order.cpf).toBe("529.982.247-25");
+    expect(order.aggregatesApplied).toBe(false);
     expect(order.items[0]).toMatchObject({ name: "Tênis Nike Air Max", unitPrice: 19990 });
     expect(order.items[1]).toMatchObject({ variationLabel: "M", unitPrice: 4990, quantity: 2 });
-    expect(order.productIds).toEqual(["prod-1", "prod-2"]);
     expect(order.status).toBe(ORDER_STATUS.AGUARDANDO_PAGAMENTO);
 
-    // Contador, dailyStats e agregados do cliente na MESMA transação
+    // Contador incrementado, mas dailyStats e totais do cliente INALTERADOS
     expect(store.get("counters/orders").current).toBe(1);
-
-    const statsPath = [...store.keys()].find((key) => key.startsWith("dailyStats/"));
-    const stats = store.get(statsPath);
-
-    expect(stats.revenue).toBe(order.total);
-    expect(stats.orderCount).toBe(1);
-    expect(stats.unitsSold).toBe(3);
-    expect(stats.unitsByProduct["prod-1"].units).toBe(1);
+    expect([...store.keys()].some((key) => key.startsWith("dailyStats/"))).toBe(false);
 
     const customer = store.get("users/cliente-1");
-
-    expect(customer.orderCount).toBe(1);
-    expect(customer.totalSpent).toBe(order.total);
+    expect(customer.orderCount).toBe(0);
+    expect(customer.totalSpent).toBe(0);
   });
 
   it("compra simultânea da última unidade: 1 sucesso, 1 estoque-insuficiente, estoque final 0 (SC-006)", async () => {
@@ -254,6 +251,25 @@ describe("advanceStatus — transições validadas (FR-051)", () => {
       advanceStatus(orderId, ORDER_STATUS.CANCELADO, { byUid: "a", byName: "A" })
     ).rejects.toMatchObject({ code: "transicao-invalida" });
   });
+
+  it("marcar como PAGO aplica os agregados uma única vez (feature 009)", async () => {
+    const orderId = await createTestOrder();
+    const order = store.get(`orders/${orderId}`);
+
+    await advanceStatus(orderId, ORDER_STATUS.PAGO, { byUid: "admin-1", byName: "Admin" });
+
+    const statsPath = [...store.keys()].find((key) => key.startsWith("dailyStats/"));
+    expect(store.get(statsPath).revenue).toBe(order.total);
+    expect(store.get(statsPath).orderCount).toBe(1);
+    expect(store.get("users/cliente-1").orderCount).toBe(1);
+    expect(store.get("users/cliente-1").totalSpent).toBe(order.total);
+    expect(store.get(`orders/${orderId}`).aggregatesApplied).toBe(true);
+
+    // Avançar para em_separacao NÃO re-aplica (idempotência do agregado)
+    await advanceStatus(orderId, ORDER_STATUS.EM_SEPARACAO, { byUid: "admin-1", byName: "Admin" });
+    expect(store.get(statsPath).orderCount).toBe(1);
+    expect(store.get("users/cliente-1").orderCount).toBe(1);
+  });
 });
 
 describe("cancelOrder — atomicidade (SC-009)", () => {
@@ -275,28 +291,41 @@ describe("cancelOrder — atomicidade (SC-009)", () => {
     ).rejects.toMatchObject({ code: "motivo-obrigatorio" });
   });
 
-  it("devolve estoque + histórico + dailyStats + agregados do cliente na mesma transação", async () => {
-    const orderId = await createTestOrder();
-    const statsPath = [...store.keys()].find((key) => key.startsWith("dailyStats/"));
+  it("cancelar pedido PENDENTE devolve estoque e NÃO mexe em agregados (feature 009)", async () => {
+    const orderId = await createTestOrder(); // aguardando_pagamento, sem agregados
 
-    await cancelOrder(orderId, {
-      reason: "Cliente desistiu",
-      byUid: "admin-1",
-      byName: "Admin",
-    });
+    await cancelOrder(orderId, { reason: "Cliente desistiu", byUid: "admin-1", byName: "Admin" });
 
     const order = store.get(`orders/${orderId}`);
-    const stats = store.get(statsPath);
     const customer = store.get("users/cliente-1");
 
     expect(order.status).toBe(ORDER_STATUS.CANCELADO);
     expect(order.statusHistory.at(-1)).toMatchObject({ reason: "Cliente desistiu" });
+    // Estoque devolvido
     expect(store.get("products/prod-1").stock).toBe(1);
     expect(store.get("products/prod-1").totalStock).toBe(1);
-    expect(stats.revenue).toBe(0);
-    expect(stats.orderCount).toBe(0);
+    // Agregados nunca foram somados na criação → seguem zerados; sem dailyStats
+    expect([...store.keys()].some((key) => key.startsWith("dailyStats/"))).toBe(false);
     expect(customer.orderCount).toBe(0);
     expect(customer.totalSpent).toBe(0);
+  });
+
+  it("cancelar pedido PAGO devolve estoque E reverte agregados (feature 009)", async () => {
+    const orderId = await createTestOrder();
+    await advanceStatus(orderId, ORDER_STATUS.PAGO, { byUid: "admin-1", byName: "Admin" });
+
+    // Após o pago: agregados aplicados
+    const statsPath = [...store.keys()].find((key) => key.startsWith("dailyStats/"));
+    expect(store.get(statsPath).revenue).toBeGreaterThan(0);
+    expect(store.get("users/cliente-1").orderCount).toBe(1);
+
+    await cancelOrder(orderId, { reason: "Estorno", byUid: "admin-1", byName: "Admin" });
+
+    expect(store.get("products/prod-1").stock).toBe(1);
+    expect(store.get(statsPath).revenue).toBe(0);
+    expect(store.get(statsPath).orderCount).toBe(0);
+    expect(store.get("users/cliente-1").orderCount).toBe(0);
+    expect(store.get("users/cliente-1").totalSpent).toBe(0);
   });
 
   it("bloqueia cancelamento de pedido já enviado", async () => {

@@ -27,6 +27,7 @@ import {
   saveAddress,
   setDefaultAddress,
   removeAddress,
+  saveCpf,
 } from "../userService";
 import { ROLES } from "../../constants/roles";
 
@@ -246,5 +247,17 @@ describe("hasPermission", () => {
   it("papel desconhecido/nulo não tem permissões (deny by default)", () => {
     expect(hasPermission(null, "products.write")).toBe(false);
     expect(hasPermission("operator", "products.write")).toBe(false);
+  });
+});
+
+describe("saveCpf (feature 009, opt-in)", () => {
+  it("grava o cpf no doc do próprio usuário", async () => {
+    await saveCpf("uid-1", "529.982.247-25");
+
+    expect(docMock).toHaveBeenCalledWith({}, "users", "uid-1");
+    expect(updateDocMock).toHaveBeenCalledWith(
+      { db: {}, collectionName: "users", id: "uid-1" },
+      { cpf: "529.982.247-25" }
+    );
   });
 });

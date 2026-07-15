@@ -27,7 +27,17 @@ service cloud.firestore {
       // status/deleted seriam negados por esta rule.
       allow read: if isAdmin()
         || (resource.data.status == "ativo" && resource.data.deleted == false);
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      // Baixa de estoque pela transação de criação de pedido do cliente
+      // (feature 009): só campos de estoque, decremental e não-negativo. A rule
+      // não valida o valor EXATO do decremento (Firestore não lê o pedido criado
+      // na mesma transação) — dívida fechada no M4b (Function + custom claims).
+      allow update: if isAdmin()
+        || ( isSignedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['stock', 'totalStock', 'variations'])
+          && request.resource.data.totalStock <= resource.data.totalStock
+          && request.resource.data.totalStock >= 0 );
     }
 
     match /categories/{categoryId} {
@@ -37,7 +47,13 @@ service cloud.firestore {
 
     match /orders/{orderId} {
       allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
-      allow create, delete: if isAdmin();
+      // Checkout (feature 009): o cliente DONO cria o próprio pedido, só no
+      // status inicial e sem agregados aplicados. Avançar status segue admin-only.
+      allow create: if isAdmin()
+        || ( isSelf(request.resource.data.customerId)
+          && request.resource.data.status == "aguardando_pagamento"
+          && request.resource.data.aggregatesApplied == false );
+      allow delete: if isAdmin();
       // Itens, número, cliente (id/e-mail) e data são imutáveis após a criação
       // (defesa em profundidade; a validação principal é do orderService).
       // Os campos desnormalizados de exibição/busca do cliente podem ser
@@ -68,7 +84,12 @@ service cloud.firestore {
     }
 
     match /counters/{counterId} {
-      allow read, write: if isAdmin();
+      // O cliente lê e incrementa (+1) o contador de pedidos na transação de
+      // criação (feature 009); admin faz qualquer escrita.
+      allow read: if isAdmin() || isSignedIn();
+      allow write: if isAdmin()
+        || ( isSignedIn()
+          && request.resource.data.current == (resource != null ? resource.data.current : 0) + 1 );
     }
 
     // Aparência da Home (feature 004): a loja lê as imagens customizadas

@@ -124,3 +124,41 @@ export function maskCep(value) {
 
   return d.replace(/^(\d{5})(\d)/, "$1-$2");
 }
+
+// Dígito verificador do CPF: soma ponderada (peso decrescente) mod 11.
+function cpfCheckDigit(digits) {
+  const sum = digits.reduce((acc, digit, i) => acc + digit * (digits.length + 1 - i), 0);
+  const rest = (sum * 10) % 11;
+
+  return rest === 10 ? 0 : rest;
+}
+
+// Valida CPF pelos 2 dígitos verificadores (feature 009). Rejeita tamanho
+// errado e sequências repetidas (ex.: 111.111.111-11), que passam nos DVs mas
+// não são CPFs válidos.
+export function validateCpf(value) {
+  const digits = onlyDigits(value);
+
+  if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) {
+    return "CPF inválido.";
+  }
+
+  const nums = digits.split("").map(Number);
+  const dv1 = cpfCheckDigit(nums.slice(0, 9));
+  const dv2 = cpfCheckDigit(nums.slice(0, 10));
+
+  if (dv1 !== nums[9] || dv2 !== nums[10]) {
+    return "CPF inválido.";
+  }
+
+  return null;
+}
+
+export function maskCpf(value) {
+  const d = onlyDigits(value).slice(0, 11);
+
+  return d
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4");
+}

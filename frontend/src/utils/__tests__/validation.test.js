@@ -11,6 +11,8 @@ import {
   validateTermsAccepted,
   validateCep,
   maskCep,
+  validateCpf,
+  maskCpf,
 } from "../validation";
 
 describe("validateEmail", () => {
@@ -75,5 +77,32 @@ describe("validateCep / maskCep", () => {
     expect(validateCep("01001000")).toBe(null);
     expect(validateCep("123")).toBe("CEP inválido.");
     expect(maskCep("01001000")).toBe("01001-000");
+  });
+});
+
+describe("validateCpf / maskCpf", () => {
+  it("aceita CPFs válidos (com e sem máscara)", () => {
+    expect(validateCpf("529.982.247-25")).toBe(null);
+    expect(validateCpf("52998224725")).toBe(null);
+    expect(validateCpf("111.444.777-35")).toBe(null);
+  });
+
+  it("rejeita DV inválido", () => {
+    expect(validateCpf("529.982.247-24")).toBe("CPF inválido.");
+    expect(validateCpf("11144477736")).toBe("CPF inválido.");
+  });
+
+  it("rejeita sequência repetida e tamanho errado", () => {
+    expect(validateCpf("111.111.111-11")).toBe("CPF inválido.");
+    expect(validateCpf("00000000000")).toBe("CPF inválido.");
+    expect(validateCpf("123")).toBe("CPF inválido.");
+    expect(validateCpf("")).toBe("CPF inválido.");
+  });
+
+  it("máscara progressiva", () => {
+    expect(maskCpf("529")).toBe("529");
+    expect(maskCpf("529982")).toBe("529.982");
+    expect(maskCpf("52998224725")).toBe("529.982.247-25");
+    expect(maskCpf("529982247259999")).toBe("529.982.247-25"); // trava em 11 dígitos
   });
 });

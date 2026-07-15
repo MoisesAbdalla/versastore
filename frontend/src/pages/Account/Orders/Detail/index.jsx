@@ -7,6 +7,8 @@ import { formatBRL, formatDateTime } from "../../../../utils/format";
 import ROUTES from "../../../../constants/routes";
 import styles from "./styles.module.css";
 
+const PAYMENT_LABELS = { pix: "Pix", cartao: "Cartão", boleto: "Boleto" };
+
 // Detalhe de "Meus pedidos" (feature 007, US4). Carrega via getMyOrder, que
 // devolve null se o pedido não for do usuário (SC-006) — cai no "não
 // encontrado", sem vazar pedido alheio.
@@ -112,10 +114,30 @@ function AccountOrderDetail() {
           ))}
         </ul>
 
+        {order.subtotal != null && (
+          <div className={styles.summaryRow}>
+            <span>Subtotal</span>
+            <span>{formatBRL(order.subtotal)}</span>
+          </div>
+        )}
+
+        <div className={styles.summaryRow}>
+          <span>Frete</span>
+          <span>{order.shippingStatus === "a_calcular" ? "A combinar" : formatBRL(order.shipping)}</span>
+        </div>
+
         <div className={styles.totalRow}>
           <span>Total</span>
           <strong>{formatBRL(order.total)}</strong>
         </div>
+      </section>
+
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>Pagamento</h3>
+        <p className={styles.line}>
+          Forma: <strong>{PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod || "—"}</strong>
+        </p>
+        {order.cpf && <p className={styles.line}>CPF: {order.cpf}</p>}
       </section>
 
       {address && (

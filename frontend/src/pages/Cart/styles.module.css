@@ -247,6 +247,8 @@
 }
 
 .checkout {
+    display: inline-block;
+
     padding: 14px 32px;
 
     border: none;
@@ -265,13 +267,15 @@
 
     text-transform: uppercase;
 
+    text-decoration: none;
+
+    text-align: center;
+
     cursor: pointer;
 }
 
-.checkout:disabled {
-    background: var(--text-muted);
-
-    cursor: not-allowed;
+.checkout:hover {
+    opacity: .9;
 }
 
 .ghostButton {

@@ -100,6 +100,12 @@ export async function updatePersonalData(uid, { name, phone }) {
   });
 }
 
+// Salva o CPF no perfil (feature 009, opt-in "salvar para as próximas compras")
+// — pré-preenche o checkout seguinte. Escrita do próprio usuário no próprio doc.
+export async function saveCpf(uid, cpf) {
+  await updateDoc(doc(db, "users", uid), { cpf: cpf || "" });
+}
+
 // Perfil completo quando tem telefone E aceite de termos (feature 007).
 export function isProfileComplete(profile) {
   return Boolean(profile?.phone) && profile?.termsAcceptedAt != null;

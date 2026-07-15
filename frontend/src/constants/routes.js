@@ -8,6 +8,10 @@ const ROUTES = {
 
     CART:"/cart",
 
+    CHECKOUT:"/checkout",
+
+    CHECKOUT_SUCCESS:"/checkout/sucesso",
+
     LOGIN:"/login",
 
     REGISTER:"/register",

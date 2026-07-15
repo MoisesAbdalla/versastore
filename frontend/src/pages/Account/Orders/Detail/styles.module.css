@@ -211,6 +211,18 @@
     white-space: nowrap;
 }
 
+.summaryRow {
+    display: flex;
+
+    justify-content: space-between;
+
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    color: var(--text-muted);
+}
+
 .totalRow {
     display: flex;
 
@@ -223,6 +235,14 @@
     font-family: var(--font-body);
 
     font-size: 16px;
+
+    color: var(--text);
+}
+
+.line {
+    font-family: var(--font-body);
+
+    font-size: 14px;
 
     color: var(--text);
 }
