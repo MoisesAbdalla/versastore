@@ -315,9 +315,16 @@ o `MainLayout` (TopBar + Header + Navbar + Footer).
 - Layout 1 coluna → 2 colunas em ≥860px. `ProductGallery`: imagem principal (`w=800`) + miniaturas
   (`w=120`); zoom desktop por lupa (`background-position`), mobile por modal (imagem `w=1600` +
   pinch nativo).
-- `VariationSelector`: chips por variação; esgotadas desabilitadas/riscadas.
+- `VariationSelector` **por atributo** (feature 008): uma linha de opções por atributo (ex.: Tamanho
+  em cima, Cor embaixo), **todas visíveis desde o início**, com os valores na ordem declarada pelo
+  lojista. Ao escolher um valor, os valores do outro atributo sem combinação disponível (inexistente
+  ou esgotada) ficam **desabilitados/riscados**; ordem de escolha livre; clicar no valor marcado
+  desmarca. Estoque e botão "Adicionar ao carrinho" só reagem quando **todos** os atributos estão
+  selecionados (variação resolvida). Produto simples (sem atributos) não mostra seletor. A lógica de
+  disponibilidade fica no hook `useVariationSelection`; o componente é só apresentação.
 - Indicador "últimas unidades" quando estoque ≤ limiar do produto. Botão "Adicionar ao carrinho"
-  (esgotado desabilita). 404 amigável para produto inativo/inexistente.
+  (esgotado desabilita). 404 amigável para produto inativo/inexistente **ou sinalizado como
+  inconsistente** (feature 008).
 
 ## Carrinho
 
@@ -382,3 +389,35 @@ feedback de erro **campo a campo** em pt-BR (nunca `alert`).
   o eixo central idêntico entre páginas curtas e longas.
 - **`EmptyState`** aceita `actionOnClick` (ação na própria página) além de `actionTo` (link): o CTA do
   vazio deve ser a ação que resolve o vazio.
+
+# Variações por Atributo (008-variacoes-por-atributo, 2026-07-13)
+
+Modelo: `product.attributes: [{ name, values: string[] }]` (ordenado); cada variação escolhe um valor
+por atributo. Regra única de consistência em `utils/variationValidation.js`, reusada por form, service
+e migração.
+
+## Editor de variações no admin (`Products/Form`)
+
+- **`AttributeEditor`**: define/renomeia/remove atributos e, por atributo, adiciona/**reordena** (setas
+  ↑↓)/remove valores. A ordem dos valores aqui é a ordem exibida na vitrine. Valores são **normalizados
+  na entrada** (siglas/alfanuméricos em caixa alta — P, GG, 110V; palavras capitalizadas — Preta,
+  Azul); duplicatas pós-normalização são rejeitadas. Remover um valor em uso é bloqueado.
+- **Tabela de variações**: uma coluna (select do valor permitido) por atributo declarado + SKU, preço
+  opcional, estoque. **"Gerar combinações"** cria o produto cartesiano dos valores (linhas existentes
+  intactas, id estável); **"Adicionar variação"** para casos pontuais.
+- **Validação**: salvar bloqueia variações inconsistentes (valor vazio, combinação duplicada, conjunto
+  divergente); publicar (ativo) exige consistência. **Resolução de fusão** (`ConfirmDialog`): remover
+  um atributo que faz variações colapsarem na mesma combinação abre um passo onde o lojista escolhe
+  **manter uma** ou **somar estoques** — nunca automático.
+- **Ids de variação estáveis**: editar/reordenar/renomear preserva o `id` da variação (carrinho salvo
+  e pedidos continuam válidos); id novo só para combinação nova.
+
+## Sinalização de inconsistência (produto oculto da vitrine)
+
+- Campo derivado `variationsInconsistent` (+ `variationIssues`), recalculado em todo save e pela
+  migração `backfillVariations` (dev). Produto sinalizado é **escondido da vitrine** (catálogo, Home,
+  busca e página → 404 amigável).
+- **Alerta impossível de ignorar no admin**: badge vermelho **"Variação inconsistente"** na linha da
+  listagem; contador **"N produto(s) oculto(s) por inconsistência de variação"** + itens acionáveis no
+  card de Alertas do dashboard; **banner** na tela de edição com os `variationIssues` e como corrigir.
+  Corrigir e salvar limpa o flag e o produto volta à vitrine.

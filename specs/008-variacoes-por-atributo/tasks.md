@@ -84,8 +84,8 @@
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T022 [P] Atualizar `docs/design-system.md`: seção da página de produto — seletor **por atributo** (uma linha por atributo, valores na ordem declarada, indisponível riscado) substituindo "chips por variação"; e registrar o badge/alerta de "variação inconsistente" no admin
-- [ ] T023 Gates finais: `npm run lint` (zero erros), `npm run test` (suíte atual + novos verdes), `npm run build` (bundle íntegro; admin segue code-split)
+- [x] T022 [P] Atualizar `docs/design-system.md`: seção da página de produto — seletor **por atributo** (uma linha por atributo, valores na ordem declarada, indisponível riscado) substituindo "chips por variação"; e registrar o badge/alerta de "variação inconsistente" no admin
+- [x] T023 Gates finais: `npm run lint` (zero erros), `npm run test` (suíte atual + novos verdes), `npm run build` (bundle íntegro; admin segue code-split)
 - [ ] T024 Regressão do quickstart.md (§1–5): Home, catálogo, carrinho persistente, pedidos, painel admin e área de conta (007) intactos — **validação manual do usuário**
 
 ---
