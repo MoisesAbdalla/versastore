@@ -5,8 +5,10 @@ import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { createOrder } from "../services/orderService";
 import { createPayment } from "../services/paymentProvider";
+import { quote } from "../services/shippingProvider";
 import { saveCpf } from "../services/userService";
 import { validateCpf, maskCpf } from "../utils/validation";
+import { formatBRL } from "../utils/format";
 import ROUTES from "../constants/routes";
 
 const PAYMENT_METHODS = ["pix", "cartao", "boleto"];
@@ -83,9 +85,67 @@ export function useCheckout() {
   const isEmpty = !revalidating && items.length === 0;
   const mustReview = changes.length > 0 && !acknowledged;
 
+  // Frete (feature 011 / M5a): calcula pelo CEP do endereço selecionado; recalcula
+  // ao trocar de endereço ou mudar o subtotal.
+  const cep = selectedAddress?.cep || "";
+  const [shippingQuote, setShippingQuote] = useState(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+
+  useEffect(() => {
+    if (!cep || items.length === 0) {
+      setShippingQuote(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setShippingLoading(true);
+
+    quote({ cep, subtotal })
+      .then((result) => {
+        if (!cancelled) setShippingQuote(result);
+      })
+      .catch(() => {
+        if (!cancelled) setShippingQuote({ ok: false, error: "erro" });
+      })
+      .finally(() => {
+        if (!cancelled) setShippingLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cep, subtotal, items.length]);
+
+  const shippingOption = shippingQuote?.ok ? shippingQuote.options[0] : null;
+  const shippingError = shippingQuote && !shippingQuote.ok ? shippingQuote.error : null;
+  // sem_config = loja sem tabela → "a combinar" (fallback M4a), NÃO bloqueia.
+  // sem_regra/erro = não dá pra cobrar certo → bloqueia.
+  const shippingBlocked = shippingError === "sem_regra" || shippingError === "erro";
+  const shipping = shippingOption ? shippingOption.price : null; // null = a combinar
+  const shippingEtaDays = shippingOption?.etaDays ?? null;
+  const shippingMethod = shippingOption?.method || "";
+  const total = subtotal + (shipping || 0);
+
+  let shippingLabel;
+  if (shippingLoading) {
+    shippingLabel = "Calculando…";
+  } else if (shippingOption?.free) {
+    shippingLabel = "Frete grátis";
+  } else if (shippingOption) {
+    shippingLabel = `${formatBRL(shippingOption.price)}${
+      shippingOption.etaDays ? ` · até ${shippingOption.etaDays} dias úteis` : ""
+    }`;
+  } else if (shippingError === "sem_regra") {
+    shippingLabel = "Ainda não entregamos nessa região";
+  } else {
+    shippingLabel = "A combinar";
+  }
+
   const canConfirm =
     !submitting &&
     !revalidating &&
+    !shippingLoading &&
+    !shippingBlocked &&
     items.length > 0 &&
     !mustReview &&
     Boolean(selectedAddress) &&
@@ -120,6 +180,10 @@ export function useCheckout() {
         shippingAddress: selectedAddress,
         paymentMethod,
         cpf,
+        shipping,
+        shippingEtaDays,
+        shippingMethod,
+        shippingCep: cep,
       });
 
       // Ponto de integração do pagamento (stub na M4a; Mercado Pago no M4b).
@@ -148,6 +212,10 @@ export function useCheckout() {
     paymentMethod,
     cpf,
     saveCpfOptIn,
+    shipping,
+    shippingEtaDays,
+    shippingMethod,
+    cep,
     clear,
     navigate,
     reloadProfile,
@@ -157,8 +225,13 @@ export function useCheckout() {
     // carrinho
     items,
     subtotal,
-    shippingLabel: "A combinar",
-    total: subtotal, // shipping "a combinar" (0) → total = subtotal na M4a
+    shippingLabel,
+    shipping,
+    shippingEtaDays,
+    shippingError,
+    shippingBlocked,
+    shippingLoading,
+    total,
     revalidating,
     changes,
     acknowledged,

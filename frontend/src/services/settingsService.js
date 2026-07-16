@@ -64,6 +64,39 @@ export async function setCategoryPosition(key, position) {
   });
 }
 
+// --- Frete por tabela (feature 011 / M5a) --------------------------------
+// Documento único settings/shipping com a tabela de frete. Leitura pública
+// (checkout + banner), escrita admin — as rules de settings/{id} já cobrem.
+// Shape: { rules: [{region, cepRanges:[{from,to}], price, etaDays,
+//          minSubtotal?, maxSubtotal?}], defaultRule: {price, etaDays}|null,
+//          freeShippingThreshold: number|null }
+
+const SHIPPING_SETTINGS_REF = ["settings", "shipping"];
+
+export async function getShippingSettings() {
+  const snapshot = await getDoc(doc(db, ...SHIPPING_SETTINGS_REF));
+
+  if (!snapshot.exists()) {
+    return { rules: [], defaultRule: null, freeShippingThreshold: null };
+  }
+
+  const data = snapshot.data();
+
+  return {
+    rules: data.rules || [],
+    defaultRule: data.defaultRule || null,
+    freeShippingThreshold: data.freeShippingThreshold ?? null,
+  };
+}
+
+export async function updateShippingSettings(changes) {
+  await setDoc(
+    doc(db, ...SHIPPING_SETTINGS_REF),
+    { ...changes, updatedAt: serverTimestamp() },
+    { merge: true }
+  );
+}
+
 // "Restaurar padrão" zera imagem E enquadramento em uma única escrita.
 export async function resetHero() {
   await updateHomeSettings({ heroImage: null, heroPosition: null });

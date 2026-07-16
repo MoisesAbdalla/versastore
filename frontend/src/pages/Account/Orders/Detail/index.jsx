@@ -122,8 +122,14 @@ function AccountOrderDetail() {
         )}
 
         <div className={styles.summaryRow}>
-          <span>Frete</span>
-          <span>{order.shippingStatus === "a_calcular" ? "A combinar" : formatBRL(order.shipping)}</span>
+          <span>Frete{order.shippingEtaDays ? ` · até ${order.shippingEtaDays} dias úteis` : ""}</span>
+          <span>
+            {order.shippingStatus === "a_calcular"
+              ? "A combinar"
+              : order.shippingStatus === "gratis" || order.shipping === 0
+                ? "Grátis"
+                : formatBRL(order.shipping)}
+          </span>
         </div>
 
         <div className={styles.totalRow}>

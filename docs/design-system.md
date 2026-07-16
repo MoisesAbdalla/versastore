@@ -443,3 +443,33 @@ e migração.
   listagem; contador **"N produto(s) oculto(s) por inconsistência de variação"** + itens acionáveis no
   card de Alertas do dashboard; **banner** na tela de edição com os `variationIssues` e como corrigir.
   Corrigir e salvar limpa o flag e o produto volta à vitrine.
+
+# Frete (011-frete-tabela / M5a, 2026-07-16)
+
+Cálculo de frete por **tabela configurável** (sem API/servidor; a API real é o M5b). A lógica fica
+atrás do provedor `shippingProvider` (implementação por tabela), para o M5b plugar a API sem tocar o
+checkout — mesmo padrão do `paymentProvider`.
+
+## Admin — tela de Frete (`/admin/frete`)
+
+- Item **"Frete"** no menu do painel. Config em `settings/shipping` (leitura pública, escrita admin).
+- **Regras por região**: nome, **faixas de CEP** (de–até, máscara), **valor** e **prazo** (dias), e
+  faixa de valor do pedido opcional. Adicionar/remover regras e faixas.
+- **Frete padrão "demais regiões"**: valor + prazo para CEPs sem regra (vazio = bloquear).
+- **Frete grátis acima de**: limite configurável (alimenta o banner e o cálculo).
+- Salvar valida a tabela (`validateShippingSettings`): faixas de 8 dígitos, `de ≤ até`, valor/prazo
+  preenchidos, **sem sobreposição** de faixas; erros listados no topo.
+
+## Checkout — frete calculado
+
+- O frete é calculado pelo **CEP do endereço selecionado** (recalcula ao trocar de endereço/subtotal).
+- Ordem: **frete grátis** (subtotal ≥ limite, prevalece) → **regra da região** → **frete padrão** →
+  **sem regra** (bloqueia) / **sem tabela** (mantém "A combinar", permite finalizar — fallback M4a).
+- Resumo: linha **Frete** com "R$ X · até N dias úteis" / "Frete grátis" / "Calculando…" / "A
+  combinar"; **Total = subtotal + frete**. Frete **congelado** no pedido (`shipping`, `shippingEtaDays`,
+  `shippingMethod`, `shippingCep`, `shippingStatus`) — alterar a tabela depois não muda pedidos feitos.
+
+## Banner
+
+- O TopBar lê `freeShippingThreshold` (via `useShippingSettings`) e mostra "Frete grátis acima de
+  R$X"; sem limite configurado, o banner de frete some.

@@ -16,7 +16,7 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Adicionar `ADMIN_SHIPPING: "/admin/frete"` em `frontend/src/constants/routes.js`
+- [x] T001 [P] Adicionar `ADMIN_SHIPPING: "/admin/frete"` em `frontend/src/constants/routes.js`
 
 ---
 
@@ -24,10 +24,10 @@
 
 **⚠️ CRITICAL**: regra de cálculo + config + interface bloqueiam admin e checkout
 
-- [ ] T002 [P] Criar `frontend/src/utils/shipping.js` (contracts/services.md): `cepToNumber`, `matchRule`, `computeShipping` (frete grátis prevalece → regra → defaultRule → `sem_regra`) e `validateShippingSettings` (faixas 8 dígitos/from≤to, valor/prazo ≥ 0, sem sobreposição) — testes em `frontend/src/utils/__tests__/shipping.test.js` (grátis; regra por região; faixa de valor; default; sem_regra; validação)
-- [ ] T003 [P] Estender `frontend/src/services/settingsService.js`: `getShippingSettings()` / `updateShippingSettings(changes)` no doc `settings/shipping` (default vazio se ausente)
-- [ ] T004 Criar `frontend/src/services/shippingProvider.js`: `quote({ cep, subtotal })` que lê `getShippingSettings` + `computeShipping` → `{ ok, options:[{method,price,etaDays,free}] }` ou `{ ok:false, error }` (interface p/ o M5b) — teste em `frontend/src/services/__tests__/shippingProvider.test.js`
-- [ ] T005 [P] Criar `frontend/src/hooks/useShippingSettings.js`: leitura da config com cache de módulo (para banner e, se útil, checkout)
+- [x] T002 [P] Criar `frontend/src/utils/shipping.js` (contracts/services.md): `cepToNumber`, `matchRule`, `computeShipping` (frete grátis prevalece → regra → defaultRule → `sem_regra`) e `validateShippingSettings` (faixas 8 dígitos/from≤to, valor/prazo ≥ 0, sem sobreposição) — testes em `frontend/src/utils/__tests__/shipping.test.js` (grátis; regra por região; faixa de valor; default; sem_regra; validação)
+- [x] T003 [P] Estender `frontend/src/services/settingsService.js`: `getShippingSettings()` / `updateShippingSettings(changes)` no doc `settings/shipping` (default vazio se ausente)
+- [x] T004 Criar `frontend/src/services/shippingProvider.js`: `quote({ cep, subtotal })` que lê `getShippingSettings` + `computeShipping` → `{ ok, options:[{method,price,etaDays,free}] }` ou `{ ok:false, error }` (interface p/ o M5b) — teste em `frontend/src/services/__tests__/shippingProvider.test.js`
+- [x] T005 [P] Criar `frontend/src/hooks/useShippingSettings.js`: leitura da config com cache de módulo (para banner e, se útil, checkout)
 
 **Checkpoint**: cálculo de frete, config e interface prontos e testados
 
@@ -39,8 +39,8 @@
 
 **Independent Test**: quickstart §1 — cadastrar regras + padrão + limite, ser bloqueado por faixa malformada/sobreposta, salvar e ver persistido.
 
-- [ ] T006 [US1] Criar `frontend/src/pages/Admin/Shipping/index.jsx` + `styles.module.css`: editor de regras (região, faixas de CEP com máscara, valor, prazo, faixa de valor opcional), frete padrão "demais regiões", limite de frete grátis; salvar valida via `validateShippingSettings` (erros campo a campo) e grava via `updateShippingSettings`; estados carregando/salvando/erro
-- [ ] T007 [US1] Registrar a rota `/admin/frete` sob `AdminRoute` em `frontend/src/routes/index.jsx` e adicionar o item **"Frete"** ao `NAV_ITEMS` do `frontend/src/layouts/AdminLayout/index.jsx`
+- [x] T006 [US1] Criar `frontend/src/pages/Admin/Shipping/index.jsx` + `styles.module.css`: editor de regras (região, faixas de CEP com máscara, valor, prazo, faixa de valor opcional), frete padrão "demais regiões", limite de frete grátis; salvar valida via `validateShippingSettings` (erros campo a campo) e grava via `updateShippingSettings`; estados carregando/salvando/erro
+- [x] T007 [US1] Registrar a rota `/admin/frete` sob `AdminRoute` em `frontend/src/routes/index.jsx` e adicionar o item **"Frete"** ao `NAV_ITEMS` do `frontend/src/layouts/AdminLayout/index.jsx`
 
 **Checkpoint**: lojista configura e salva a tabela de frete
 
@@ -52,10 +52,10 @@
 
 **Independent Test**: quickstart §2 — CEP do Sudeste mostra o frete/prazo; ≥ limite → grátis; sem regra sem padrão → bloqueia; confirmar grava o frete congelado.
 
-- [ ] T008 [US2] Estender `frontend/src/hooks/useCheckout.js`: usar o **CEP do endereço selecionado** (`address.cep`; ViaCEP não é re-chamado — já validado no M3); chamar `shippingProvider.quote({ cep, subtotal })` ao montar e ao mudar endereço/subtotal; expor `shipping`/`shippingEtaDays`/`shippingMethod`/`shippingError` e `total = subtotal + (shipping||0)`. **Comportamento (C1 do analyze):** frete calculado/grátis → mostra e permite confirmar; **`sem_regra`** (config existe mas CEP não coberto e sem padrão) → **bloqueia** com aviso; **`sem_config`** (loja sem tabela) → mantém "a combinar" e **permite** confirmar (fallback M4a, `shipping: null`). — testes em `frontend/src/hooks/__tests__/useCheckout.test.jsx` (recalcula ao trocar endereço; grátis ≥ limite; sem_regra bloqueia; sem_config permite "a combinar"; total)
-- [ ] T009 [US2] Atualizar `frontend/src/pages/Checkout/index.jsx`: linha de frete no resumo com **valor + prazo** (ou "Frete grátis"/"Calculando…"), o CEP editável/derivado do endereço, e o aviso de bloqueio ("ainda não entregamos nessa região"/CEP inválido)
-- [ ] T010 [US2] Estender `frontend/src/services/orderService.js` `createOrder`: aceitar/gravar `shipping` (valor calculado) + `shippingEtaDays` + `shippingMethod` + `shippingCep`, e `shippingStatus` "calculado"/"gratis"; `total = subtotal + (shipping||0)` — estender `frontend/src/services/__tests__/orderService.test.js` (grava frete e etaDays/method/cep; total = subtotal + shipping; frete 0 → status "gratis")
-- [ ] T011 [US2] Exibir o frete/prazo no detalhe de "Meus pedidos" `frontend/src/pages/Account/Orders/Detail/index.jsx` (substitui o "A combinar" quando o frete está calculado; mostra o prazo)
+- [x] T008 [US2] Estender `frontend/src/hooks/useCheckout.js`: usar o **CEP do endereço selecionado** (`address.cep`; ViaCEP não é re-chamado — já validado no M3); chamar `shippingProvider.quote({ cep, subtotal })` ao montar e ao mudar endereço/subtotal; expor `shipping`/`shippingEtaDays`/`shippingMethod`/`shippingError` e `total = subtotal + (shipping||0)`. **Comportamento (C1 do analyze):** frete calculado/grátis → mostra e permite confirmar; **`sem_regra`** (config existe mas CEP não coberto e sem padrão) → **bloqueia** com aviso; **`sem_config`** (loja sem tabela) → mantém "a combinar" e **permite** confirmar (fallback M4a, `shipping: null`). — testes em `frontend/src/hooks/__tests__/useCheckout.test.jsx` (recalcula ao trocar endereço; grátis ≥ limite; sem_regra bloqueia; sem_config permite "a combinar"; total)
+- [x] T009 [US2] Atualizar `frontend/src/pages/Checkout/index.jsx`: linha de frete no resumo com **valor + prazo** (ou "Frete grátis"/"Calculando…"), o CEP editável/derivado do endereço, e o aviso de bloqueio ("ainda não entregamos nessa região"/CEP inválido)
+- [x] T010 [US2] Estender `frontend/src/services/orderService.js` `createOrder`: aceitar/gravar `shipping` (valor calculado) + `shippingEtaDays` + `shippingMethod` + `shippingCep`, e `shippingStatus` "calculado"/"gratis"; `total = subtotal + (shipping||0)` — estender `frontend/src/services/__tests__/orderService.test.js` (grava frete e etaDays/method/cep; total = subtotal + shipping; frete 0 → status "gratis")
+- [x] T011 [US2] Exibir o frete/prazo no detalhe de "Meus pedidos" `frontend/src/pages/Account/Orders/Detail/index.jsx` (substitui o "A combinar" quando o frete está calculado; mostra o prazo)
 
 **Checkpoint**: cliente vê e paga com o frete correto; pedido congela o frete
 
@@ -63,7 +63,7 @@
 
 ## Phase 5: User Story 3 - Banner conectado ao limite (Priority: P3)
 
-- [ ] T012 [US3] Ajustar `frontend/src/components/TopBar/index.jsx` para ler `freeShippingThreshold` via `useShippingSettings` e exibir "Frete grátis acima de R$X" (oculta/genérico sem limite)
+- [x] T012 [US3] Ajustar `frontend/src/components/TopBar/index.jsx` para ler `freeShippingThreshold` via `useShippingSettings` e exibir "Frete grátis acima de R$X" (oculta/genérico sem limite)
 
 **Checkpoint**: banner reflete o limite real configurado
 
@@ -71,8 +71,8 @@
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T013 [P] Atualizar `docs/design-system.md` com a seção **Frete** (tela do admin; linha de frete no checkout com valor+prazo; banner conectado ao limite)
-- [ ] T014 Gates finais: `npm run lint` (zero erros), `npm run test` (suíte + novos verdes), `npm run build` (bundle íntegro)
+- [x] T013 [P] Atualizar `docs/design-system.md` com a seção **Frete** (tela do admin; linha de frete no checkout com valor+prazo; banner conectado ao limite)
+- [x] T014 Gates finais: `npm run lint` (zero erros), `npm run test` (suíte + novos verdes), `npm run build` (bundle íntegro)
 - [ ] T015 Regressão do quickstart (§1–5): checkout (009), carrinho, conta (007), variações (008), admin e vitrine intactos — **validação manual do usuário**
 
 ---

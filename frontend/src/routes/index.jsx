@@ -37,6 +37,7 @@ const CustomerListPage = lazy(() => import("../pages/Admin/Customers/List"));
 const CustomerDetailPage = lazy(() => import("../pages/Admin/Customers/Detail"));
 const ReportsPage = lazy(() => import("../pages/Admin/Reports"));
 const AppearancePage = lazy(() => import("../pages/Admin/Appearance"));
+const ShippingPage = lazy(() => import("../pages/Admin/Shipping"));
 
 function AppRoutes() {
   return (
@@ -123,6 +124,7 @@ function AppRoutes() {
             <Route path="customers" element={<CustomerListPage />} />
             <Route path="customers/:id" element={<CustomerDetailPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="frete" element={<ShippingPage />} />
             <Route path="appearance" element={<AppearancePage />} />
           </Route>
 

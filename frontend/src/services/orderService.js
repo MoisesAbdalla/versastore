@@ -122,7 +122,17 @@ function productWithStockDelta(product, items, direction) {
 // `aguardando_pagamento`. Feature 009: NÃO conta receita/totais do cliente aqui
 // — isso se move para a transição `pago` (createOrder ≠ venda confirmada).
 // Estoque insuficiente aborta tudo.
-export async function createOrder({ customerId, items, shippingAddress, paymentMethod, cpf }) {
+export async function createOrder({
+  customerId,
+  items,
+  shippingAddress,
+  paymentMethod,
+  cpf,
+  shipping = null,
+  shippingEtaDays = null,
+  shippingMethod = "",
+  shippingCep = "",
+}) {
   if (!items || items.length === 0) {
     throw serviceError("pedido-vazio", "O pedido precisa de ao menos um item.");
   }
@@ -191,8 +201,10 @@ export async function createOrder({ customerId, items, shippingAddress, paymentM
     }
 
     const subtotal = frozenItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-    const shipping = null; // frete "a combinar" (M4a); o M5 preenche o valor real.
+    // Frete calculado pela M5a (tabela) e congelado no pedido; null = "a combinar"
+    // (loja sem tabela configurada — fallback M4a).
     const total = subtotal + (shipping || 0);
+    const shippingStatus = shipping == null ? "a_calcular" : shipping === 0 ? "gratis" : "calculado";
     const orderNumber = (counterSnap.exists() ? counterSnap.data().current : 0) + 1;
 
     const order = {
@@ -209,7 +221,10 @@ export async function createOrder({ customerId, items, shippingAddress, paymentM
       productIds,
       subtotal,
       shipping,
-      shippingStatus: "a_calcular",
+      shippingStatus,
+      shippingEtaDays,
+      shippingMethod: shippingMethod || "",
+      shippingCep: shippingCep || "",
       total,
       status: ORDER_STATUS.AGUARDANDO_PAGAMENTO,
       statusHistory: [

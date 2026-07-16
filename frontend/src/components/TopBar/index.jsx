@@ -4,14 +4,23 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 
+import { useShippingSettings } from "../../hooks/useShippingSettings";
+import { formatBRL } from "../../utils/format";
+
 function TopBar() {
+  // Banner conectado ao limite real de frete grátis (feature 011). Sem limite
+  // configurado, o banner de frete some.
+  const { freeShippingThreshold } = useShippingSettings();
+
   return (
     <div className={styles.topbar}>
       <div className={styles.left}>
-        <span>
-          <LocalShippingOutlinedIcon fontSize="small" />
-          Frete grátis acima de R$199
-        </span>
+        {freeShippingThreshold > 0 && (
+          <span>
+            <LocalShippingOutlinedIcon fontSize="small" />
+            Frete grátis acima de {formatBRL(freeShippingThreshold)}
+          </span>
+        )}
       </div>
 
       <div className={styles.right}>

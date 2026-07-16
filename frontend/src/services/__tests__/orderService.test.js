@@ -166,6 +166,31 @@ describe("createOrder — transação de criação", () => {
     expect(customer.totalSpent).toBe(0);
   });
 
+  it("grava o frete calculado (feature 011) congelado no pedido", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      shipping: 1990,
+      shippingEtaDays: 5,
+      shippingMethod: "Sudeste",
+      shippingCep: "01001000",
+    });
+
+    const order = store.get(findOrderPath());
+    expect(order.shipping).toBe(1990);
+    expect(order.shippingStatus).toBe("calculado");
+    expect(order.shippingEtaDays).toBe(5);
+    expect(order.shippingMethod).toBe("Sudeste");
+    expect(order.shippingCep).toBe("01001000");
+    expect(order.total).toBe(order.subtotal + 1990);
+  });
+
+  it("frete 0 → shippingStatus 'gratis'; sem frete → 'a_calcular'", async () => {
+    await createOrder({ customerId: "cliente-1", items: [{ productId: "prod-1", quantity: 1 }], paymentMethod: "pix", shipping: 0 });
+    expect(store.get(findOrderPath()).shippingStatus).toBe("gratis");
+  });
+
   it("compra simultânea da última unidade: 1 sucesso, 1 estoque-insuficiente, estoque final 0 (SC-006)", async () => {
     const buy = () =>
       createOrder({

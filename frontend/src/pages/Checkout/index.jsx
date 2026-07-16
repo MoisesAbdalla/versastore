@@ -195,6 +195,12 @@ function Checkout() {
 
             {!c.hasAddress && <p className={styles.blockHint}>Cadastre um endereço para continuar.</p>}
             {c.mustReview && <p className={styles.blockHint}>Revise as mudanças dos itens acima.</p>}
+            {c.shippingError === "sem_regra" && (
+              <p className={styles.blockHint}>Ainda não entregamos para o CEP deste endereço.</p>
+            )}
+            {c.shippingError === "erro" && (
+              <p className={styles.blockHint}>Não foi possível calcular o frete. Tente novamente.</p>
+            )}
           </aside>
         </div>
       </div>
