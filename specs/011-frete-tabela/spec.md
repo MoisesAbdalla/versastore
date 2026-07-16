@@ -14,6 +14,14 @@ O checkout (M4a) já cria o pedido com o campo `shipping` (hoje "a combinar", `s
 
 O cálculo fica atrás de uma **interface abstrata de frete** (um provedor de frete) com implementação por TABELA aqui; a **M5b** conecta a API real (Melhor Envio/SuperFrete) na mesma interface, sem reescrever o checkout. A M5b depende de infraestrutura de servidor ainda não disponível.
 
+## Clarifications
+
+### Session 2026-07-15
+
+- Q: A tabela usa peso/dimensão dos produtos ou só região + faixa de valor? → A: **Só região + faixa de valor** na M5a. **Sem peso** — não adiciona campo de peso no produto agora; o peso fica para o **M5b** (a API real precisa dele, e lá decidimos como cadastrar). Mantém a M5a sem migração de produtos.
+- Q: O que acontece quando o CEP não cai em nenhuma regra da tabela? → A: **Frete padrão configurável ("demais regiões")** — o lojista define um frete/prazo catch-all para CEPs não cobertos por regra específica. Se o lojista **não** definir esse padrão, o CEP sem regra **bloqueia** a finalização com aviso ("ainda não entregamos nessa região").
+- Q: Retirada na loja é opção de frete na M5a? → A: **Fora de escopo da M5a.** A M5a foca no cálculo de frete por tabela (entrega por CEP). "Retirar na loja" (frete R$0, sem endereço) é um modo de entrega distinto, tratado como acréscimo posterior.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Lojista configura a tabela de frete (Priority: P1)
@@ -65,7 +73,7 @@ O banner do topo ("Frete grátis acima de R$X") passa a exibir o **limite config
 
 ### Edge Cases
 
-- **CEP sem regra**: um CEP que não cai em nenhuma região/faixa da tabela — comportamento a definir (ver Clarifications).
+- **CEP sem regra**: aplica o frete padrão "demais regiões" se definido; senão, bloqueia a finalização com aviso (FR-010).
 - **CEP inválido/não encontrado** (ViaCEP falhou): mostra erro no campo e não calcula; o cliente corrige o CEP.
 - **Tabela vazia / não configurada**: sem regras, o checkout mantém "a combinar" e orienta (não inventa frete).
 - **Faixas sobrepostas/ambíguas**: a configuração impede sobreposição; se ainda assim houver empate, aplica-se um critério determinístico (ex.: a primeira/mais específica) — documentado.
@@ -81,6 +89,7 @@ O banner do topo ("Frete grátis acima de R$X") passa a exibir o **limite config
 - **FR-001**: O lojista MUST poder cadastrar/editar/remover regras de frete numa tela do painel, cada regra com: **região** (identificada por uma ou mais **faixas de CEP**), **valor do frete** e **prazo estimado** (em dias). Suporte a múltiplas regiões (ex.: Sudeste, Sul, Nordeste, Norte, Centro-Oeste).
 - **FR-002**: O lojista MAY definir regras/ajustes por **faixa de valor do pedido** (ex.: frete diferente até R$99, R$100–199…), combinando com a região.
 - **FR-003**: O lojista MUST poder definir o **limite de frete grátis** (valor de pedido acima do qual o frete é R$0); um valor vazio/zero desliga o frete grátis.
+- **FR-003a**: O lojista MAY definir um **frete padrão ("demais regiões")** — valor + prazo catch-all aplicado a CEPs não cobertos por nenhuma regra específica.
 - **FR-004**: O sistema MUST validar as regras ao salvar: faixas de CEP bem formadas, valores/prazos preenchidos, **sem sobreposição** ambígua de faixas; erros apontados campo a campo.
 - **FR-005**: As regras e o limite MUST persistir (configuração administrada, como a aparência da Home) e serem lidas pelo checkout e pelo banner.
 
@@ -90,8 +99,7 @@ O banner do topo ("Frete grátis acima de R$X") passa a exibir o **limite config
 - **FR-007**: O checkout MUST **calcular o frete** aplicando a tabela ao CEP (região) e ao subtotal (faixa de valor), exibindo **valor e prazo estimado** no resumo, com **`total = subtotal + frete`**.
 - **FR-008**: Pedidos com subtotal **≥ limite de frete grátis** MUST ter frete **R$0** ("Frete grátis"), prevalecendo sobre o valor da região.
 - **FR-009**: Ao mudar o CEP/endereço, o frete MUST recalcular.
-- **FR-010**: O CEP sem regra aplicável MUST ser tratado de forma definida [NEEDS CLARIFICATION: CEP fora de qualquer regra — bloquear a compra para aquele CEP com aviso, aplicar um frete padrão configurável, ou manter "a combinar"?].
-- **FR-011**: Retirada na loja [NEEDS CLARIFICATION: existe opção de "retirar na loja" (frete R$0, sem cálculo/endereço de entrega) na M5a, ou fica fora de escopo?].
+- **FR-010**: Um CEP sem regra específica MUST aplicar o **frete padrão ("demais regiões")** se o lojista o definiu (FR-003a); se **não** houver frete padrão, o checkout MUST **bloquear** a finalização para aquele CEP com aviso claro ("ainda não entregamos nessa região"), sem inventar valor.
 
 **Persistência no pedido**
 
@@ -103,11 +111,11 @@ O banner do topo ("Frete grátis acima de R$X") passa a exibir o **limite config
 
 **Peso dos produtos**
 
-- **FR-014**: O uso de **peso/dimensão** no cálculo [NEEDS CLARIFICATION: a tabela usa peso/dimensão ou só região + faixa de valor? Os produtos não têm peso hoje — incluir peso agora (campo novo no produto) ou deixar para o M5b com a API real?].
+- **FR-014**: A M5a MUST calcular o frete **apenas** por região (CEP) e faixa de valor do pedido — **sem** peso/dimensão. Nenhum campo de peso é adicionado ao produto nesta feature; peso fica para o M5b (API real).
 
 ### Key Entities *(include if feature involves data)*
 
-- **Configuração de frete**: administrada pelo lojista. Contém a **lista de regras** (região → faixas de CEP, valor, prazo; opcionalmente faixas de valor) e o **limite de frete grátis**. Fonte única lida pelo checkout e pelo banner.
+- **Configuração de frete**: administrada pelo lojista. Contém a **lista de regras** (região → faixas de CEP, valor, prazo; opcionalmente faixas de valor), o **frete padrão "demais regiões"** (opcional, catch-all) e o **limite de frete grátis**. Fonte única lida pelo checkout e pelo banner.
 - **Regra de frete**: região (faixas de CEP), valor, prazo estimado; opcionalmente condicionada a faixa de valor do pedido.
 - **Pedido**: já tem `shipping`/`shippingStatus`/`total` (M4a). A M5a passa a **preencher** `shipping` e a gravar prazo/método estimado + CEP usado, congelados na compra.
 - **Provedor de frete (interface)**: abstração do cálculo; na M5a, a implementação por tabela. Contrato estável para a M5b (API real).
@@ -127,8 +135,9 @@ O banner do topo ("Frete grátis acima de R$X") passa a exibir o **limite config
 
 - Cloud Function que consulta a **API real de frete** (Melhor Envio/SuperFrete) com a chave protegida no servidor, retornando opções reais (PAC/SEDEX/transportadora) com valor e prazo por CEP.
 - Substituição da implementação por tabela pela API real, plugando no mesmo provedor de frete.
-- **Peso/dimensão real** dos produtos, se necessário para a cotação da API (decidir no M5b).
+- **Peso/dimensão** dos produtos (campo novo + cadastro), necessário para a cotação da API (decidir no M5b).
 - Qualquer chamada a serviço externo de frete, etiquetas, ou integração de postagem.
+- **Retirada na loja** (modo de entrega com frete R$0, sem endereço) — não é o cálculo de frete por tabela; fica como acréscimo posterior.
 
 ## Assumptions
 

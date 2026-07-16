@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,8 +31,8 @@
 
 ## Notes
 
-- **3 marcadores [NEEDS CLARIFICATION] deixados de propósito para o `/speckit-clarify`** (as considerações do usuário):
-  - **FR-010** — CEP fora de qualquer regra (bloquear / frete padrão / "a combinar").
-  - **FR-011** — retirada na loja (opção de frete R$0 ou fora de escopo).
-  - **FR-014** — peso/dimensão no cálculo (agora, exigindo campo no produto, ou só no M5b).
-- Escopo do M5b explicitamente separado na seção "Out of Scope". Resolver os 3 marcadores no `/speckit-clarify` antes do `/speckit-plan`.
+- Clarificações resolvidas no `/speckit-clarify` (Session 2026-07-15):
+  - **FR-014** — só região + faixa de valor; **sem peso** na M5a (peso é M5b).
+  - **FR-010** — CEP sem regra usa o **frete padrão "demais regiões"** (FR-003a); sem padrão, **bloqueia** com aviso.
+  - **FR-011** — **retirada na loja fora de escopo** da M5a.
+- Escopo do M5b separado na "Out of Scope". Todos os itens do checklist passam — pronto para `/speckit-plan`.
