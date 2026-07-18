@@ -35,6 +35,11 @@
   align-items: center;
 }
 
+.favoriteActive {
+  color: var(--error, #EF4444);
+  border-color: var(--error, #EF4444);
+}
+
 .imageWrap {
   position: relative;
   height: 340px;

@@ -9,6 +9,7 @@ import theme from './styles/theme'
 import { AuthProvider } from './contexts/AuthContext';
 import { FeedbackProvider } from './contexts/FeedbackContext';
 import { CartProvider } from './contexts/CartContext';
+import { WishlistProvider } from './contexts/WishlistContext';
 
 // Utilitários de desenvolvimento (specs/003, T029a/T038) — só em dev, logado
 // como admin, no console do navegador:
@@ -41,7 +42,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <CssBaseline />
           <FeedbackProvider>
             <CartProvider>
-              <App />
+              <WishlistProvider>
+                <App />
+              </WishlistProvider>
             </CartProvider>
           </FeedbackProvider>
         </ThemeProvider>

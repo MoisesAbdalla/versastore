@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from "firebase/firestore";
 
 import db from "../firebase/firestore";
 import { ROLES, roleHasPermission } from "../constants/roles";
@@ -163,4 +163,18 @@ export async function setDefaultAddress(uid, addressId) {
 
 export function hasPermission(role, capability) {
   return roleHasPermission(role, capability);
+}
+
+// --- Lista de desejos (users.wishlist) — feature 014 -------------------------
+// Guardada como array de productIds no doc do próprio usuário. As rules já
+// permitem o usuário escrever no próprio doc (role/orderCount/totalSpent
+// inalterados), então não há mudança de regras. arrayUnion/arrayRemove evitam
+// corrida de leitura-escrita.
+
+export async function addToWishlist(uid, productId) {
+  await updateDoc(doc(db, "users", uid), { wishlist: arrayUnion(productId) });
+}
+
+export async function removeFromWishlist(uid, productId) {
+  await updateDoc(doc(db, "users", uid), { wishlist: arrayRemove(productId) });
 }

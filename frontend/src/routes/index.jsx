@@ -19,6 +19,7 @@ import AccountPersonalData from "../pages/Account/PersonalData";
 import AccountOrders from "../pages/Account/Orders";
 import AccountOrderDetail from "../pages/Account/Orders/Detail";
 import AccountAddresses from "../pages/Account/Addresses";
+import AccountWishlist from "../pages/Account/Wishlist";
 import AdminRoute from "./AdminRoute";
 import PrivateRoute from "./PrivateRoute";
 import CompleteProfileGuard from "./CompleteProfileGuard";
@@ -98,6 +99,7 @@ function AppRoutes() {
             <Route index element={<AccountPersonalData />} />
             <Route path="pedidos" element={<AccountOrders />} />
             <Route path="pedidos/:id" element={<AccountOrderDetail />} />
+            <Route path="desejos" element={<AccountWishlist />} />
             <Route path="enderecos" element={<AccountAddresses />} />
           </Route>
 

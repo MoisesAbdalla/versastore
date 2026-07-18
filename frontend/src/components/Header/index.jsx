@@ -1,12 +1,12 @@
 import { useState } from "react";
 import styles from "./styles.module.css";
-import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { useNavigate } from "react-router-dom";
 import  ROUTES  from "../../constants/routes";
 import { useAuth } from "../../contexts/AuthContext";
 import CartBadge from "../CartBadge";
+import WishlistBadge from "../WishlistBadge";
 import UserMenu from "../UserMenu";
 
 
@@ -64,9 +64,7 @@ function Header() {
             </button>
           )}
 
-          <button aria-label="Lista de desejos">
-            <FavoriteBorderOutlinedIcon />
-          </button>
+          <WishlistBadge />
 
           <CartBadge />
         </div>

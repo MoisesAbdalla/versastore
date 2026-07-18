@@ -1,9 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "./styles.module.css";
 
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 import PriceTag from "../PriceTag";
 import { cloudinaryUrl, IMAGE_WIDTHS } from "../../services/cloudinaryService";
+import { useAuth } from "../../contexts/AuthContext";
+import { useWishlist } from "../../contexts/WishlistContext";
 import ROUTES from "../../constants/routes";
 
 function isSoldOut(product) {
@@ -17,16 +20,34 @@ function isSoldOut(product) {
 function ProductCard({ product }) {
   const soldOut = isSoldOut(product);
   const image = cloudinaryUrl(product.image, { w: IMAGE_WIDTHS.card });
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isFavorite, toggle } = useWishlist();
+  const favorited = isFavorite(product.id);
+
+  // O card é um link; o coração não deve navegar para o produto.
+  function handleFavorite(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      navigate(ROUTES.LOGIN);
+      return;
+    }
+
+    toggle(product.id);
+  }
 
   return (
     <Link className={styles.card} to={`${ROUTES.PRODUCT}/${product.id}`}>
       <button
         type="button"
-        className={styles.favorite}
-        aria-label="Adicionar à lista de desejos"
-        onClick={(e) => e.preventDefault()}
+        className={favorited ? `${styles.favorite} ${styles.favoriteActive}` : styles.favorite}
+        aria-label={favorited ? "Remover da lista de desejos" : "Adicionar à lista de desejos"}
+        aria-pressed={favorited}
+        onClick={handleFavorite}
       >
-        <FavoriteBorderOutlinedIcon />
+        {favorited ? <FavoriteIcon /> : <FavoriteBorderOutlinedIcon />}
       </button>
 
       <div className={styles.imageWrap}>

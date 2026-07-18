@@ -27,6 +27,8 @@ const ROUTES = {
 
     CONTA_ENDERECOS:"/conta/enderecos",
 
+    CONTA_DESEJOS:"/conta/desejos",
+
     TERMOS:"/termos",
 
     PRIVACIDADE:"/privacidade",

@@ -9,6 +9,7 @@ import styles from "./styles.module.css";
 const TABS = [
   { to: ROUTES.CONTA, label: "Meus dados", end: true },
   { to: ROUTES.CONTA_PEDIDOS, label: "Meus pedidos", end: false },
+  { to: ROUTES.CONTA_DESEJOS, label: "Meus desejos", end: false },
   { to: ROUTES.CONTA_ENDERECOS, label: "Meus endereços", end: false },
 ];
 
