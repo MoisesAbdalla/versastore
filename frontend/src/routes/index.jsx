@@ -40,6 +40,7 @@ const ReportsPage = lazy(() => import("../pages/Admin/Reports"));
 const AppearancePage = lazy(() => import("../pages/Admin/Appearance"));
 const ShippingPage = lazy(() => import("../pages/Admin/Shipping"));
 const CouponsPage = lazy(() => import("../pages/Admin/Coupons"));
+const ReviewsPage = lazy(() => import("../pages/Admin/Reviews"));
 
 function AppRoutes() {
   return (
@@ -129,6 +130,7 @@ function AppRoutes() {
             <Route path="reports" element={<ReportsPage />} />
             <Route path="frete" element={<ShippingPage />} />
             <Route path="cupons" element={<CouponsPage />} />
+            <Route path="avaliacoes" element={<ReviewsPage />} />
             <Route path="appearance" element={<AppearancePage />} />
           </Route>
 

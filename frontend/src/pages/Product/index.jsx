@@ -4,6 +4,8 @@ import MainLayout from "../../layouts/MainLayout";
 import ProductGallery from "../../components/ProductGallery";
 import VariationSelector from "../../components/VariationSelector";
 import PriceTag from "../../components/PriceTag";
+import StarRating from "../../components/StarRating";
+import ProductReviews from "../../components/ProductReviews";
 import { useProductPage } from "../../hooks/useProductPage";
 import { useVariationSelection } from "../../hooks/useVariationSelection";
 import { usePublicCategories } from "../../hooks/usePublicCategories";
@@ -116,6 +118,10 @@ function Product() {
 
           <h1 className={styles.name}>{product.name}</h1>
 
+          {(product.ratingCount ?? 0) > 0 && (
+            <StarRating avg={product.ratingAvg ?? 0} count={product.ratingCount ?? 0} size="sm" showCount />
+          )}
+
           <PriceTag product={product} size="lg" />
 
           {hasVariations && (
@@ -156,6 +162,10 @@ function Product() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className={styles.reviewsWrap}>
+        <ProductReviews product={product} />
       </div>
     </MainLayout>
   );

@@ -12,6 +12,7 @@ import AssessmentIcon from "@mui/icons-material/Assessment";
 import WallpaperIcon from "@mui/icons-material/Wallpaper";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { signOut } from "firebase/auth";
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { to: ROUTES.ADMIN_REPORTS, label: "Relatórios", icon: AssessmentIcon },
   { to: ROUTES.ADMIN_SHIPPING, label: "Frete", icon: LocalShippingIcon },
   { to: ROUTES.ADMIN_COUPONS, label: "Cupons", icon: LocalOfferIcon },
+  { to: ROUTES.ADMIN_REVIEWS, label: "Avaliações", icon: StarBorderIcon },
   { to: ROUTES.ADMIN_APPEARANCE, label: "Aparência", icon: WallpaperIcon },
 ];
 

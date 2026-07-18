@@ -4,6 +4,7 @@ import styles from "./styles.module.css";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import PriceTag from "../PriceTag";
+import StarRating from "../StarRating";
 import { cloudinaryUrl, IMAGE_WIDTHS } from "../../services/cloudinaryService";
 import { useAuth } from "../../contexts/AuthContext";
 import { useWishlist } from "../../contexts/WishlistContext";
@@ -74,6 +75,10 @@ function ProductCard({ product }) {
         </span>
 
         <h3>{product.name}</h3>
+
+        {(product.ratingCount ?? 0) > 0 && (
+          <StarRating avg={product.ratingAvg ?? 0} count={product.ratingCount ?? 0} size="sm" showCount />
+        )}
 
         <PriceTag product={product} />
       </div>

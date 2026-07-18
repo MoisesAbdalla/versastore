@@ -12,6 +12,14 @@
     gap: 32px;
 }
 
+.reviewsWrap {
+    max-width: 1100px;
+
+    margin: 0 auto;
+
+    padding: 0 24px 64px;
+}
+
 .galleryCol {
     min-width: 0;
 }

@@ -1,0 +1,45 @@
+.wrap {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    font-size: 18px;
+}
+
+.wrap.sm {
+    font-size: 14px;
+}
+
+.wrap.md {
+    font-size: 18px;
+}
+
+.wrap.lg {
+    font-size: 24px;
+}
+
+.stars {
+    display: inline-flex;
+
+    align-items: center;
+
+    line-height: 1;
+}
+
+.filled {
+    color: var(--secondary);
+}
+
+.empty {
+    color: var(--border);
+}
+
+.count {
+    font-family: var(--font-body);
+
+    font-size: 13px;
+
+    color: var(--text-muted);
+}

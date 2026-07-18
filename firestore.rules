@@ -115,6 +115,31 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Avaliações de produtos (feature 015). O público lê só as APROVADAS; o autor
+    // lê/edita a própria (sempre voltando a "pendente" — não pode se auto-aprovar);
+    // o admin modera. O id é `productId_uid` (1 por produto/cliente), validado na
+    // criação. A média denormalizada do produto é escrita ADMIN (via
+    // recomputeProductRating) — o cliente não a forja. A "compra verificada" é
+    // checada no client (as rules não cruzam docs) → dívida endurecida no M4b.
+    match /reviews/{reviewId} {
+      allow read: if resource.data.status == "aprovada"
+        || (isSignedIn() && resource.data.userId == request.auth.uid)
+        || isAdmin();
+      allow create: if isSelf(request.resource.data.userId)
+        && reviewId == request.resource.data.productId + "_" + request.auth.uid
+        && request.resource.data.status == "pendente"
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+      allow update: if isAdmin()
+        || ( isSelf(resource.data.userId)
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.status == "pendente"
+          && request.resource.data.rating >= 1
+          && request.resource.data.rating <= 5 );
+      allow delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

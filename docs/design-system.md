@@ -503,3 +503,30 @@ Sem servidor (client + Firestore + rules); o desconto é recalculado pela autori
   composição do total; frete "Grátis (cupom)" quando `couponType === "frete_gratis"`.
 - Congelado: `couponCode`, `couponType`, `discount` ficam no pedido; alterar/remover o cupom depois
   não muda pedidos existentes. O uso (`usedCount`) conta na transição para **pago**.
+
+# Avaliações (015-avaliacoes-produtos / 2026-07-18)
+
+Prova social por produto: nota (1–5 estrelas) + comentário, com **pré-moderação** e
+**média denormalizada** no produto (`ratingAvg`/`ratingCount`, escrita só pelo admin).
+
+## Estrelas (`StarRating`)
+
+- Componente único reutilizado: 5 estrelas (cheia/meia/vazia via `starBreakdown`) + contagem
+  opcional. Cor das estrelas = `--secondary`; vazias = `--border`. Tamanhos sm/md/lg.
+- **Card da vitrine** e **topo da página do produto**: só aparece quando `ratingCount > 0`
+  (não polui produtos sem avaliação).
+
+## Página do produto — seção "Avaliações"
+
+- **Resumo**: estrelas grandes + "X de 5 · N avaliações" (ou "Ainda sem avaliações").
+- **Formulário** (gating): deslogado → "Entre para avaliar"; logado que **não comprou** →
+  "Só quem comprou pode avaliar"; **comprou** → estrelas clicáveis + textarea (limite
+  `COMMENT_MAX`, contador) + enviar. Preenchido se já avaliou; editar uma **aprovada** avisa
+  que volta para análise. Estados enviando/erro/enviado; a própria pendente mostra "em análise".
+- **Lista**: avaliações **aprovadas** (estrelas, comentário, nome, data) com "Ver mais" (cursor).
+
+## Admin — Moderação (`/admin/avaliacoes`)
+
+- Filtro por status (Pendentes/Aprovadas/Ocultas) + **contador de pendentes** no título.
+- Cada item: nota (estrelas), autor, data, comentário, link para o produto; ações
+  **Aprovar/Ocultar/Remover** (confirm na remoção). Toda moderação recalcula a média do produto.
