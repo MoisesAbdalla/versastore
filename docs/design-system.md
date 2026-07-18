@@ -473,3 +473,33 @@ checkout — mesmo padrão do `paymentProvider`.
 
 - O TopBar lê `freeShippingThreshold` (via `useShippingSettings`) e mostra "Frete grátis acima de
   R$X"; sem limite configurado, o banner de frete some.
+
+# Cupons (013-cupons-desconto / 2026-07-17)
+
+Cupons de desconto por código, aplicados no checkout e refletidos no total do pedido.
+Sem servidor (client + Firestore + rules); o desconto é recalculado pela autoridade
+(`orderService.createOrder`) na finalização.
+
+## Admin — /admin/cupons
+
+- **Lista**: cada cupom mostra **Código**, **Tipo** (Valor fixo / Percentual / Frete grátis),
+  **Valor** (R$ ou %), **Status** (badge: ativo / inativo / expirado / esgotado, derivado por
+  `couponStatus`), **Usos** (`usedCount`/`maxUses`) e ações (switch ativar, editar, remover).
+- **Formulário**: código (maiúsculas; **imutável** na edição), tipo, valor (oculto para frete
+  grátis), pedido mínimo, validade (de/até), limite de uso total e switch ativo. Validação campo a
+  campo por `validateCouponInput` (código único, valor > 0, percentual ≤ 100, datas coerentes).
+
+## Checkout — campo de cupom
+
+- Campo **"Cupom de desconto"** + **Aplicar**; ao validar, mostra "Cupom CÓDIGO aplicado" + **Remover**.
+- Resumo: linha **Desconto (CÓDIGO) −R$Z** (quando > 0); a linha de **Frete** vira
+  **"Frete grátis (cupom)"** para cupom de frete grátis. **Total = subtotal − desconto + frete**
+  (nunca negativo).
+- Mensagens de erro: não encontrado / inválido ou expirado / esgotado / valor mínimo não atingido.
+
+## Histórico do pedido
+
+- "Meus pedidos" (cliente) e detalhe no admin mostram a linha **Desconto (CÓDIGO) −R$Z** na
+  composição do total; frete "Grátis (cupom)" quando `couponType === "frete_gratis"`.
+- Congelado: `couponCode`, `couponType`, `discount` ficam no pedido; alterar/remover o cupom depois
+  não muda pedidos existentes. O uso (`usedCount`) conta na transição para **pago**.

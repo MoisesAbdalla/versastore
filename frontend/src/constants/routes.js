@@ -49,7 +49,9 @@ const ROUTES = {
 
     ADMIN_APPEARANCE:"/admin/appearance",
 
-    ADMIN_SHIPPING:"/admin/frete"
+    ADMIN_SHIPPING:"/admin/frete",
+
+    ADMIN_COUPONS:"/admin/cupons"
 
 }
 

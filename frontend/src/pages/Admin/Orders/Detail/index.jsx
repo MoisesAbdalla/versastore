@@ -179,6 +179,13 @@ function OrderDetailPage() {
             ))}
           </ul>
 
+          {order.discount > 0 && (
+            <p className={styles.muted}>
+              Subtotal: {formatBRL(order.subtotal)} · Desconto
+              {order.couponCode ? ` (${order.couponCode})` : ""}: −{formatBRL(order.discount)}
+            </p>
+          )}
+
           <p className={styles.total}>Total: {formatBRL(order.total)}</p>
         </section>
 

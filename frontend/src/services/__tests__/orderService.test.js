@@ -516,3 +516,131 @@ describe("getMyOrder — isolamento por cliente (SC-006)", () => {
     expect(await getMyOrder("inexistente", "cliente-1")).toBeNull();
   });
 });
+
+describe("cupom (feature 013)", () => {
+  it("sem cupom: couponCode/couponType null e discount 0", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+    });
+
+    const order = store.get(findOrderPath());
+    expect(order.couponCode).toBeNull();
+    expect(order.couponType).toBeNull();
+    expect(order.discount).toBe(0);
+  });
+
+  it("recalcula o desconto pelo código e grava congelado (percentual)", async () => {
+    store.set("coupons/OFF10", { code: "OFF10", type: "percentual", value: 10, active: true, usedCount: 0 });
+
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      couponCode: "off10", // normaliza para OFF10
+    });
+
+    const order = store.get(findOrderPath());
+    expect(order.couponCode).toBe("OFF10");
+    expect(order.couponType).toBe("percentual");
+    expect(order.discount).toBe(1999); // 10% de 19990, arredondado
+    expect(order.total).toBe(19990 - 1999);
+  });
+
+  it("cupom de frete grátis zera o frete (status gratis, discount 0)", async () => {
+    store.set("coupons/FRETE", { code: "FRETE", type: "frete_gratis", value: 0, active: true, usedCount: 0 });
+
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      shipping: 1990,
+      shippingEtaDays: 3,
+      couponCode: "FRETE",
+    });
+
+    const order = store.get(findOrderPath());
+    expect(order.shipping).toBe(0);
+    expect(order.shippingStatus).toBe("gratis");
+    expect(order.couponType).toBe("frete_gratis");
+    expect(order.discount).toBe(0);
+    expect(order.total).toBe(order.subtotal);
+  });
+
+  it("cupom inválido (inativo) aborta com cupom-invalido, sem efeitos", async () => {
+    store.set("coupons/OFF", { code: "OFF", type: "fixo", value: 500, active: false, usedCount: 0 });
+
+    await expect(
+      createOrder({
+        customerId: "cliente-1",
+        items: [{ productId: "prod-1", quantity: 1 }],
+        paymentMethod: "pix",
+        couponCode: "OFF",
+      })
+    ).rejects.toMatchObject({ code: "cupom-invalido" });
+
+    // Nada gravado: estoque intacto, sem pedido
+    expect(store.get("products/prod-1").stock).toBe(1);
+    expect(findOrderPath()).toBeUndefined();
+  });
+
+  it("cupom inexistente aborta com cupom-invalido", async () => {
+    await expect(
+      createOrder({
+        customerId: "cliente-1",
+        items: [{ productId: "prod-1", quantity: 1 }],
+        paymentMethod: "pix",
+        couponCode: "NAO-EXISTE",
+      })
+    ).rejects.toMatchObject({ code: "cupom-invalido" });
+  });
+
+  it("incrementa usedCount ao marcar como pago (conta no pago)", async () => {
+    store.set("coupons/OFF10", { code: "OFF10", type: "percentual", value: 10, active: true, usedCount: 0 });
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      couponCode: "OFF10",
+    });
+    const orderId = findOrderPath().split("/")[1];
+
+    await advanceStatus(orderId, ORDER_STATUS.PAGO, { byUid: "a", byName: "A" });
+    expect(store.get("coupons/OFF10").usedCount).toBe(1);
+
+    // Avançar de novo NÃO re-incrementa (guard aggregatesApplied)
+    await advanceStatus(orderId, ORDER_STATUS.EM_SEPARACAO, { byUid: "a", byName: "A" });
+    expect(store.get("coupons/OFF10").usedCount).toBe(1);
+  });
+
+  it("pedido não pago (cancelado) NÃO consome o cupom", async () => {
+    store.set("coupons/OFF10", { code: "OFF10", type: "percentual", value: 10, active: true, usedCount: 0 });
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      couponCode: "OFF10",
+    });
+    const orderId = findOrderPath().split("/")[1];
+
+    await cancelOrder(orderId, { reason: "desistiu", byUid: "a", byName: "A" });
+    expect(store.get("coupons/OFF10").usedCount).toBe(0);
+  });
+
+  it("cupom removido antes do pago → não quebra a transição", async () => {
+    store.set("coupons/GONE", { code: "GONE", type: "fixo", value: 500, active: true, usedCount: 0 });
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      couponCode: "GONE",
+    });
+    const orderId = findOrderPath().split("/")[1];
+    store.delete("coupons/GONE");
+
+    await expect(
+      advanceStatus(orderId, ORDER_STATUS.PAGO, { byUid: "a", byName: "A" })
+    ).resolves.toBeUndefined();
+  });
+});

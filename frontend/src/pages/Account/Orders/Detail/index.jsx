@@ -127,10 +127,19 @@ function AccountOrderDetail() {
             {order.shippingStatus === "a_calcular"
               ? "A combinar"
               : order.shippingStatus === "gratis" || order.shipping === 0
-                ? "Grátis"
+                ? order.couponType === "frete_gratis"
+                  ? "Grátis (cupom)"
+                  : "Grátis"
                 : formatBRL(order.shipping)}
           </span>
         </div>
+
+        {order.discount > 0 && (
+          <div className={styles.summaryRow}>
+            <span>Desconto{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+            <span>−{formatBRL(order.discount)}</span>
+          </div>
+        )}
 
         <div className={styles.totalRow}>
           <span>Total</span>

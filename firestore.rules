@@ -102,6 +102,19 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Cupons de desconto (feature 013): o cliente autenticado LÊ um cupom por
+    // código (get) para validar no checkout, mas NÃO pode enumerar todos (list
+    // é admin) — o código não vaza a lista inteira. Escrita é admin: criar/
+    // editar/remover e incrementar usedCount (o admin marca o pedido como pago,
+    // ação que conta o uso, na feature 013). O limite de uso ainda é forjável
+    // sem servidor (rules não validam consistência entre docs) — dívida fechada
+    // no M4b junto do webhook confiável.
+    match /coupons/{code} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

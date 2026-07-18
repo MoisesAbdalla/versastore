@@ -18,6 +18,7 @@ import db from "../firebase/firestore";
 import { ORDER_STATUS, ORDER_STATUS_LABELS, isValidTransition } from "../constants/orderStatus";
 import { PRODUCT_STATUS } from "../constants/product";
 import { normalizeForSearch } from "../utils/slugify";
+import { normalizeCode, isCouponValid, computeCouponEffect } from "../utils/coupon";
 
 const PAGE_SIZE = 20;
 
@@ -132,6 +133,7 @@ export async function createOrder({
   shippingEtaDays = null,
   shippingMethod = "",
   shippingCep = "",
+  couponCode = null,
 }) {
   if (!items || items.length === 0) {
     throw serviceError("pedido-vazio", "O pedido precisa de ao menos um item.");
@@ -147,6 +149,13 @@ export async function createOrder({
     }
 
     const customer = customerSnap.data();
+
+    // Cupom (feature 013): lê o doc do cupom (se houver) para revalidar e
+    // recalcular o desconto pela AUTORIDADE — nunca confia num valor do client.
+    const normalizedCoupon = couponCode ? normalizeCode(couponCode) : "";
+    const couponSnap = normalizedCoupon
+      ? await tx.get(doc(db, "coupons", normalizedCoupon))
+      : null;
 
     const productIds = [...new Set(items.map((item) => item.productId))];
     const productData = {};
@@ -201,10 +210,39 @@ export async function createOrder({
     }
 
     const subtotal = frozenItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+
+    // Cupom (feature 013): revalida contra o subtotal autoritativo e recalcula o
+    // desconto. Cupom informado mas inválido (inexistente/expirado/esgotado/
+    // abaixo do mínimo) aborta com aviso — o checkout refaz sem o cupom (FR-010).
+    let discount = 0;
+    let couponType = null;
+    let appliedCouponCode = null;
+    let effectiveShipping = shipping;
+
+    if (normalizedCoupon) {
+      const coupon = couponSnap && couponSnap.exists() ? couponSnap.data() : null;
+      const check = coupon
+        ? isCouponValid(coupon, { subtotal, now: Date.now() })
+        : { ok: false, error: "nao_encontrado" };
+
+      if (!check.ok) {
+        throw serviceError("cupom-invalido", "O cupom deixou de ser válido. Revise o pedido.");
+      }
+
+      const effect = computeCouponEffect(coupon, { subtotal, shipping: shipping || 0 });
+      discount = effect.discount;
+      couponType = coupon.type;
+      appliedCouponCode = coupon.code;
+      if (effect.freeShipping) {
+        effectiveShipping = 0; // cupom de frete grátis zera o frete
+      }
+    }
+
     // Frete calculado pela M5a (tabela) e congelado no pedido; null = "a combinar"
     // (loja sem tabela configurada — fallback M4a).
-    const total = subtotal + (shipping || 0);
-    const shippingStatus = shipping == null ? "a_calcular" : shipping === 0 ? "gratis" : "calculado";
+    const total = subtotal - discount + (effectiveShipping || 0);
+    const shippingStatus =
+      effectiveShipping == null ? "a_calcular" : effectiveShipping === 0 ? "gratis" : "calculado";
     const orderNumber = (counterSnap.exists() ? counterSnap.data().current : 0) + 1;
 
     const order = {
@@ -220,11 +258,14 @@ export async function createOrder({
       items: frozenItems,
       productIds,
       subtotal,
-      shipping,
+      shipping: effectiveShipping,
       shippingStatus,
       shippingEtaDays,
       shippingMethod: shippingMethod || "",
       shippingCep: shippingCep || "",
+      couponCode: appliedCouponCode,
+      couponType,
+      discount,
       total,
       status: ORDER_STATUS.AGUARDANDO_PAGAMENTO,
       statusHistory: [
@@ -299,12 +340,21 @@ export async function advanceStatus(id, nextStatus, { byUid, byName }) {
     let statsSnap;
     let customerRef;
     let customerSnap;
+    let couponRef;
+    let couponSnap;
 
     if (applyingPaid) {
       statsRef = doc(db, "dailyStats", payDay);
       statsSnap = await tx.get(statsRef);
       customerRef = doc(db, "users", order.customerId);
       customerSnap = await tx.get(customerRef);
+
+      // Cupom (feature 013): o uso conta quando a venda se confirma (pago), não
+      // na criação — pedido não pago não consome o cupom.
+      if (order.couponCode) {
+        couponRef = doc(db, "coupons", order.couponCode);
+        couponSnap = await tx.get(couponRef);
+      }
     }
 
     // ---- ESCRITAS
@@ -319,6 +369,12 @@ export async function advanceStatus(id, nextStatus, { byUid, byName }) {
           orderCount: (customer.orderCount || 0) + 1,
           totalSpent: (customer.totalSpent || 0) + order.total,
         });
+      }
+
+      // Incremento de uso do cupom (guard aggregatesApplied garante 1x). Cupom
+      // removido depois → snap inexistente → apenas não incrementa.
+      if (couponSnap && couponSnap.exists()) {
+        tx.update(couponRef, { usedCount: (couponSnap.data().usedCount || 0) + 1 });
       }
     }
 

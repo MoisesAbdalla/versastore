@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import FormField from "../../components/form/FormField";
@@ -10,6 +10,16 @@ import ROUTES from "../../constants/routes";
 import styles from "./styles.module.css";
 
 const METHOD_LABELS = { pix: "Pix", cartao: "Cartão", boleto: "Boleto" };
+
+const COUPON_MESSAGES = {
+  nao_encontrado: "Cupom não encontrado.",
+  inativo: "Cupom inválido ou expirado.",
+  expirado: "Cupom inválido ou expirado.",
+  esgotado: "Cupom esgotado.",
+  minimo: "Seu pedido não atinge o valor mínimo deste cupom.",
+  erro: "Não foi possível validar o cupom. Tente novamente.",
+  invalido_checkout: "O cupom deixou de ser válido.",
+};
 
 function changeMessage(change) {
   switch (change.type) {
@@ -28,6 +38,7 @@ function changeMessage(change) {
 
 function Checkout() {
   const c = useCheckout();
+  const [couponInput, setCouponInput] = useState("");
 
   useEffect(() => {
     document.title = "Checkout · Versa Store";
@@ -171,8 +182,56 @@ function Checkout() {
             </div>
             <div className={styles.summaryRow}>
               <span>Frete</span>
-              <span className={styles.muted}>{c.shippingLabel}</span>
+              <span className={styles.muted}>
+                {c.freeShipping ? "Frete grátis (cupom)" : c.shippingLabel}
+              </span>
             </div>
+
+            {c.discount > 0 && (
+              <div className={styles.summaryRow}>
+                <span>Desconto{c.appliedCoupon ? ` (${c.appliedCoupon.code})` : ""}</span>
+                <span className={styles.discount}>−{formatBRL(c.discount)}</span>
+              </div>
+            )}
+
+            {/* Cupom de desconto (feature 013) */}
+            <div className={styles.coupon}>
+              {c.appliedCoupon ? (
+                <div className={styles.couponApplied}>
+                  <span>
+                    Cupom <strong>{c.appliedCoupon.code}</strong> aplicado
+                  </span>
+                  <button type="button" className={styles.couponRemove} onClick={c.removeCoupon}>
+                    Remover
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.couponRow}>
+                  <input
+                    type="text"
+                    className={styles.couponInput}
+                    placeholder="Cupom de desconto"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    aria-label="Cupom de desconto"
+                  />
+                  <button
+                    type="button"
+                    className={styles.couponApply}
+                    onClick={() => c.applyCoupon(couponInput)}
+                    disabled={!couponInput.trim()}
+                  >
+                    Aplicar
+                  </button>
+                </div>
+              )}
+              {c.couponError && (
+                <p className={styles.couponError} role="alert">
+                  {COUPON_MESSAGES[c.couponError] || "Cupom inválido."}
+                </p>
+              )}
+            </div>
+
             <div className={`${styles.summaryRow} ${styles.summaryTotal}`}>
               <span>Total</span>
               <span>{formatBRL(c.total)}</span>

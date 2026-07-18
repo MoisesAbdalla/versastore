@@ -6,8 +6,10 @@ import { useAuth } from "../contexts/AuthContext";
 import { createOrder } from "../services/orderService";
 import { createPayment } from "../services/paymentProvider";
 import { quote } from "../services/shippingProvider";
+import { getCoupon } from "../services/couponService";
 import { saveCpf } from "../services/userService";
 import { validateCpf, maskCpf } from "../utils/validation";
+import { isCouponValid, computeCouponEffect } from "../utils/coupon";
 import { formatBRL } from "../utils/format";
 import ROUTES from "../constants/routes";
 
@@ -124,7 +126,59 @@ export function useCheckout() {
   const shipping = shippingOption ? shippingOption.price : null; // null = a combinar
   const shippingEtaDays = shippingOption?.etaDays ?? null;
   const shippingMethod = shippingOption?.method || "";
-  const total = subtotal + (shipping || 0);
+
+  // Cupom (feature 013): aplica/remove no checkout; o desconto entra no total.
+  // A revalidação definitiva é do createOrder (autoridade) na finalização.
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState(null);
+
+  const couponEffect =
+    appliedCoupon && isCouponValid(appliedCoupon, { subtotal }).ok
+      ? computeCouponEffect(appliedCoupon, { subtotal, shipping: shipping || 0 })
+      : null;
+  const discount = couponEffect ? couponEffect.discount : 0;
+  const freeShipping = couponEffect ? couponEffect.freeShipping : false;
+
+  const total = subtotal - discount + (freeShipping ? 0 : shipping || 0);
+
+  const applyCoupon = useCallback(
+    async (rawCode) => {
+      setCouponError(null);
+
+      if (!rawCode || !rawCode.trim()) {
+        return;
+      }
+
+      let coupon = null;
+      try {
+        coupon = await getCoupon(rawCode);
+      } catch {
+        setCouponError("erro");
+        return;
+      }
+
+      if (!coupon) {
+        setAppliedCoupon(null);
+        setCouponError("nao_encontrado");
+        return;
+      }
+
+      const check = isCouponValid(coupon, { subtotal });
+      if (!check.ok) {
+        setAppliedCoupon(null);
+        setCouponError(check.error);
+        return;
+      }
+
+      setAppliedCoupon(coupon);
+    },
+    [subtotal]
+  );
+
+  const removeCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+    setCouponError(null);
+  }, []);
 
   let shippingLabel;
   if (shippingLoading) {
@@ -184,6 +238,7 @@ export function useCheckout() {
         shippingEtaDays,
         shippingMethod,
         shippingCep: cep,
+        couponCode: appliedCoupon?.code || null,
       });
 
       // Ponto de integração do pagamento (stub na M4a; Mercado Pago no M4b).
@@ -197,11 +252,18 @@ export function useCheckout() {
       clear();
       navigate(ROUTES.CHECKOUT_SUCCESS, { state: { orderNumber } });
     } catch (error) {
-      setSubmitError(
-        error.code === "estoque-insuficiente"
-          ? "O estoque de um item mudou. Revise o carrinho e tente de novo."
-          : "Não foi possível criar o pedido. Tente novamente."
-      );
+      if (error.code === "cupom-invalido") {
+        // O cupom deixou de valer entre aplicar e finalizar (FR-010): remove e avisa.
+        setAppliedCoupon(null);
+        setCouponError("invalido_checkout");
+        setSubmitError("O cupom deixou de ser válido. Revise o pedido e tente novamente.");
+      } else {
+        setSubmitError(
+          error.code === "estoque-insuficiente"
+            ? "O estoque de um item mudou. Revise o carrinho e tente de novo."
+            : "Não foi possível criar o pedido. Tente novamente."
+        );
+      }
       setSubmitting(false);
     }
   }, [
@@ -216,6 +278,7 @@ export function useCheckout() {
     shippingEtaDays,
     shippingMethod,
     cep,
+    appliedCoupon,
     clear,
     navigate,
     reloadProfile,
@@ -232,6 +295,13 @@ export function useCheckout() {
     shippingBlocked,
     shippingLoading,
     total,
+    // cupom
+    appliedCoupon,
+    couponError,
+    applyCoupon,
+    removeCoupon,
+    discount,
+    freeShipping,
     revalidating,
     changes,
     acknowledged,

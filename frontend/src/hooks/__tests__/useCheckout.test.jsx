@@ -17,12 +17,14 @@ const createOrderMock = vi.fn().mockResolvedValue({ id: "order-1", orderNumber: 
 const createPaymentMock = vi.fn().mockResolvedValue({ status: "pendente" });
 const saveCpfMock = vi.fn().mockResolvedValue(undefined);
 const quoteMock = vi.fn();
+const getCouponMock = vi.fn();
 
 vi.mock("../../contexts/CartContext", () => ({ useCart: () => cart }));
 vi.mock("../../contexts/AuthContext", () => ({ useAuth: () => auth }));
 vi.mock("../../services/orderService", () => ({ createOrder: (...a) => createOrderMock(...a) }));
 vi.mock("../../services/paymentProvider", () => ({ createPayment: (...a) => createPaymentMock(...a) }));
 vi.mock("../../services/shippingProvider", () => ({ quote: (...a) => quoteMock(...a) }));
+vi.mock("../../services/couponService", () => ({ getCoupon: (...a) => getCouponMock(...a) }));
 vi.mock("../../services/userService", () => ({ saveCpf: (...a) => saveCpfMock(...a) }));
 vi.mock("react-router-dom", () => ({ useNavigate: () => navigateMock }));
 
@@ -38,6 +40,7 @@ beforeEach(() => {
   createPaymentMock.mockClear();
   saveCpfMock.mockClear();
   quoteMock.mockReset().mockResolvedValue(OK_QUOTE);
+  getCouponMock.mockReset().mockResolvedValue(null);
   auth.profile = { addresses: auth.profile.addresses, cpf: "" };
 });
 
@@ -84,6 +87,7 @@ describe("useCheckout", () => {
       shippingEtaDays: 5,
       shippingMethod: "Sudeste",
       shippingCep: "01001-000",
+      couponCode: null,
     });
     expect(cart.clear).toHaveBeenCalled();
     expect(navigateMock).toHaveBeenCalledWith("/checkout/sucesso", { state: { orderNumber: 7 } });
@@ -149,6 +153,98 @@ describe("useCheckout", () => {
 
     act(() => result.current.setCpf("111.444.777-35"));
     expect(result.current.cpf).toBe("111.444.777-35");
+  });
+
+  it("aplica cupom percentual: desconto e total recompostos", async () => {
+    getCouponMock.mockResolvedValue({ code: "OFF10", type: "percentual", value: 10, active: true, usedCount: 0 });
+    const { result } = renderHook(() => useCheckout());
+    await waitFor(() => expect(result.current.shipping).toBe(1990));
+
+    await act(async () => {
+      await result.current.applyCoupon("off10");
+    });
+
+    expect(result.current.appliedCoupon.code).toBe("OFF10");
+    expect(result.current.discount).toBe(1000); // 10% de 10000
+    expect(result.current.total).toBe(10000 - 1000 + 1990);
+  });
+
+  it("cupom inexistente → couponError, sem desconto", async () => {
+    getCouponMock.mockResolvedValue(null);
+    const { result } = renderHook(() => useCheckout());
+    await waitFor(() => expect(result.current.shipping).toBe(1990));
+
+    await act(async () => {
+      await result.current.applyCoupon("NADA");
+    });
+
+    expect(result.current.couponError).toBe("nao_encontrado");
+    expect(result.current.appliedCoupon).toBe(null);
+    expect(result.current.discount).toBe(0);
+  });
+
+  it("cupom de frete grátis zera o frete no total", async () => {
+    getCouponMock.mockResolvedValue({ code: "FRETE", type: "frete_gratis", value: 0, active: true, usedCount: 0 });
+    const { result } = renderHook(() => useCheckout());
+    await waitFor(() => expect(result.current.shipping).toBe(1990));
+
+    await act(async () => {
+      await result.current.applyCoupon("FRETE");
+    });
+
+    expect(result.current.freeShipping).toBe(true);
+    expect(result.current.total).toBe(10000); // frete zerado, sem desconto no subtotal
+  });
+
+  it("remover o cupom volta o total", async () => {
+    getCouponMock.mockResolvedValue({ code: "OFF10", type: "percentual", value: 10, active: true, usedCount: 0 });
+    const { result } = renderHook(() => useCheckout());
+    await waitFor(() => expect(result.current.shipping).toBe(1990));
+
+    await act(async () => {
+      await result.current.applyCoupon("OFF10");
+    });
+    expect(result.current.total).toBe(10990);
+
+    act(() => result.current.removeCoupon());
+    expect(result.current.appliedCoupon).toBe(null);
+    expect(result.current.total).toBe(11990);
+  });
+
+  it("confirm passa o couponCode aplicado ao createOrder", async () => {
+    getCouponMock.mockResolvedValue({ code: "OFF10", type: "percentual", value: 10, active: true, usedCount: 0 });
+    const { result } = renderHook(() => useCheckout());
+    await waitFor(() => expect(result.current.shipping).toBe(1990));
+    act(() => result.current.setCpf(VALID_CPF));
+
+    await act(async () => {
+      await result.current.applyCoupon("OFF10");
+    });
+
+    await act(async () => {
+      await result.current.confirm();
+    });
+
+    expect(createOrderMock).toHaveBeenCalledWith(expect.objectContaining({ couponCode: "OFF10" }));
+  });
+
+  it("createOrder cupom-invalido → remove o cupom e avisa", async () => {
+    getCouponMock.mockResolvedValue({ code: "OFF10", type: "percentual", value: 10, active: true, usedCount: 0 });
+    createOrderMock.mockRejectedValueOnce(Object.assign(new Error("x"), { code: "cupom-invalido" }));
+    const { result } = renderHook(() => useCheckout());
+    await waitFor(() => expect(result.current.shipping).toBe(1990));
+    act(() => result.current.setCpf(VALID_CPF));
+
+    await act(async () => {
+      await result.current.applyCoupon("OFF10");
+    });
+    await act(async () => {
+      await result.current.confirm();
+    });
+
+    expect(result.current.appliedCoupon).toBe(null);
+    expect(result.current.couponError).toBe("invalido_checkout");
+    expect(result.current.submitError).toMatch(/cupom/i);
   });
 
   it("mudança na revalidação bloqueia até revisar", async () => {
