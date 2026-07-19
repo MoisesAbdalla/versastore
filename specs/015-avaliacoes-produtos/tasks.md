@@ -76,7 +76,7 @@
 
 - [x] T012 [P] Atualizar `docs/design-system.md` com a seção **Avaliações** (estrelas no card/página; formulário com gating comprou/logado e limite; re-moderação ao editar; tela de moderação do admin)
 - [x] T013 Gates finais: `npm run lint` (zero erros), `npm run test` (suíte + novos verdes), `npm run build` (bundle íntegro)
-- [ ] T014 Regressão do quickstart (§1–4): vitrine, produto, checkout (009), frete (011), cupons (013), lista de desejos (014), carrinho, conta, admin intactos — **validação manual do usuário** (após deploy de rules + índices)
+- [x] T014 Regressão do quickstart (§1–4): vitrine, produto, checkout (009), frete (011), cupons (013), lista de desejos (014), carrinho, conta, admin intactos — **validação manual do usuário** (após deploy de rules + índices)
 
 ---
 
