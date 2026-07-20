@@ -517,6 +517,86 @@ describe("getMyOrder — isolamento por cliente (SC-006)", () => {
   });
 });
 
+describe("retirada na loja (feature 016)", () => {
+  it("pedido de retirada: frete 0, status 'retirada', endereço da loja congelado, sem endereço de entrega", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      shippingAddress: { cidade: "São Paulo" }, // ignorado na retirada
+      paymentMethod: "pix",
+      shipping: 1990, // ignorado na retirada
+      deliveryMethod: "retirada",
+      pickupAddress: "Rua da Loja, 10 — Centro",
+    });
+
+    const order = store.get(findOrderPath());
+    expect(order.deliveryMethod).toBe("retirada");
+    expect(order.shipping).toBe(0);
+    expect(order.shippingStatus).toBe("retirada");
+    expect(order.shippingMethod).toBe("Retirada na loja");
+    expect(order.pickupAddress).toBe("Rua da Loja, 10 — Centro");
+    expect(order.shippingAddress).toBeNull();
+    expect(order.total).toBe(order.subtotal);
+  });
+
+  it("retirada com cupom percentual: desconto aplica, frete segue 0", async () => {
+    store.set("coupons/OFF10", { code: "OFF10", type: "percentual", value: 10, active: true, usedCount: 0 });
+
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      deliveryMethod: "retirada",
+      pickupAddress: "Rua da Loja, 10",
+      couponCode: "OFF10",
+    });
+
+    const order = store.get(findOrderPath());
+    expect(order.discount).toBe(1999);
+    expect(order.shipping).toBe(0);
+    expect(order.total).toBe(order.subtotal - 1999);
+  });
+
+  it("pedido comum (entrega) não ganha campos de retirada", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      shipping: 1990,
+    });
+
+    const order = store.get(findOrderPath());
+    expect(order.deliveryMethod).toBe("entrega");
+    expect(order.pickupAddress).toBeNull();
+    expect(order.shipping).toBe(1990);
+  });
+
+  it("fluxo de status: em_separacao → pronto_retirada → entregue", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      deliveryMethod: "retirada",
+      pickupAddress: "Rua da Loja, 10",
+    });
+    const orderId = findOrderPath().split("/")[1];
+
+    await advanceStatus(orderId, ORDER_STATUS.PAGO, { byUid: "a", byName: "A" });
+    await advanceStatus(orderId, ORDER_STATUS.EM_SEPARACAO, { byUid: "a", byName: "A" });
+    await advanceStatus(orderId, ORDER_STATUS.PRONTO_RETIRADA, { byUid: "a", byName: "A" });
+
+    expect(store.get(`orders/${orderId}`).status).toBe(ORDER_STATUS.PRONTO_RETIRADA);
+
+    // De pronto_retirada não vai para "enviado" — só entregue.
+    await expect(
+      advanceStatus(orderId, ORDER_STATUS.ENVIADO, { byUid: "a", byName: "A" })
+    ).rejects.toMatchObject({ code: "transicao-invalida" });
+
+    await advanceStatus(orderId, ORDER_STATUS.ENTREGUE, { byUid: "a", byName: "A" });
+    expect(store.get(`orders/${orderId}`).status).toBe(ORDER_STATUS.ENTREGUE);
+  });
+});
+
 describe("cupom (feature 013)", () => {
   it("sem cupom: couponCode/couponType null e discount 0", async () => {
     await createOrder({

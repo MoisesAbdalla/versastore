@@ -18,7 +18,11 @@ const createPaymentMock = vi.fn().mockResolvedValue({ status: "pendente" });
 const saveCpfMock = vi.fn().mockResolvedValue(undefined);
 const quoteMock = vi.fn();
 const getCouponMock = vi.fn();
+const shippingSettings = { pickup: null };
 
+vi.mock("../useShippingSettings", () => ({
+  useShippingSettings: () => ({ ...shippingSettings, loading: false }),
+}));
 vi.mock("../../contexts/CartContext", () => ({ useCart: () => cart }));
 vi.mock("../../contexts/AuthContext", () => ({ useAuth: () => auth }));
 vi.mock("../../services/orderService", () => ({ createOrder: (...a) => createOrderMock(...a) }));
@@ -41,6 +45,7 @@ beforeEach(() => {
   saveCpfMock.mockClear();
   quoteMock.mockReset().mockResolvedValue(OK_QUOTE);
   getCouponMock.mockReset().mockResolvedValue(null);
+  shippingSettings.pickup = null;
   auth.profile = { addresses: auth.profile.addresses, cpf: "" };
 });
 
@@ -88,9 +93,13 @@ describe("useCheckout", () => {
       shippingMethod: "Sudeste",
       shippingCep: "01001-000",
       couponCode: null,
+      deliveryMethod: "entrega",
+      pickupAddress: "",
     });
     expect(cart.clear).toHaveBeenCalled();
-    expect(navigateMock).toHaveBeenCalledWith("/checkout/sucesso", { state: { orderNumber: 7 } });
+    expect(navigateMock).toHaveBeenCalledWith("/checkout/sucesso", {
+      state: { orderNumber: 7, pickupAddress: null },
+    });
   });
 
   it("frete grátis: shipping 0 e total = subtotal", async () => {
@@ -245,6 +254,58 @@ describe("useCheckout", () => {
     expect(result.current.appliedCoupon).toBe(null);
     expect(result.current.couponError).toBe("invalido_checkout");
     expect(result.current.submitError).toMatch(/cupom/i);
+  });
+
+  it("retirada indisponível quando o lojista não ativou", async () => {
+    const { result } = renderHook(() => useCheckout());
+    await waitFor(() => expect(result.current.revalidating).toBe(false));
+    expect(result.current.pickupAvailable).toBe(false);
+    expect(result.current.isPickup).toBe(false);
+  });
+
+  it("retirada na loja: frete zerado, total = subtotal, confirma sem depender do frete", async () => {
+    shippingSettings.pickup = { enabled: true, address: "Rua da Loja, 10 — Centro" };
+    quoteMock.mockResolvedValue({ ok: false, error: "sem_regra" }); // frete bloquearia a entrega
+
+    const { result } = renderHook(() => useCheckout());
+    await waitFor(() => expect(result.current.revalidating).toBe(false));
+
+    expect(result.current.pickupAvailable).toBe(true);
+
+    act(() => result.current.setDeliveryMethod("retirada"));
+    expect(result.current.isPickup).toBe(true);
+    expect(result.current.total).toBe(10000); // sem frete
+    expect(result.current.shippingLabel).toBe("Retirada na loja · grátis");
+
+    act(() => result.current.setCpf(VALID_CPF));
+    await waitFor(() => expect(result.current.canConfirm).toBe(true)); // apesar do sem_regra
+  });
+
+  it("confirm de retirada envia deliveryMethod, endereço da loja e frete 0", async () => {
+    shippingSettings.pickup = { enabled: true, address: "Rua da Loja, 10" };
+    const { result } = renderHook(() => useCheckout());
+    await waitFor(() => expect(result.current.revalidating).toBe(false));
+
+    act(() => result.current.setDeliveryMethod("retirada"));
+    act(() => result.current.setCpf(VALID_CPF));
+    await waitFor(() => expect(result.current.canConfirm).toBe(true));
+
+    await act(async () => {
+      await result.current.confirm();
+    });
+
+    expect(createOrderMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deliveryMethod: "retirada",
+        pickupAddress: "Rua da Loja, 10",
+        shipping: 0,
+        shippingAddress: null,
+        shippingMethod: "Retirada na loja",
+      })
+    );
+    expect(navigateMock).toHaveBeenCalledWith("/checkout/sucesso", {
+      state: { orderNumber: 7, pickupAddress: "Rua da Loja, 10" },
+    });
   });
 
   it("mudança na revalidação bloqueia até revisar", async () => {

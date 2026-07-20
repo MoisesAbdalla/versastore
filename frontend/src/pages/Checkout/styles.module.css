@@ -269,6 +269,22 @@
     font-weight: 600;
 }
 
+.pickupAddress {
+    font-family: var(--font-body);
+
+    font-size: 14px;
+
+    color: var(--text);
+
+    padding: 10px 14px;
+
+    border: 1px dashed var(--border);
+
+    border-radius: var(--radius);
+
+    line-height: 1.5;
+}
+
 .coupon {
     display: flex;
 

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import IconButton from "@mui/material/IconButton";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 
@@ -26,6 +28,8 @@ function toForm(settings) {
     defaultPriceText: settings.defaultRule ? centsToInput(settings.defaultRule.price) : "",
     defaultEta: settings.defaultRule?.etaDays != null ? String(settings.defaultRule.etaDays) : "",
     freeText: settings.freeShippingThreshold != null ? centsToInput(settings.freeShippingThreshold) : "",
+    pickupEnabled: Boolean(settings.pickup?.enabled),
+    pickupAddress: settings.pickup?.address || "",
   };
 }
 
@@ -52,7 +56,12 @@ function toSettings(form) {
 
   const freeShippingThreshold = form.freeText.trim() ? parseBRLInput(form.freeText) : null;
 
-  return { rules, defaultRule, freeShippingThreshold };
+  // Retirada na loja (feature 016): só ativa com endereço preenchido.
+  const pickup = form.pickupEnabled
+    ? { enabled: true, address: form.pickupAddress.trim() }
+    : null;
+
+  return { rules, defaultRule, freeShippingThreshold, pickup };
 }
 
 const EMPTY_RULE = { region: "", cepRanges: [{ from: "", to: "" }], priceText: "", etaDays: "", minText: "", maxText: "" };
@@ -87,6 +96,12 @@ function ShippingPage() {
   async function handleSave() {
     const settings = toSettings(form);
     const check = validateShippingSettings(settings);
+
+    if (settings.pickup && !settings.pickup.address) {
+      setErrors(["Informe o endereço da loja para ativar a retirada."]);
+      toastError("Informe o endereço da loja para ativar a retirada.");
+      return;
+    }
 
     if (!check.ok) {
       setErrors(check.issues);
@@ -261,6 +276,33 @@ function ShippingPage() {
           onChange={(e) => setForm((f) => ({ ...f, freeText: e.target.value }))}
           placeholder="199,00"
         />
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Retirada na loja</h2>
+        <p className={styles.hint}>
+          Com a retirada ativa, o cliente pode escolher buscar o pedido na loja (sem frete). O
+          endereço aparece no checkout e no pedido.
+        </p>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={form.pickupEnabled}
+              onChange={(e) => setForm((f) => ({ ...f, pickupEnabled: e.target.checked }))}
+            />
+          }
+          label="Permitir retirada na loja"
+        />
+        {form.pickupEnabled && (
+          <TextField
+            size="small"
+            fullWidth
+            label="Endereço da loja"
+            value={form.pickupAddress}
+            onChange={(e) => setForm((f) => ({ ...f, pickupAddress: e.target.value }))}
+            placeholder="Rua Exemplo, 123 — Centro, São Paulo/SP · Seg–Sáb, 9h–18h"
+          />
+        )}
       </section>
     </div>
   );

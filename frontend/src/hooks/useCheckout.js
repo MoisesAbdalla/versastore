@@ -8,6 +8,7 @@ import { createPayment } from "../services/paymentProvider";
 import { quote } from "../services/shippingProvider";
 import { getCoupon } from "../services/couponService";
 import { saveCpf } from "../services/userService";
+import { useShippingSettings } from "./useShippingSettings";
 import { validateCpf, maskCpf } from "../utils/validation";
 import { isCouponValid, computeCouponEffect } from "../utils/coupon";
 import { formatBRL } from "../utils/format";
@@ -27,6 +28,13 @@ export function useCheckout() {
   const [revalidating, setRevalidating] = useState(true);
   const [changes, setChanges] = useState([]);
   const [acknowledged, setAcknowledged] = useState(false);
+
+  // Retirada na loja (feature 016): disponível quando o lojista ativou e tem
+  // endereço configurado. "retirada" dispensa endereço/frete.
+  const { pickup } = useShippingSettings();
+  const pickupAvailable = Boolean(pickup?.enabled && pickup?.address);
+  const [deliveryMethod, setDeliveryMethod] = useState("entrega");
+  const isPickup = pickupAvailable && deliveryMethod === "retirada";
 
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [cpf, setCpf] = useState("");
@@ -134,12 +142,12 @@ export function useCheckout() {
 
   const couponEffect =
     appliedCoupon && isCouponValid(appliedCoupon, { subtotal }).ok
-      ? computeCouponEffect(appliedCoupon, { subtotal, shipping: shipping || 0 })
+      ? computeCouponEffect(appliedCoupon, { subtotal, shipping: isPickup ? 0 : shipping || 0 })
       : null;
   const discount = couponEffect ? couponEffect.discount : 0;
   const freeShipping = couponEffect ? couponEffect.freeShipping : false;
 
-  const total = subtotal - discount + (freeShipping ? 0 : shipping || 0);
+  const total = subtotal - discount + (isPickup || freeShipping ? 0 : shipping || 0);
 
   const applyCoupon = useCallback(
     async (rawCode) => {
@@ -181,7 +189,9 @@ export function useCheckout() {
   }, []);
 
   let shippingLabel;
-  if (shippingLoading) {
+  if (isPickup) {
+    shippingLabel = "Retirada na loja · grátis";
+  } else if (shippingLoading) {
     shippingLabel = "Calculando…";
   } else if (shippingOption?.free) {
     shippingLabel = "Frete grátis";
@@ -195,14 +205,13 @@ export function useCheckout() {
     shippingLabel = "A combinar";
   }
 
+  // Retirada dispensa endereço e frete; entrega segue as condições da M5a.
   const canConfirm =
     !submitting &&
     !revalidating &&
-    !shippingLoading &&
-    !shippingBlocked &&
+    (isPickup || (!shippingLoading && !shippingBlocked && Boolean(selectedAddress))) &&
     items.length > 0 &&
     !mustReview &&
-    Boolean(selectedAddress) &&
     validateCpf(cpf) === null &&
     PAYMENT_METHODS.includes(paymentMethod);
 
@@ -231,14 +240,16 @@ export function useCheckout() {
       const { id, orderNumber } = await createOrder({
         customerId: user.uid,
         items: orderItems,
-        shippingAddress: selectedAddress,
+        shippingAddress: isPickup ? null : selectedAddress,
         paymentMethod,
         cpf,
-        shipping,
-        shippingEtaDays,
-        shippingMethod,
-        shippingCep: cep,
+        shipping: isPickup ? 0 : shipping,
+        shippingEtaDays: isPickup ? null : shippingEtaDays,
+        shippingMethod: isPickup ? "Retirada na loja" : shippingMethod,
+        shippingCep: isPickup ? "" : cep,
         couponCode: appliedCoupon?.code || null,
+        deliveryMethod: isPickup ? "retirada" : "entrega",
+        pickupAddress: isPickup ? pickup.address : "",
       });
 
       // Ponto de integração do pagamento (stub na M4a; Mercado Pago no M4b).
@@ -250,7 +261,9 @@ export function useCheckout() {
       }
 
       clear();
-      navigate(ROUTES.CHECKOUT_SUCCESS, { state: { orderNumber } });
+      navigate(ROUTES.CHECKOUT_SUCCESS, {
+        state: { orderNumber, pickupAddress: isPickup ? pickup.address : null },
+      });
     } catch (error) {
       if (error.code === "cupom-invalido") {
         // O cupom deixou de valer entre aplicar e finalizar (FR-010): remove e avisa.
@@ -279,6 +292,8 @@ export function useCheckout() {
     shippingMethod,
     cep,
     appliedCoupon,
+    isPickup,
+    pickup,
     clear,
     navigate,
     reloadProfile,
@@ -308,6 +323,12 @@ export function useCheckout() {
     acknowledge: () => setAcknowledged(true),
     mustReview,
     isEmpty,
+    // retirada na loja
+    pickupAvailable,
+    pickupAddress: pickup?.address || "",
+    deliveryMethod,
+    setDeliveryMethod,
+    isPickup,
     // endereço
     addresses,
     selectedAddressId,

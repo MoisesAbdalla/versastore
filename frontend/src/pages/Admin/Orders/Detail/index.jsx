@@ -95,8 +95,14 @@ function OrderDetailPage() {
     );
   }
 
+  // Retirada na loja (feature 016): pedido de retirada não é "enviado" — vai
+  // para "pronto para retirada"; pedido de entrega não usa o ramo de retirada.
+  const isPickupOrder = order.deliveryMethod === "retirada";
   const nextStatuses = (ORDER_STATUS_TRANSITIONS[order.status] || []).filter(
-    (status) => status !== ORDER_STATUS.CANCELADO && status !== ORDER_STATUS.DEVOLVIDO
+    (status) =>
+      status !== ORDER_STATUS.CANCELADO &&
+      status !== ORDER_STATUS.DEVOLVIDO &&
+      (isPickupOrder ? status !== ORDER_STATUS.ENVIADO : status !== ORDER_STATUS.PRONTO_RETIRADA)
   );
 
   const canCancel = (ORDER_STATUS_TRANSITIONS[order.status] || []).includes(ORDER_STATUS.CANCELADO);
@@ -147,8 +153,17 @@ function OrderDetailPage() {
           <p className={styles.strong}>{order.customerName || "—"}</p>
           <p className={styles.muted}>{order.customerEmail}</p>
 
-          <h3 className={styles.subTitle}>Endereço de entrega</h3>
-          <p className={styles.muted}>{addressLine(order.shippingAddress)}</p>
+          {isPickupOrder ? (
+            <>
+              <h3 className={styles.subTitle}>Retirada na loja</h3>
+              <p className={styles.muted}>{order.pickupAddress || "—"}</p>
+            </>
+          ) : (
+            <>
+              <h3 className={styles.subTitle}>Endereço de entrega</h3>
+              <p className={styles.muted}>{addressLine(order.shippingAddress)}</p>
+            </>
+          )}
 
           <h3 className={styles.subTitle}>Pagamento</h3>
           <p className={styles.muted}>{order.paymentMethod || "—"}</p>

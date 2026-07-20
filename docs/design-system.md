@@ -530,3 +530,18 @@ Prova social por produto: nota (1–5 estrelas) + comentário, com **pré-modera
 - Filtro por status (Pendentes/Aprovadas/Ocultas) + **contador de pendentes** no título.
 - Cada item: nota (estrelas), autor, data, comentário, link para o produto; ações
   **Aprovar/Ocultar/Remover** (confirm na remoção). Toda moderação recalcula a média do produto.
+
+# Retirada na loja (016 / 2026-07-19)
+
+Débito da M5a: o cliente pode retirar o pedido na loja, sem frete.
+
+- **Admin → Frete**: seção "Retirada na loja" (switch + endereço da loja, obrigatório para ativar).
+- **Checkout**: com a retirada ativa, aparece "Como você quer receber?" (Receber em casa /
+  Retirar na loja — grátis). Retirada dispensa endereço/CEP/frete; o endereço da loja aparece
+  no checkout e na confirmação. Resumo: "Retirada na loja · grátis".
+- **Pedido**: congela `deliveryMethod` ("entrega"/"retirada"), `pickupAddress`, `shipping: 0`,
+  `shippingStatus: "retirada"`, `shippingMethod: "Retirada na loja"`.
+- **Status**: novo `pronto_retirada` ("Pronto para retirada") — ramo alternativo de "enviado":
+  em separação → pronto para retirada → entregue. O admin vê só o ramo aplicável ao pedido.
+- **Detalhes** (cliente + admin): mostram "Retirada na loja" + endereço no lugar do endereço
+  de entrega.

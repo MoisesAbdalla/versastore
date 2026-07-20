@@ -100,7 +100,40 @@ function Checkout() {
               </ul>
             </section>
 
+            {/* Forma de recebimento (feature 016) */}
+            {c.pickupAvailable && (
+              <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>Como você quer receber?</h2>
+                <div className={styles.methods}>
+                  <label className={styles.methodOption} data-selected={!c.isPickup}>
+                    <input
+                      type="radio"
+                      name="delivery"
+                      checked={!c.isPickup}
+                      onChange={() => c.setDeliveryMethod("entrega")}
+                    />
+                    Receber em casa
+                  </label>
+                  <label className={styles.methodOption} data-selected={c.isPickup}>
+                    <input
+                      type="radio"
+                      name="delivery"
+                      checked={c.isPickup}
+                      onChange={() => c.setDeliveryMethod("retirada")}
+                    />
+                    Retirar na loja (grátis)
+                  </label>
+                </div>
+                {c.isPickup && (
+                  <p className={styles.pickupAddress}>
+                    <strong>Endereço para retirada:</strong> {c.pickupAddress}
+                  </p>
+                )}
+              </section>
+            )}
+
             {/* Endereço */}
+            {!c.isPickup && (
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>Endereço de entrega</h2>
 
@@ -131,6 +164,7 @@ function Checkout() {
                 </div>
               )}
             </section>
+            )}
 
             {/* CPF */}
             <section className={styles.section}>
@@ -252,12 +286,14 @@ function Checkout() {
               {c.submitting ? "Criando pedido…" : "Confirmar pedido"}
             </button>
 
-            {!c.hasAddress && <p className={styles.blockHint}>Cadastre um endereço para continuar.</p>}
+            {!c.isPickup && !c.hasAddress && (
+              <p className={styles.blockHint}>Cadastre um endereço para continuar.</p>
+            )}
             {c.mustReview && <p className={styles.blockHint}>Revise as mudanças dos itens acima.</p>}
-            {c.shippingError === "sem_regra" && (
+            {!c.isPickup && c.shippingError === "sem_regra" && (
               <p className={styles.blockHint}>Ainda não entregamos para o CEP deste endereço.</p>
             )}
-            {c.shippingError === "erro" && (
+            {!c.isPickup && c.shippingError === "erro" && (
               <p className={styles.blockHint}>Não foi possível calcular o frete. Tente novamente.</p>
             )}
           </aside>

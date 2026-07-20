@@ -124,13 +124,15 @@ function AccountOrderDetail() {
         <div className={styles.summaryRow}>
           <span>Frete{order.shippingEtaDays ? ` · até ${order.shippingEtaDays} dias úteis` : ""}</span>
           <span>
-            {order.shippingStatus === "a_calcular"
-              ? "A combinar"
-              : order.shippingStatus === "gratis" || order.shipping === 0
-                ? order.couponType === "frete_gratis"
-                  ? "Grátis (cupom)"
-                  : "Grátis"
-                : formatBRL(order.shipping)}
+            {order.shippingStatus === "retirada"
+              ? "Retirada na loja"
+              : order.shippingStatus === "a_calcular"
+                ? "A combinar"
+                : order.shippingStatus === "gratis" || order.shipping === 0
+                  ? order.couponType === "frete_gratis"
+                    ? "Grátis (cupom)"
+                    : "Grátis"
+                  : formatBRL(order.shipping)}
           </span>
         </div>
 
@@ -155,18 +157,25 @@ function AccountOrderDetail() {
         {order.cpf && <p className={styles.line}>CPF: {order.cpf}</p>}
       </section>
 
-      {address && (
+      {order.deliveryMethod === "retirada" ? (
         <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>Endereço de entrega</h3>
-          <address className={styles.address}>
-            {address.street}, {address.number}
-            {address.complement ? ` — ${address.complement}` : ""}
-            <br />
-            {address.neighborhood} — {address.city}/{address.state}
-            <br />
-            CEP {address.cep}
-          </address>
+          <h3 className={styles.sectionTitle}>Retirada na loja</h3>
+          <address className={styles.address}>{order.pickupAddress || "Endereço a combinar"}</address>
         </section>
+      ) : (
+        address && (
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>Endereço de entrega</h3>
+            <address className={styles.address}>
+              {address.street}, {address.number}
+              {address.complement ? ` — ${address.complement}` : ""}
+              <br />
+              {address.neighborhood} — {address.city}/{address.state}
+              <br />
+              CEP {address.cep}
+            </address>
+          </section>
+        )
       )}
     </div>
   );

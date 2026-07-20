@@ -77,7 +77,7 @@ export async function getShippingSettings() {
   const snapshot = await getDoc(doc(db, ...SHIPPING_SETTINGS_REF));
 
   if (!snapshot.exists()) {
-    return { rules: [], defaultRule: null, freeShippingThreshold: null };
+    return { rules: [], defaultRule: null, freeShippingThreshold: null, pickup: null };
   }
 
   const data = snapshot.data();
@@ -86,6 +86,8 @@ export async function getShippingSettings() {
     rules: data.rules || [],
     defaultRule: data.defaultRule || null,
     freeShippingThreshold: data.freeShippingThreshold ?? null,
+    // Retirada na loja (feature 016): { enabled, address } ou null (desligada).
+    pickup: data.pickup || null,
   };
 }
 

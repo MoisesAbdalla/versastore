@@ -134,6 +134,8 @@ export async function createOrder({
   shippingMethod = "",
   shippingCep = "",
   couponCode = null,
+  deliveryMethod = "entrega",
+  pickupAddress = "",
 }) {
   if (!items || items.length === 0) {
     throw serviceError("pedido-vazio", "O pedido precisa de ao menos um item.");
@@ -217,7 +219,9 @@ export async function createOrder({
     let discount = 0;
     let couponType = null;
     let appliedCouponCode = null;
-    let effectiveShipping = shipping;
+    // Retirada na loja (feature 016): sem frete — o cliente busca o pedido.
+    const isPickup = deliveryMethod === "retirada";
+    let effectiveShipping = isPickup ? 0 : shipping;
 
     if (normalizedCoupon) {
       const coupon = couponSnap && couponSnap.exists() ? couponSnap.data() : null;
@@ -239,10 +243,15 @@ export async function createOrder({
     }
 
     // Frete calculado pela M5a (tabela) e congelado no pedido; null = "a combinar"
-    // (loja sem tabela configurada — fallback M4a).
+    // (loja sem tabela configurada — fallback M4a). "retirada" = sem entrega.
     const total = subtotal - discount + (effectiveShipping || 0);
-    const shippingStatus =
-      effectiveShipping == null ? "a_calcular" : effectiveShipping === 0 ? "gratis" : "calculado";
+    const shippingStatus = isPickup
+      ? "retirada"
+      : effectiveShipping == null
+        ? "a_calcular"
+        : effectiveShipping === 0
+          ? "gratis"
+          : "calculado";
     const orderNumber = (counterSnap.exists() ? counterSnap.data().current : 0) + 1;
 
     const order = {
@@ -252,7 +261,10 @@ export async function createOrder({
       customerNameLower: normalizeForSearch(customer.name || ""),
       customerEmail: customer.email || "",
       customerEmailLower: normalizeForSearch(customer.email || ""),
-      shippingAddress: shippingAddress || null,
+      shippingAddress: isPickup ? null : shippingAddress || null,
+      deliveryMethod,
+      // Endereço da loja congelado no pedido (mudar a config não altera pedidos).
+      pickupAddress: isPickup ? pickupAddress || "" : null,
       paymentMethod: paymentMethod || "",
       cpf: cpf || "",
       items: frozenItems,
@@ -260,9 +272,9 @@ export async function createOrder({
       subtotal,
       shipping: effectiveShipping,
       shippingStatus,
-      shippingEtaDays,
-      shippingMethod: shippingMethod || "",
-      shippingCep: shippingCep || "",
+      shippingEtaDays: isPickup ? null : shippingEtaDays,
+      shippingMethod: isPickup ? "Retirada na loja" : shippingMethod || "",
+      shippingCep: isPickup ? "" : shippingCep || "",
       couponCode: appliedCouponCode,
       couponType,
       discount,
