@@ -4,13 +4,24 @@ import styles from "./styles.module.css";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import PinterestIcon from "@mui/icons-material/Pinterest";
+import { useStoreSettings } from "../../hooks/useStoreSettings";
+import ROUTES from "../../constants/routes";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function Footer() {
+  const store = useStoreSettings();
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+
+  // Identificação do fornecedor (feature 017 / Decreto 7.962/2013): exibida
+  // quando configurada em Admin → Dados da loja; campos vazios são omitidos.
+  const identification = [
+    [store.razaoSocial, store.cnpj && `CNPJ ${store.cnpj}`].filter(Boolean).join(" · "),
+    store.endereco,
+    [store.email, store.telefone].filter(Boolean).join(" · "),
+  ].filter(Boolean);
 
   const canSubmit = consent && EMAIL_PATTERN.test(email);
 
@@ -46,10 +57,18 @@ function Footer() {
           <h4>Institucional</h4>
 
           <ul>
-            <li>Quem Somos</li>
-            <li>Promoções</li>
-            <li>Contato</li>
-            <li>Política de Privacidade</li>
+            <li>
+              <Link to={ROUTES.SOBRE}>Quem somos</Link>
+            </li>
+            <li>
+              <Link to={ROUTES.CONTATO}>Contato</Link>
+            </li>
+            <li>
+              <Link to={ROUTES.TERMOS}>Termos de uso</Link>
+            </li>
+            <li>
+              <Link to={ROUTES.PRIVACIDADE}>Política de privacidade</Link>
+            </li>
           </ul>
         </div>
 
@@ -57,9 +76,15 @@ function Footer() {
           <h4>Atendimento</h4>
 
           <ul>
-            <li>Central de Ajuda</li>
-            <li>Trocas e Devoluções</li>
-            <li>Meus Pedidos</li>
+            <li>
+              <Link to={ROUTES.TROCAS}>Trocas e devoluções</Link>
+            </li>
+            <li>
+              <Link to={ROUTES.CONTA_PEDIDOS}>Meus pedidos</Link>
+            </li>
+            <li>
+              <Link to={ROUTES.CONTA}>Minha conta</Link>
+            </li>
           </ul>
         </div>
 
@@ -87,7 +112,7 @@ function Footer() {
                 />
                 <span>
                   Aceito receber e-mails da Versa Store e li a{" "}
-                  <Link to="/privacy">Política de Privacidade</Link>.
+                  <Link to={ROUTES.PRIVACIDADE}>Política de Privacidade</Link>.
                 </span>
               </label>
 
@@ -98,6 +123,14 @@ function Footer() {
           )}
         </div>
       </div>
+
+      {identification.length > 0 && (
+        <div className={styles.identification}>
+          {identification.map((line) => (
+            <span key={line}>{line}</span>
+          ))}
+        </div>
+      )}
 
       <div className={styles.copy}>
         © 2026 Versa Store - Todos os direitos reservados.

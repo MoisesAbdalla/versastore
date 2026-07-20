@@ -13,6 +13,9 @@ import ForgotPassword from "../pages/ForgotPassword";
 import CompleteProfile from "../pages/CompleteProfile";
 import Terms from "../pages/Legal/Terms";
 import Privacy from "../pages/Legal/Privacy";
+import Returns from "../pages/Legal/Returns";
+import About from "../pages/About";
+import Contact from "../pages/Contact";
 import NotFound from "../pages/NotFound";
 import AccountLayout from "../layouts/AccountLayout";
 import AccountPersonalData from "../pages/Account/PersonalData";
@@ -41,6 +44,7 @@ const AppearancePage = lazy(() => import("../pages/Admin/Appearance"));
 const ShippingPage = lazy(() => import("../pages/Admin/Shipping"));
 const CouponsPage = lazy(() => import("../pages/Admin/Coupons"));
 const ReviewsPage = lazy(() => import("../pages/Admin/Reviews"));
+const StorePage = lazy(() => import("../pages/Admin/Store"));
 
 function AppRoutes() {
   return (
@@ -108,6 +112,12 @@ function AppRoutes() {
 
           <Route path="/privacidade" element={<Privacy />} />
 
+          <Route path="/trocas" element={<Returns />} />
+
+          <Route path="/sobre" element={<About />} />
+
+          <Route path="/contato" element={<Contact />} />
+
           <Route path="/acesso-negado" element={<AccessDenied />} />
 
           <Route
@@ -131,6 +141,7 @@ function AppRoutes() {
             <Route path="frete" element={<ShippingPage />} />
             <Route path="cupons" element={<CouponsPage />} />
             <Route path="avaliacoes" element={<ReviewsPage />} />
+            <Route path="loja" element={<StorePage />} />
             <Route path="appearance" element={<AppearancePage />} />
           </Route>
 

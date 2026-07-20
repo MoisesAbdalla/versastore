@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /admin
+Disallow: /conta
+Disallow: /checkout
+Disallow: /login
+Disallow: /register
+Disallow: /recuperar-senha
+Disallow: /completar-cadastro
+Disallow: /acesso-negado
+
+Sitemap: https://versa-store-2eb1a.web.app/sitemap.xml

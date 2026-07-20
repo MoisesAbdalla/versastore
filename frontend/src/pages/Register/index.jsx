@@ -7,6 +7,7 @@ import Checkbox from "../../components/form/Checkbox";
 import GoogleButton from "../../components/form/GoogleButton";
 import { register, loginWithGoogle } from "../../services/authService";
 import { useAuth } from "../../contexts/AuthContext";
+import { usePageMeta } from "../../hooks/usePageMeta";
 import { isProfileComplete } from "../../services/userService";
 import { useAuthForm } from "../../hooks/useAuthForm";
 import {
@@ -31,6 +32,8 @@ const schema = {
 };
 
 function Register() {
+  usePageMeta({ title: "Criar conta", noindex: true });
+
   const navigate = useNavigate();
   const { setUser, reloadProfile } = useAuth();
   const { values, errors, touched, setField, blurField, validateAll } = useAuthForm(

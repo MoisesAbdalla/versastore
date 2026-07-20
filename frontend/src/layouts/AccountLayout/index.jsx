@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import MainLayout from "../MainLayout";
 import PageContainer from "../../components/PageContainer";
+import { usePageMeta } from "../../hooks/usePageMeta";
 import ROUTES from "../../constants/routes";
 import styles from "./styles.module.css";
 
@@ -17,6 +18,8 @@ const TABS = [
 // para o conteúdo de cada aba (dados / pedidos / endereços). Evita três páginas
 // soltas com layouts divergentes.
 function AccountLayout() {
+  usePageMeta({ title: "Minha conta", noindex: true });
+
   return (
     <MainLayout>
       <PageContainer narrow>

@@ -1,10 +1,10 @@
-import { useEffect } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import PageContainer from "../../components/PageContainer";
 import ProductCard from "../../components/ProductCard";
 import CategoryFilter from "../../components/CategoryFilter";
 import SortSelect from "../../components/SortSelect";
 import { useCatalog } from "../../hooks/useCatalog";
+import { usePageMeta } from "../../hooks/usePageMeta";
 import styles from "./styles.module.css";
 
 function CardSkeleton() {
@@ -16,11 +16,10 @@ function Products() {
 
   const hasFilters = Boolean(filters.categoria || filters.q);
 
-  useEffect(() => {
-    document.title = filters.q
-      ? `Busca: ${filters.q} · Versa Store`
-      : "Produtos · Versa Store";
-  }, [filters.q]);
+  usePageMeta({
+    title: filters.q ? `Busca: ${filters.q}` : "Produtos",
+    description: "Catálogo completo da Versa Store: produtos selecionados com qualidade e entrega para todo o Brasil.",
+  });
 
   return (
     <MainLayout>

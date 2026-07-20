@@ -2,6 +2,7 @@ import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestam
 
 import db from "../firebase/firestore";
 import { ROLES, roleHasPermission } from "../constants/roles";
+import { TERMS_VERSION } from "../constants/terms";
 import { normalizeForSearch } from "../utils/slugify";
 
 export async function getUserProfile(uid) {
@@ -78,6 +79,15 @@ export async function createCustomerProfile(uid, { name, email, phone, termsAcce
     },
     { merge: true }
   );
+}
+
+// Re-aceite dos termos (feature 017/M8): registra o aceite da VERSÃO VIGENTE no
+// próprio doc do usuário (permitido pelas rules — não toca role/agregados).
+export async function acceptCurrentTerms(uid) {
+  await updateDoc(doc(db, "users", uid), {
+    termsVersion: TERMS_VERSION,
+    termsAcceptedAt: serverTimestamp(),
+  });
 }
 
 // Completa o cadastro (telefone + aceite) — usado no passo pós-Google.

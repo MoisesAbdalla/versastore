@@ -37,6 +37,11 @@
   color: var(--secondary);
 }
 
+.container li a {
+  color: inherit;
+  text-decoration: none;
+}
+
 .social {
   display: flex;
   gap: 16px;
@@ -135,6 +140,24 @@
   color: var(--secondary);
   font-size: 14px;
   font-weight: 600;
+}
+
+.identification {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  text-align: center;
+  padding: 18px 24px;
+  border-top: 1px solid var(--border-inverse);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted-inverse);
+}
+
+.identification + .copy {
+  border-top: none;
+  padding-top: 0;
 }
 
 .copy {

@@ -1,19 +1,26 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+
+    <!-- Meta default da loja (feature 017): é o que crawlers SEM JavaScript veem
+         para qualquer URL; as páginas sobrescrevem em runtime (usePageMeta). -->
+    <title>Versa Store</title>
+    <meta name="description" content="Versa Store — sua loja online com qualidade, tecnologia e confiança. Frete para todo o Brasil e retirada na loja." />
+    <meta property="og:site_name" content="Versa Store" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Versa Store" />
+    <meta property="og:description" content="Sua loja online com qualidade, tecnologia e confiança." />
+    <meta name="twitter:card" content="summary" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">

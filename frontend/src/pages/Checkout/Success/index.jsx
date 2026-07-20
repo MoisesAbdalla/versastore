@@ -1,7 +1,7 @@
-import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import MainLayout from "../../../layouts/MainLayout";
 import { formatOrderNumber } from "../../../services/orderService";
+import { usePageMeta } from "../../../hooks/usePageMeta";
 import ROUTES from "../../../constants/routes";
 import styles from "./styles.module.css";
 
@@ -13,9 +13,7 @@ function CheckoutSuccess() {
   // Retirada na loja (feature 016): mostra onde buscar o pedido.
   const pickupAddress = location.state?.pickupAddress || null;
 
-  useEffect(() => {
-    document.title = "Pedido criado · Versa Store";
-  }, []);
+  usePageMeta({ title: "Pedido criado", noindex: true });
 
   return (
     <MainLayout>

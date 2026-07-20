@@ -33,6 +33,12 @@ const ROUTES = {
 
     PRIVACIDADE:"/privacidade",
 
+    TROCAS:"/trocas",
+
+    SOBRE:"/sobre",
+
+    CONTATO:"/contato",
+
     ACCESS_DENIED:"/acesso-negado",
 
     ADMIN:"/admin",
@@ -55,7 +61,9 @@ const ROUTES = {
 
     ADMIN_COUPONS:"/admin/cupons",
 
-    ADMIN_REVIEWS:"/admin/avaliacoes"
+    ADMIN_REVIEWS:"/admin/avaliacoes",
+
+    ADMIN_STORE:"/admin/loja"
 
 }
 

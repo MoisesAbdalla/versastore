@@ -545,3 +545,28 @@ Débito da M5a: o cliente pode retirar o pedido na loja, sem frete.
   em separação → pronto para retirada → entregue. O admin vê só o ramo aplicável ao pedido.
 - **Detalhes** (cliente + admin): mostram "Retirada na loja" + endereço no lugar do endereço
   de entrega.
+
+# Lançamento — SEO, institucional e legal (017 / M8, 2026-07-19)
+
+## Legal
+- **/termos**, **/privacidade** e **/trocas** com textos reais versionados (minutas para revisão
+  jurídica); renderizador comum `LegalDocument` (título, versão, destaque, seções, nota de minuta).
+- **/trocas** abre com o bloco destacado do **arrependimento de 7 dias (CDC art. 49)**; linkada no
+  rodapé e no checkout ("Ao confirmar, você concorda…").
+- **Re-aceite**: `TERMS_VERSION` subiu para 2026-07-19; `TermsGate` (no `PrivateRoute`) bloqueia
+  conta + checkout de quem aceitou versão antiga até o novo aceite (links + checkbox + botão);
+  navegação pública nunca trava.
+
+## Institucional
+- **Admin → Dados da loja** (`/admin/loja`): razão social, CNPJ (máscara), endereço, e-mail,
+  telefone, WhatsApp — com aviso de pendência de lançamento. Doc `settings/store`.
+- **Rodapé**: links reais (Sobre/Contato/Termos/Privacidade/Trocas/Meus pedidos) + bloco de
+  identificação da empresa (campos vazios omitidos).
+- **/sobre** e **/contato** (canais diretos: mailto/wa.me/tel; sem formulário).
+
+## SEO
+- `usePageMeta` por rota: title ("Página · Versa Store"), description, OG (og:image no produto) e
+  **noindex** nas privadas (checkout, conta, admin, login/registro).
+- `index.html`: meta/OG default da loja (o que crawlers sem JS veem — limitação SPA documentada).
+- `public/robots.txt` + `public/sitemap.xml` gerado no **build** (páginas fixas + produtos ativos
+  via REST pública do Firestore) — `npm run build` roda o prebuild do sitemap.

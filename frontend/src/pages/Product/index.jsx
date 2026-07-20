@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import ProductGallery from "../../components/ProductGallery";
@@ -11,6 +11,8 @@ import { useVariationSelection } from "../../hooks/useVariationSelection";
 import { usePublicCategories } from "../../hooks/usePublicCategories";
 import { useCart } from "../../contexts/CartContext";
 import { useFeedback } from "../../contexts/FeedbackContext";
+import { usePageMeta } from "../../hooks/usePageMeta";
+import { cloudinaryUrl, IMAGE_WIDTHS } from "../../services/cloudinaryService";
 import { DEFAULT_LOW_STOCK_THRESHOLD } from "../../constants/product";
 import ROUTES from "../../constants/routes";
 import styles from "./styles.module.css";
@@ -33,9 +35,17 @@ function Product() {
 
   const [attempted, setAttempted] = useState(false);
 
-  useEffect(() => {
-    document.title = product ? `${product.name} · Versa Store` : "Produto · Versa Store";
-  }, [product]);
+  // Meta/OG do produto (feature 017): nome, descrição textual e imagem —
+  // visíveis para crawlers que executam JS (limitação SPA documentada no R-1).
+  const plainDescription = product?.description
+    ? product.description.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160)
+    : undefined;
+
+  usePageMeta({
+    title: product ? product.name : "Produto",
+    description: plainDescription,
+    image: product?.image ? cloudinaryUrl(product.image, { w: IMAGE_WIDTHS.card }) : undefined,
+  });
 
   function handleAdd() {
     setAttempted(true);

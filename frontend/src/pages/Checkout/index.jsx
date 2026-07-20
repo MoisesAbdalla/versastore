@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import FormField from "../../components/form/FormField";
 import Checkbox from "../../components/form/Checkbox";
 import EmptyState from "../../components/EmptyState";
 import { useCheckout } from "../../hooks/useCheckout";
+import { usePageMeta } from "../../hooks/usePageMeta";
 import { formatBRL } from "../../utils/format";
 import ROUTES from "../../constants/routes";
 import styles from "./styles.module.css";
@@ -40,9 +41,7 @@ function Checkout() {
   const c = useCheckout();
   const [couponInput, setCouponInput] = useState("");
 
-  useEffect(() => {
-    document.title = "Checkout · Versa Store";
-  }, []);
+  usePageMeta({ title: "Checkout", noindex: true });
 
   if (c.isEmpty) {
     return (
@@ -276,6 +275,18 @@ function Checkout() {
                 {c.submitError}
               </p>
             )}
+
+            <p className={styles.legalNote}>
+              Ao confirmar, você concorda com os{" "}
+              <Link to={ROUTES.TERMOS} target="_blank">
+                Termos de uso
+              </Link>{" "}
+              e a{" "}
+              <Link to={ROUTES.TROCAS} target="_blank">
+                Política de trocas
+              </Link>{" "}
+              (arrependimento em até 7 dias).
+            </p>
 
             <button
               type="button"

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import { useCart } from "../../contexts/CartContext";
+import { usePageMeta } from "../../hooks/usePageMeta";
 import { formatBRL } from "../../utils/format";
 import ROUTES from "../../constants/routes";
 import styles from "./styles.module.css";
@@ -28,9 +29,7 @@ function Cart() {
   const [revalidating, setRevalidating] = useState(true);
   const [changes, setChanges] = useState([]);
 
-  useEffect(() => {
-    document.title = "Carrinho · Versa Store";
-  }, []);
+  usePageMeta({ title: "Carrinho" });
 
   // Revalida contra o Firestore ao abrir o carrinho (uma vez): ajusta
   // preço/estoque, remove indisponíveis e sinaliza o que mudou.

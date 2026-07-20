@@ -385,6 +385,20 @@
     color: var(--error, #B3261E);
 }
 
+.legalNote {
+    font-family: var(--font-body);
+
+    font-size: 12px;
+
+    line-height: 1.5;
+
+    color: var(--text-muted);
+}
+
+.legalNote a {
+    color: var(--primary);
+}
+
 .confirm {
     margin-top: 8px;
 

@@ -6,6 +6,7 @@ import PasswordField from "../../components/form/PasswordField";
 import GoogleButton from "../../components/form/GoogleButton";
 import { login, loginWithGoogle } from "../../services/authService";
 import { useAuth } from "../../contexts/AuthContext";
+import { usePageMeta } from "../../hooks/usePageMeta";
 import { isProfileComplete } from "../../services/userService";
 import { useAuthForm } from "../../hooks/useAuthForm";
 import { validateEmail } from "../../utils/validation";
@@ -26,6 +27,8 @@ const LOGIN_ERRORS = {
 };
 
 function Login() {
+  usePageMeta({ title: "Entrar", noindex: true });
+
   const navigate = useNavigate();
   const { setUser, reloadProfile } = useAuth();
   const { values, errors, touched, setField, blurField, validateAll } = useAuthForm(

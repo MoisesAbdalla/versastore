@@ -13,12 +13,14 @@ import WallpaperIcon from "@mui/icons-material/Wallpaper";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
+import BusinessIcon from "@mui/icons-material/Business";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { signOut } from "firebase/auth";
 
 import auth from "../../firebase/auth";
 import { useAuth } from "../../contexts/AuthContext";
+import { usePageMeta } from "../../hooks/usePageMeta";
 import ROUTES from "../../constants/routes";
 import GlobalSearch from "./GlobalSearch";
 import styles from "./styles.module.css";
@@ -33,6 +35,7 @@ const NAV_ITEMS = [
   { to: ROUTES.ADMIN_SHIPPING, label: "Frete", icon: LocalShippingIcon },
   { to: ROUTES.ADMIN_COUPONS, label: "Cupons", icon: LocalOfferIcon },
   { to: ROUTES.ADMIN_REVIEWS, label: "Avaliações", icon: StarBorderIcon },
+  { to: ROUTES.ADMIN_STORE, label: "Dados da loja", icon: BusinessIcon },
   { to: ROUTES.ADMIN_APPEARANCE, label: "Aparência", icon: WallpaperIcon },
 ];
 
@@ -73,6 +76,8 @@ function SidebarContent({ onNavigate }) {
 // Layout do painel (US1): sidebar fixa em desktop, drawer em mobile,
 // header com nome do usuário logado e slot de busca global (preenchido no Polish).
 function AdminLayout() {
+  usePageMeta({ title: "Painel", noindex: true });
+
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);

@@ -28,6 +28,7 @@ vi.mock("../userService", () => ({
 }));
 
 import { register, loginWithGoogle, resetPassword } from "../authService";
+import { TERMS_VERSION } from "../../constants/terms";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -55,7 +56,7 @@ describe("register (feature 007)", () => {
     expect(uid).toBe("u1");
     expect(data.name).toBe("Maria Silva");
     expect(data.phone).toBe("11912345678");
-    expect(data.termsVersion).toBe("2026-07-13");
+    expect(data.termsVersion).toBe(TERMS_VERSION);
   });
 
   it("traduz e-mail já em uso para o código de domínio", async () => {

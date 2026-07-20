@@ -28,8 +28,10 @@ import {
   setDefaultAddress,
   removeAddress,
   saveCpf,
+  acceptCurrentTerms,
 } from "../userService";
 import { ROLES } from "../../constants/roles";
+import { TERMS_VERSION } from "../../constants/terms";
 
 beforeEach(() => {
   // Reset das filas de mockResolvedValueOnce entre testes (evita vazamento).
@@ -258,6 +260,17 @@ describe("saveCpf (feature 009, opt-in)", () => {
     expect(updateDocMock).toHaveBeenCalledWith(
       { db: {}, collectionName: "users", id: "uid-1" },
       { cpf: "529.982.247-25" }
+    );
+  });
+});
+
+describe("acceptCurrentTerms (feature 017, re-aceite)", () => {
+  it("grava a versão vigente + data no doc do próprio usuário", async () => {
+    await acceptCurrentTerms("uid-1");
+
+    expect(updateDocMock).toHaveBeenCalledWith(
+      { db: {}, collectionName: "users", id: "uid-1" },
+      { termsVersion: TERMS_VERSION, termsAcceptedAt: "server-timestamp" }
     );
   });
 });

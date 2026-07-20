@@ -99,6 +99,49 @@ export async function updateShippingSettings(changes) {
   );
 }
 
+// --- Dados da loja (feature 017 / M8) ------------------------------------
+// Documento único settings/store com a identificação do fornecedor exibida no
+// rodapé e no Contato (razão social, CNPJ, endereço, contatos). Leitura pública,
+// escrita admin — as rules de settings/{id} já cobrem. Campos vazios = omitidos.
+
+const STORE_SETTINGS_REF = ["settings", "store"];
+
+const EMPTY_STORE = {
+  razaoSocial: "",
+  cnpj: "",
+  endereco: "",
+  email: "",
+  telefone: "",
+  whatsapp: "",
+};
+
+export async function getStoreSettings() {
+  const snapshot = await getDoc(doc(db, ...STORE_SETTINGS_REF));
+
+  if (!snapshot.exists()) {
+    return { ...EMPTY_STORE };
+  }
+
+  const data = snapshot.data();
+
+  return {
+    razaoSocial: data.razaoSocial || "",
+    cnpj: data.cnpj || "",
+    endereco: data.endereco || "",
+    email: data.email || "",
+    telefone: data.telefone || "",
+    whatsapp: data.whatsapp || "",
+  };
+}
+
+export async function updateStoreSettings(changes) {
+  await setDoc(
+    doc(db, ...STORE_SETTINGS_REF),
+    { ...changes, updatedAt: serverTimestamp() },
+    { merge: true }
+  );
+}
+
 // "Restaurar padrão" zera imagem E enquadramento em uma única escrita.
 export async function resetHero() {
   await updateHomeSettings({ heroImage: null, heroPosition: null });
