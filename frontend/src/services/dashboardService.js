@@ -12,6 +12,7 @@ import db from "../firebase/firestore";
 import { dayKey } from "./orderService";
 import { ORDER_STATUS } from "../constants/orderStatus";
 import { DEFAULT_LOW_STOCK_THRESHOLD } from "../constants/product";
+import { sumPeriod, periodKpis, mixDistribution } from "../utils/report";
 
 // Visão geral lê SOMENTE agregados (dailyStats) e consultas com limit —
 // nunca varre a coleção orders (research R-2, SC-003, constituição IV).
@@ -177,6 +178,61 @@ export async function getTopProducts(fromKey, toKey, topLimit = 5) {
   }
 
   return [...totals.values()].sort((a, b) => b.units - a.units).slice(0, topLimit);
+}
+
+// Relatório ampliado do período (feature 018): uma única range query cobre o
+// período E o período anterior de mesma duração (estende o `from` para trás),
+// para os KPIs comparativos — mantendo a regra de só ler dailyStats (Const. IV).
+export async function getPeriodReport(fromKey, toKey) {
+  if (!fromKey || !toKey || fromKey > toKey) {
+    const error = new Error("Período inválido.");
+    error.code = "periodo-invalido";
+    throw error;
+  }
+
+  // Lista de dias do período e do período anterior de mesma duração.
+  const days = [];
+  for (let key = fromKey; key <= toKey; key = addDays(key, 1)) {
+    days.push(key);
+  }
+
+  const prevTo = addDays(fromKey, -1);
+  const prevFrom = addDays(prevTo, -(days.length - 1));
+  const prevDays = [];
+  for (let key = prevFrom; key <= prevTo; key = addDays(key, 1)) {
+    prevDays.push(key);
+  }
+
+  const byDay = await getStatsRange(prevFrom, toKey);
+
+  const current = sumPeriod(byDay, days);
+  const previous = sumPeriod(byDay, prevDays);
+
+  const series = days.map((date) => {
+    const stats = byDay.get(date) || emptyTotals();
+    return { date, revenue: stats.revenue || 0, orderCount: stats.orderCount || 0 };
+  });
+
+  // Faturamento por categoria (forward-only) do período atual, ordenado desc.
+  const byCategoryRevenue = Object.values(current.byCategory)
+    .map((c) => ({ name: c.name, revenue: c.revenue, units: c.units }))
+    .sort((a, b) => b.revenue - a.revenue);
+
+  // 1º dia do período que já tem os campos novos (aviso de forward-only).
+  const coverageStart =
+    days.find((date) => {
+      const stats = byDay.get(date);
+      return stats && stats.byPaymentMethod && Object.keys(stats.byPaymentMethod).length > 0;
+    }) || null;
+
+  return {
+    kpis: periodKpis(current, previous),
+    series,
+    byCategoryRevenue,
+    paymentMix: mixDistribution(current.byPaymentMethod),
+    deliveryMix: mixDistribution(current.byDeliveryMethod),
+    coverageStart,
+  };
 }
 
 export async function getRecentOrders(count = 5) {

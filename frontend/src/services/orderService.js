@@ -56,7 +56,33 @@ function variationLabel(variation) {
 }
 
 function emptyStats() {
-  return { revenue: 0, orderCount: 0, unitsSold: 0, unitsByProduct: {} };
+  return {
+    revenue: 0,
+    orderCount: 0,
+    unitsSold: 0,
+    unitsByProduct: {},
+    // Relatórios ampliados (feature 018) — forward-only: dias anteriores ao
+    // deploy não têm estes campos (lidos como 0/vazio nos relatórios).
+    discountTotal: 0,
+    byCategory: {},
+    byPaymentMethod: {},
+    byDeliveryMethod: {},
+  };
+}
+
+// Aplica ±direction numa contagem de map, removendo a chave ao zerar.
+function applyCountDelta(target, key, delta) {
+  if (!key) {
+    return;
+  }
+
+  const next = Math.max(0, (target[key] || 0) + delta);
+
+  if (next === 0) {
+    delete target[key];
+  } else {
+    target[key] = next;
+  }
 }
 
 // Feature 009: agregados (receita + totais do cliente) contam na transição
@@ -75,6 +101,11 @@ function applyStatsDelta(stats, order, direction) {
     orderCount: Math.max(0, (stats.orderCount || 0) + direction),
     unitsSold: 0,
     unitsByProduct: { ...(stats.unitsByProduct || {}) },
+    // Feature 018 — agregados de relatório (aplicam no pago, revertem no cancelamento).
+    discountTotal: Math.max(0, (stats.discountTotal || 0) + direction * (order.discount || 0)),
+    byCategory: { ...(stats.byCategory || {}) },
+    byPaymentMethod: { ...(stats.byPaymentMethod || {}) },
+    byDeliveryMethod: { ...(stats.byDeliveryMethod || {}) },
   };
 
   let unitsDelta = 0;
@@ -90,9 +121,27 @@ function applyStatsDelta(stats, order, direction) {
     } else {
       next.unitsByProduct[item.productId] = { name: item.name, units };
     }
+
+    // Faturamento/unidades por categoria (feature 018) — categoria congelada no
+    // item na criação; pedidos legados sem categoria caem em "sem-categoria".
+    const catId = item.categoryId || "sem-categoria";
+    const catName = item.categoryName || "Sem categoria";
+    const catEntry = next.byCategory[catId] || { name: catName, revenue: 0, units: 0 };
+    const catRevenue = Math.max(0, catEntry.revenue + direction * item.unitPrice * item.quantity);
+    const catUnits = Math.max(0, catEntry.units + direction * item.quantity);
+
+    if (catUnits === 0 && catRevenue === 0) {
+      delete next.byCategory[catId];
+    } else {
+      next.byCategory[catId] = { name: catName, revenue: catRevenue, units: catUnits };
+    }
   }
 
   next.unitsSold = Math.max(0, (stats.unitsSold || 0) + unitsDelta);
+
+  // Mix de forma de pagamento e de recebimento (feature 018).
+  applyCountDelta(next.byPaymentMethod, order.paymentMethod, direction);
+  applyCountDelta(next.byDeliveryMethod, order.deliveryMethod || "entrega", direction);
 
   return next;
 }
@@ -208,6 +257,10 @@ export async function createOrder({
         unitPrice,
         quantity: item.quantity,
         imageUrl: product.image || "",
+        // Categoria congelada (feature 018) — permite o faturamento por categoria
+        // no `pago` sem leitura extra; imune a mudança de categoria do produto.
+        categoryId: product.categoryId || null,
+        categoryName: product.categoryName || product.category || "",
       });
     }
 

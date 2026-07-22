@@ -570,3 +570,21 @@ Débito da M5a: o cliente pode retirar o pedido na loja, sem frete.
 - `index.html`: meta/OG default da loja (o que crawlers sem JS veem — limitação SPA documentada).
 - `public/robots.txt` + `public/sitemap.xml` gerado no **build** (páginas fixas + produtos ativos
   via REST pública do Firestore) — `npm run build` roda o prebuild do sitemap.
+
+# Relatórios ampliados (018 / 2026-07-21)
+
+A página /admin/reports ganhou, acima dos relatórios existentes (mantidos):
+
+- **KPIs do período** (StatCard): Faturamento, Pedidos, Unidades, Ticket médio, cada um com a
+  variação % vs. o período anterior de mesma duração ("—" sem base). Reusa o StatCard da Visão geral.
+- **Gráfico de tendência**: SalesChart com a série do período.
+- **Por categoria**: unidades (retroativo, join top×catálogo) + faturamento (forward) + CSV; "Sem
+  categoria" agrupa produtos sem categoria.
+- **Mix de pagamento e recebimento**: distribuição (contagem + %) por Pix/Cartão/Boleto e
+  Entrega/Retirada.
+- **Cupons**: snapshot (código, tipo, usos, status) + CSV.
+
+Dados: só `dailyStats` (range por id) + `listProducts`/`listCoupons` com teto — **nunca varre
+orders** (Constituição IV). A base foi estendida no `pago` (revertida no cancelamento):
+`discountTotal`, `byCategory{revenue,units}`, `byPaymentMethod`, `byDeliveryMethod` — **forward-only**
+(descontos, faturamento por categoria e mix valem a partir do deploy; um aviso marca a cobertura).

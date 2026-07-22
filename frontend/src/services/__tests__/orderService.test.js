@@ -724,3 +724,84 @@ describe("cupom (feature 013)", () => {
     ).resolves.toBeUndefined();
   });
 });
+
+describe("agregados de relatório ampliado (feature 018)", () => {
+  beforeEach(() => {
+    // prod-1 ganha categoria; cupom fixo p/ testar discountTotal.
+    store.set("products/prod-1", {
+      ...store.get("products/prod-1"),
+      categoryId: "cat-1",
+      categoryName: "Calçados",
+    });
+    store.set("coupons/OFF", { code: "OFF", type: "fixo", value: 1000, active: true, usedCount: 0 });
+  });
+
+  it("createOrder congela categoryId/categoryName no item", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+    });
+
+    const order = store.get(findOrderPath());
+    expect(order.items[0].categoryId).toBe("cat-1");
+    expect(order.items[0].categoryName).toBe("Calçados");
+  });
+
+  it("pagar acumula discountTotal, byCategory, byPaymentMethod e byDeliveryMethod", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      couponCode: "OFF",
+    });
+    const orderId = findOrderPath().split("/")[1];
+
+    await advanceStatus(orderId, ORDER_STATUS.PAGO, { byUid: "a", byName: "A" });
+
+    const statsPath = [...store.keys()].find((k) => k.startsWith("dailyStats/"));
+    const stats = store.get(statsPath);
+
+    expect(stats.discountTotal).toBe(1000);
+    expect(stats.byCategory["cat-1"]).toEqual({ name: "Calçados", revenue: 19990, units: 1 });
+    expect(stats.byPaymentMethod.pix).toBe(1);
+    expect(stats.byDeliveryMethod.entrega).toBe(1); // sem retirada → entrega
+  });
+
+  it("cancelar um pedido pago reverte os novos agregados", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "pix",
+      couponCode: "OFF",
+    });
+    const orderId = findOrderPath().split("/")[1];
+    await advanceStatus(orderId, ORDER_STATUS.PAGO, { byUid: "a", byName: "A" });
+
+    await cancelOrder(orderId, { reason: "Estorno", byUid: "a", byName: "A" });
+
+    const statsPath = [...store.keys()].find((k) => k.startsWith("dailyStats/"));
+    const stats = store.get(statsPath);
+
+    expect(stats.discountTotal).toBe(0);
+    expect(stats.byCategory["cat-1"]).toBeUndefined(); // removido ao zerar
+    expect(stats.byPaymentMethod.pix).toBeUndefined();
+    expect(stats.byDeliveryMethod.entrega).toBeUndefined();
+  });
+
+  it("pedido de retirada conta em byDeliveryMethod.retirada", async () => {
+    await createOrder({
+      customerId: "cliente-1",
+      items: [{ productId: "prod-1", quantity: 1 }],
+      paymentMethod: "boleto",
+      deliveryMethod: "retirada",
+      pickupAddress: "Rua da Loja, 10",
+    });
+    const orderId = findOrderPath().split("/")[1];
+    await advanceStatus(orderId, ORDER_STATUS.PAGO, { byUid: "a", byName: "A" });
+
+    const stats = store.get([...store.keys()].find((k) => k.startsWith("dailyStats/")));
+    expect(stats.byDeliveryMethod.retirada).toBe(1);
+    expect(stats.byPaymentMethod.boleto).toBe(1);
+  });
+});
