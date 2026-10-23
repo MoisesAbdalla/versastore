@@ -30,6 +30,9 @@ import CompleteProfileGuard from "./CompleteProfileGuard";
 // Rotas do painel com code splitting (constituição, Princípio IV): o bundle
 // inicial da loja não carrega nada do admin.
 const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
+// Página de lançamento (feature 019) também sob code splitting: campanha
+// pontual não deve pesar no bundle inicial da loja.
+const DropCinder01 = lazy(() => import("../pages/DropCinder01"));
 const Dashboard = lazy(() => import("../pages/Admin/Dashboard"));
 const AccessDenied = lazy(() => import("../pages/Admin/AccessDenied"));
 const ProductListPage = lazy(() => import("../pages/Admin/Products/List"));
@@ -117,6 +120,8 @@ function AppRoutes() {
           <Route path="/sobre" element={<About />} />
 
           <Route path="/contato" element={<Contact />} />
+
+          <Route path="/drop/cinder-01" element={<DropCinder01 />} />
 
           <Route path="/acesso-negado" element={<AccessDenied />} />
 

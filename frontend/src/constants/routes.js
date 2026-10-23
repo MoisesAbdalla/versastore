@@ -39,6 +39,9 @@ const ROUTES = {
 
     CONTATO:"/contato",
 
+    // Lançamentos (feature 019): páginas de drop com fila + estoque limitado.
+    DROP_CINDER01:"/drop/cinder-01",
+
     ACCESS_DENIED:"/acesso-negado",
 
     ADMIN:"/admin",
