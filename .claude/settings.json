@@ -40,7 +40,40 @@
       "Bash(\"/c/Program Files \\(x86\\)/Microsoft/Edge/Application/msedge.exe\" --headless --disable-gpu --no-sandbox --remote-debugging-port=9333 --window-size=1440,900 about:blank)",
       "Bash(curl -s http://localhost:9333/json/version)",
       "Bash(node 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--VersaStore\\\\1be9df1a-d12b-4b4b-b25a-21787575bc6b\\\\scratchpad/cdp_shot.mjs' http://localhost:5183/ 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--VersaStore\\\\1be9df1a-d12b-4b4b-b25a-21787575bc6b\\\\scratchpad/cdp_categorias.png' '#categorias')",
-      "Bash(node 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--VersaStore\\\\1be9df1a-d12b-4b4b-b25a-21787575bc6b\\\\scratchpad/cdp_shot.mjs' http://localhost:5183/ 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--VersaStore\\\\1be9df1a-d12b-4b4b-b25a-21787575bc6b\\\\scratchpad/cdp_produtos.png' '#produtos-destaque')"
+      "Bash(node 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--VersaStore\\\\1be9df1a-d12b-4b4b-b25a-21787575bc6b\\\\scratchpad/cdp_shot.mjs' http://localhost:5183/ 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--VersaStore\\\\1be9df1a-d12b-4b4b-b25a-21787575bc6b\\\\scratchpad/cdp_produtos.png' '#produtos-destaque')",
+      "Bash(git rev-list *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git push *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(powershell -NoProfile -Command \".specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly\")",
+      "Bash(powershell -NoProfile -Command \".specify/scripts/powershell/setup-plan.ps1 -Json\")",
+      "Bash(powershell -NoProfile -Command \".specify/scripts/powershell/setup-tasks.ps1 -Json\")",
+      "Bash(powershell -NoProfile -Command \".specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks\")",
+      "Bash(mkdir -p specs/011-frete-tabela/checklists)",
+      "Bash(cp .specify/templates/spec-template.md specs/011-frete-tabela/spec.md)",
+      "Bash(printf '{\\\\n  \"feature_directory\": \"specs/011-frete-tabela\"\\\\n}\\\\n')",
+      "Bash(npx vitest *)",
+      "Bash(mkdir -p specs/013-cupons-desconto/checklists)",
+      "Bash(printf '{\\\\n  \"feature_directory\": \"specs/013-cupons-desconto\"\\\\n}\\\\n')",
+      "PowerShell(.specify\\\\scripts\\\\powershell\\\\check-prerequisites.ps1 -Json -PathsOnly)",
+      "PowerShell(.specify\\\\scripts\\\\powershell\\\\setup-plan.ps1 -Json)",
+      "PowerShell(.specify\\\\scripts\\\\powershell\\\\setup-tasks.ps1 -Json)",
+      "PowerShell(.specify\\\\scripts\\\\powershell\\\\check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks)",
+      "Bash(git commit -m '@ *)",
+      "Bash(git commit *)",
+      "Bash(sed -i \"s/^- \\\\[ \\\\] T014 /- [x] T014 /\" specs/015-avaliacoes-produtos/tasks.md)",
+      "Bash(git commit -m 'tasks\\(015\\): T014 regressão manual validada pelo usuário *)",
+      "Bash(git commit -m 'spec\\(017\\)+clarify: bloco de lançamento — SEO, institucional e legal \\(M8\\) *)",
+      "Bash(python -)",
+      "Bash(mkdir -p specs/018-relatorios-ampliados/checklists)",
+      "Bash(printf '{\\\\n  \"feature_directory\": \"specs/018-relatorios-ampliados\"\\\\n}\\\\n')",
+      "Bash(git commit -q -m 'spec\\(018\\)+clarify: relatórios ampliados do admin *)",
+      "Bash(git commit -q -m 'plan\\(018\\)+tasks+analyze: relatórios ampliados *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Admin\\.claude\\projects\\c--VersaStore\\memory"
     ]
   }
 }
